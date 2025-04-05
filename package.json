@@ -1,0 +1,17 @@
+{
+    "name": "jazz_midi",
+    "version": "1.0.0",
+    "description": "A minimal project to read MIDI piano note events and print them in the browser using TypeScript.",
+    "main": "dist/main.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "live-server --port=8080"
+    },
+    "author": "Pierre Snell <ierezell@gmail.com>",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/webmidi": "^2.1.0",
+        "live-server": "^1.2.1",
+        "typescript": "^5.8.3"
+    }
+}
