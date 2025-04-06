@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Counter from '../components/Counter.svelte';
 	import welcome from '$lib/images/svelte-welcome.webp';
 	import welcomeFallback from '$lib/images/svelte-welcome.png';
 </script>
@@ -20,8 +19,6 @@
 
 		to the jazz <br />midi app
 	</h1>
-
-	<Counter />
 </section>
 
 <style>
