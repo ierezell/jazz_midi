@@ -3,7 +3,7 @@
     import Key from "./Key.svelte";
     console.log("COUCOU");
     let {noteEvents,middleC,octaves}: {
-        noteEvents: NoteEvent[],
+        noteEvents: NoteEvent[],``
         middleC: number,
         octaves: number,
     } = $props();
