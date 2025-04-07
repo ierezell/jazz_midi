@@ -1,6 +1,20 @@
 <script lang="ts">
 	import welcome from '$lib/images/svelte-welcome.webp';
 	import welcomeFallback from '$lib/images/svelte-welcome.png';
+	import { onMount } from 'svelte';
+	import { RequestMidiAccess } from '../midi/midi';
+	import MidiDisplay from '../components/MidiDisplay.svelte';
+  
+	let midiAccess:MIDIAccess;
+  
+	onMount(async () => {
+		try {
+			midiAccess = await RequestMidiAccess();
+			console.log('MIDI Access obtained:', midiAccess);
+		} catch (error) {
+			console.error('Failed to obtain MIDI Access:', error);
+		}
+	});
 </script>
 
 <svelte:head>
@@ -19,6 +33,14 @@
 
 		to the jazz <br />midi app
 	</h1>
+	<main>
+		<h1>Jazz MIDI</h1>
+		{#if midiAccess}
+		  <MidiDisplay {midiAccess} />
+		{:else}
+		  <p>Loading MIDI Access...</p>
+		{/if}
+	</main>
 </section>
 
 <style>
@@ -49,4 +71,13 @@
 		top: 0;
 		display: block;
 	}
+	main {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 2rem;
+}
 </style>
+
+
+
+
