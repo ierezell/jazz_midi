@@ -1,15 +1,15 @@
 <script lang="ts">
 	import type { MidiNote, NoteEvent } from "../../midi/midi";
     import Key from "./Key.svelte";
-    console.log("COUCOU");
-    let {noteEvents,middleC,octaves}: {
-        noteEvents: NoteEvent[],``
-        middleC: number,
-        octaves: number,
-    } = $props();
-
-    console.log("NoteEvents", noteEvents);
-    let midiNotes = noteEvents.map((note) => note.noteNumber);
+    
+    interface KeyboardProps {
+        midiNotes: MidiNote[];
+        middleC: number;
+        octaves: number;
+    }
+    let {midiNotes,middleC,octaves}:KeyboardProps = $props();
+   
+    
     let keys = [...Array(octaves * 12 + 1).keys()].map(
         (i) => i + (middleC - Math.floor(octaves / 2) * 12)
     );
