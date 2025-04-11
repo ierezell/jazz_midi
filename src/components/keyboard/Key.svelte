@@ -1,9 +1,8 @@
 <script lang="ts">
-    export let noteNum: number;
-    export let keyWidth = 56;
-    export let pressed = false;
+    let {noteNum, pressed}: {noteNum: number, pressed: boolean} = $props();
+    let keyWidth = 56;
     let isNatural = ![1, 3, 6, 8, 10].includes(noteNum % 12);
-    let bias = 0;
+    let bias = $state(0);
     // the accidental keys are not perfectly in center
     if (!isNatural) {
         if ([1, 6].includes(noteNum % 12)) bias = -keyWidth / 12;
@@ -39,7 +38,7 @@
 <div
     class:accidental={!isNatural}
     class:natural={isNatural}
-    class:pressed
+    class:pressed={pressed}
     style="--width: {keyWidth - keyWidth * 0.47 * (isNatural ? 0.0 : 1.0)}px; transform: translate({bias}px);"
     draggable="false"
 ></div>
@@ -64,9 +63,9 @@
         box-shadow: inset black 0px 0px 2px 0px;
     }
     .accidental.pressed {
-        background: hsl(0 0% 30%);
+        background: hsl(0, 92%, 48%);
     }
     .natural.pressed {
-        background: hsl(0 0% 90%);
+        background: hsl(140, 89%, 45%);
     }
 </style>
