@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import logo from '$lib/images/svelte-logo.svg';
 	import github from '$lib/images/github.svg';
-
+	import { base } from '$app/paths';
 	let { children } = $props();
 </script>
 
@@ -14,33 +14,33 @@
 				<img src={logo} alt="SvelteKit" />
 			</a>
 		</div>
-	
+
 		<nav>
 			<svg viewBox="0 0 2 3" aria-hidden="true">
 				<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
 			</svg>
 			<ul>
 				<li aria-current={page.url.pathname === '/' ? 'page' : undefined}>
-					<a href="/">Home</a>
+					<a href="{base}/">Home</a>
 				</li>
 				<li aria-current={page.url.pathname === '/about' ? 'page' : undefined}>
-					<a href="/about">About</a>
+					<a href="{base}/about">About</a>
 				</li>
 				<li aria-current={page.url.pathname.startsWith('/two_fives_ones') ? 'page' : undefined}>
-					<a href="/two_five_ones">II-V-I</a>
+					<a href="{base}/two_five_ones">II-V-I</a>
 				</li>
 				<li aria-current={page.url.pathname.startsWith('/scales') ? 'page' : undefined}>
-					<a href="/scales">Scales</a>
+					<a href="{base}/scales">Scales</a>
 				</li>
 				<li aria-current={page.url.pathname.startsWith('/chords') ? 'page' : undefined}>
-					<a href="/chords">Chords</a>
+					<a href="{base}/chords">Chords</a>
 				</li>
 			</ul>
 			<svg viewBox="0 0 2 3" aria-hidden="true">
 				<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
 			</svg>
 		</nav>
-	
+
 		<div class="corner">
 			<a href="https://github.com/sveltejs/kit">
 				<img src={github} alt="GitHub" />

@@ -1,24 +1,29 @@
 # jazz_midi
 
-Note On: Channel 1, Note 50, Velocity 72 main.js:16:17
-Note Off: Channel 1, Note 50 main.js:19:17
-Note On: Channel 1, Note 50, Velocity 89 main.js:16:17
-Note Off: Channel 1, Note 50 main.js:19:17
-Note On: Channel 1, Note 52, Velocity 89 main.js:16:17
-Note Off: Channel 1, Note 52 main.js:19:17
-Note On: Channel 1, Note 52, Velocity 95 main.js:16:17
-Note Off: Channel 1, Note 52 main.js:19:17
-Note On: Channel 1, Note 53, Velocity 94 main.js:16:17
-Note Off: Channel 1, Note 53 main.js:19:17
-Note On: Channel 1, Note 55, Velocity 48 main.js:16:17
-Note On: Channel 1, Note 52, Velocity 60 main.js:16:17
-Note On: Channel 1, Note 48, Velocity 48 main.js:16:17
-Note Off: Channel 1, Note 52 main.js:19:17
-Note Off: Channel 1, Note 48 main.js:19:17
-Note Off: Channel 1, Note 55 main.js:19:17
-Note On: Channel 1, Note 55, Velocity 38 main.js:16:17
-Note On: Channel 1, Note 48, Velocity 50 main.js:16:17
-Note On: Channel 1, Note 52, Velocity 59 main.js:16:17
-Note Off: Channel 1, Note 55 main.js:19:17
-Note Off: Channel 1, Note 48 main.js:19:17
-Note Off: Channel 1, Note 52
+- [ ] Verify it works on mobile.
+- [ ] Put some UI indication like # for scales to learn.
+- [ ] Better UI. 
+- [ ] Better Sounds.
+- [ ] Remove the need of MIDI keyboard and play on real keyboard ? awsedrf etc..
+- [ ] Find a virtual midi keyboard on windows for tests
+- [ ] Better learn svelte and improve the loading etc...
+- [ ] More span (resizing if needed) for the keyboard ?
+- [ ] Move the span of the keyboard if needed ?
+- [ ] Add randomization for next when user got right after x tries.
+- [ ] Add timer to practice (do it faster than....).
+- [ ] Add a metronome training.
+- [ ] Add metronome acceleration training
+- [ ] Add chords to practice (maj7, min7, 7, dom).
+- [ ] Add exploded chords (1-3 right hand 5-7 left hand and vice versa).
+- [ ] Add rootless chords.
+- [ ] Add chords inversion.
+- [ ] Do a flashcard thingy for chords and scales.
+- [ ] Add two-five-ones.
+- [ ] Add two-five-ones + Scale right hand.
+- [ ] Add partition.
+- [ ] Partition note reading exercices
+- [ ] Chords reading exercices
+- [ ] Add other exercices (ones I got from teacher) 
+- [ ] Colors for dominant, third, fifth etc...
+- [ ] Add play something I will tell you what it is (chord or scale)
+- [ ] Add a MIDI file reader so it shows the notes ? 
