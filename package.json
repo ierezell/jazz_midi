@@ -34,6 +34,7 @@
 		"vite": "^6.2.5"
 	},
 	"dependencies": {
+		"@sveltejs/adapter-static": "^3.0.8",
 		"vexflow": "^5.0.0"
 	}
 }

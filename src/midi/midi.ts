@@ -10,7 +10,8 @@ export const AllMidiNotes: MidiNote[] = [
     96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107,
     108, 109, 110, 111, 112, 113, 114, 115, 116, 117,
     118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128]
-export type NoteFullName =  "C0"| "C#0"| "Db0"| "D0"| "D#0"| "Eb0"| "E0"| "F0"| "F#0"| "Gb0"| "G0"| "G#0"| "Ab0"| "A0"| "A#0"| "Bb0"| "B0"|
+
+    export type NoteFullName =  "C0"| "C#0"| "Db0"| "D0"| "D#0"| "Eb0"| "E0"| "F0"| "F#0"| "Gb0"| "G0"| "G#0"| "Ab0"| "A0"| "A#0"| "Bb0"| "B0"|
 "C1"| "C#1"| "Db1"| "D1"| "D#1"| "Eb1"| "E1"| "F1"| "F#1"| "Gb1"| "G1"| "G#1"| "Ab1"| "A1"| "A#1"| "Bb1"| "B1"|
 "C2"| "C#2"| "Db2"| "D2"| "D#2"| "Eb2"| "E2"| "F2"| "F#2"| "Gb2"| "G2"| "G#2"| "Ab2"| "A2"| "A#2"| "Bb2"| "B2"|
 "C3"| "C#3"| "Db3"| "D3"| "D#3"| "Eb3"| "E3"| "F3"| "F#3"| "Gb3"| "G3"| "G#3"| "Ab3"| "A3"| "A#3"| "Bb3"| "B3"|
@@ -19,6 +20,7 @@ export type NoteFullName =  "C0"| "C#0"| "Db0"| "D0"| "D#0"| "Eb0"| "E0"| "F0"| 
 "C6"| "C#6"| "Db6"| "D6"| "D#6"| "Eb6"| "E6"| "F6"| "F#6"| "Gb6"| "G6"| "G#6"| "Ab6"| "A6"| "A#6"| "Bb6"| "B6"|
 "C7"| "C#7"| "Db7"| "D7"| "D#7"| "Eb7"| "E7"| "F7"| "F#7"| "Gb7"| "G7"| "G#7"| "Ab7"| "A7"| "A#7"| "Bb7"| "B7"|
 "C8"| "C#8"| "Db8"| "D8"| "D#8"| "Eb8"| "E8"| "F8"| "F#8"| "Gb8"| "G8"| "G#8"
+
 export const AllNotesFullName: NoteFullName[] = [
     "C0", "C#0", "Db0", "D0", "D#0", "Eb0", "E0", "F0", "F#0", "Gb0", "G0", "G#0", "Ab0", "A0", "A#0", "Bb0", "B0",
     "C1", "C#1", "Db1", "D1", "D#1", "Eb1", "E1", "F1", "F#1", "Gb1", "G1", "G#1", "Ab1", "A1", "A#1", "Bb1", "B1",
@@ -59,6 +61,23 @@ export type Note = "C" | "C#" | "Db" | "D" | "D#" | "Eb" | "E" | "F" | "F#" | "G
 export const AllNotes: Note[] = [
     "C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb", "G", "G#", "Ab", "A", "A#", "Bb", "B"
 ]
+
+export type ChordType = "major" | "minor" | 
+                        "maj7" | "min7" | "7" | 
+                        "diminished" | "augmented" | "sus2" | "sus4";
+
+export const AllChordTypes: ChordType[] = ["major", "minor", "maj7", "min7", "7", "diminished", "augmented", "sus2", "sus4"];
+
+export type Chord = {
+    root: MidiNote,
+    third: MidiNote,
+    fifth: MidiNote,
+    seventh?: MidiNote,
+    inversion: 0 | 1 | 2 | 3;
+    chordType: ChordType
+}; 
+
+
 export const noteFullNameToNote = (noteFullName: NoteFullName): Note => noteFullName.slice(0, -1) as Note;
 
 export function getScale(rootMidi: MidiNote, intervals: number[]): NoteFullName[] {
@@ -82,6 +101,118 @@ export function getScale(rootMidi: MidiNote, intervals: number[]): NoteFullName[
     });
 
     return scaleNotes;
+}
+
+
+const inverseTriadChord = (notes: MidiNote[], inversion:0|1|2, chordType: ChordType): Chord => {
+    switch (inversion) {
+        case 0:
+            return {
+                root: notes[0],
+                third: notes[1],
+                fifth: notes[2],
+                inversion: 0,
+                chordType: chordType
+            }
+        case 1:
+            return { 
+                root: notes[1],
+                third: notes[2],
+                fifth: notes[0]+12 as MidiNote,
+                inversion: 1,
+                chordType: chordType
+            }
+        case 2:
+            return {
+                root: notes[2]-12 as MidiNote,
+                third: notes[0],
+                fifth: notes[1],
+                inversion: 2,
+                chordType: chordType
+            }
+    }
+}
+
+const inverseSeventhChord = (notes: MidiNote[], inversion:0|1|2|3, chordType: ChordType): Chord => {
+    switch (inversion) {
+        case 0:
+            return {
+                root: notes[0],
+                third: notes[1],
+                fifth: notes[2],
+                seventh: notes[3],
+                inversion: 0,
+                chordType: chordType
+            }
+        case 1:
+            return { 
+                root: notes[1],
+                third: notes[2],
+                fifth: notes[3],
+                seventh: notes[0]+12 as MidiNote,
+                inversion: 1,
+                chordType: chordType
+            }
+        case 2:
+            return {
+                root: notes[2]-12 as MidiNote,
+                third: notes[3]-12 as MidiNote,
+                fifth: notes[0],
+                seventh: notes[1],
+                inversion: 2,
+                chordType: chordType
+            }
+        case 3:
+            return {
+                root: notes[3]-12 as MidiNote,
+                third: notes[0],
+                fifth: notes[1],
+                seventh: notes[2],
+                inversion: 3,
+                chordType: chordType
+            }
+    }
+}
+
+export const chords = (rootMidi: MidiNote, chordType: ChordType, inversion: 0|1|2|3 = 0): Chord => {
+    const minorThird = rootMidi + 3 as MidiNote;
+    const majorThird = rootMidi + 4 as MidiNote;
+    const perfectFifth = rootMidi + 7 as MidiNote;
+    const flatFifth = rootMidi + 6 as MidiNote;
+    const diminishedSeventh = rootMidi + 9 as MidiNote;
+    const minorSeventh = rootMidi + 10 as MidiNote;
+    const majorSeventh = rootMidi + 11 as MidiNote;
+    
+    let chord = [] as MidiNote[];
+    switch (chordType) {
+        case "major":
+            chord =  [rootMidi, majorThird, perfectFifth] as MidiNote[];
+        case "minor":
+            chord =  [rootMidi,minorThird, perfectFifth] as MidiNote[];
+        case "maj7":
+            chord =  [rootMidi, majorThird, perfectFifth,majorSeventh] as MidiNote[];
+        case "min7":
+            chord =  [rootMidi,minorThird, perfectFifth, minorSeventh] as MidiNote[];
+        case "7":
+            chord =  [rootMidi, majorThird, perfectFifth, minorSeventh] as MidiNote[];
+        case "diminished":
+            chord =  [rootMidi,minorThird, flatFifth, diminishedSeventh] as MidiNote[];
+        case "augmented":
+            chord =  [rootMidi, majorThird, rootMidi + 8] as MidiNote[];
+        case "sus2":
+            chord =  [rootMidi, rootMidi + 2, perfectFifth] as MidiNote[];
+        case "sus4":
+            chord =  [rootMidi, rootMidi + 5, perfectFifth] as MidiNote[];
+        default: 
+            chord =  [rootMidi, majorThird, perfectFifth] as MidiNote[];
+    }
+
+    if ((chord.length === 3) && (inversion <=2)) {
+        return inverseTriadChord(chord, inversion as 0|1|2, chordType);
+    }
+    else{
+        return  inverseSeventhChord(chord, inversion, chordType);
+    }
 }
 
 export const majorScales = AllNotes.reduce((acc, value) => {
@@ -147,9 +278,6 @@ export function getMidiNote(event: MIDIMessageEvent): NoteEvent {
         type: noteType,
     }
 }
-
-
-
 
 export async function RequestMidiAccess(): Promise<MIDIAccess> {
     // Request access in the browser to MIDI devices.
