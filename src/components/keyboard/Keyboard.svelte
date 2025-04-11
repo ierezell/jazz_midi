@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { MidiNote, NoteEvent } from '../../midi/midi';
+	import type { MidiNote } from '../../midi/midi';
 	import Key from './Key.svelte';
 
 	interface KeyboardProps {

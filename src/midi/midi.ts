@@ -11,7 +11,7 @@ export const AllMidiNotes: MidiNote[] = [
     108, 109, 110, 111, 112, 113, 114, 115, 116, 117,
     118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128]
 
-    export type NoteFullName =  "C0"| "C#0"| "Db0"| "D0"| "D#0"| "Eb0"| "E0"| "F0"| "F#0"| "Gb0"| "G0"| "G#0"| "Ab0"| "A0"| "A#0"| "Bb0"| "B0"|
+export type NoteFullName =  "C0"| "C#0"| "Db0"| "D0"| "D#0"| "Eb0"| "E0"| "F0"| "F#0"| "Gb0"| "G0"| "G#0"| "Ab0"| "A0"| "A#0"| "Bb0"| "B0"|
 "C1"| "C#1"| "Db1"| "D1"| "D#1"| "Eb1"| "E1"| "F1"| "F#1"| "Gb1"| "G1"| "G#1"| "Ab1"| "A1"| "A#1"| "Bb1"| "B1"|
 "C2"| "C#2"| "Db2"| "D2"| "D#2"| "Eb2"| "E2"| "F2"| "F#2"| "Gb2"| "G2"| "G#2"| "Ab2"| "A2"| "A#2"| "Bb2"| "B2"|
 "C3"| "C#3"| "Db3"| "D3"| "D#3"| "Eb3"| "E3"| "F3"| "F#3"| "Gb3"| "G3"| "G#3"| "Ab3"| "A3"| "A#3"| "Bb3"| "B3"|
@@ -175,39 +175,50 @@ const inverseSeventhChord = (notes: MidiNote[], inversion:0|1|2|3, chordType: Ch
 }
 
 export const chords = (rootMidi: MidiNote, chordType: ChordType, inversion: 0|1|2|3 = 0): Chord => {
+    const second = rootMidi + 2 as MidiNote;
     const minorThird = rootMidi + 3 as MidiNote;
     const majorThird = rootMidi + 4 as MidiNote;
-    const perfectFifth = rootMidi + 7 as MidiNote;
+    const fourth = rootMidi + 5 as MidiNote;
     const flatFifth = rootMidi + 6 as MidiNote;
+    const perfectFifth = rootMidi + 7 as MidiNote;
+    const augmentedFifth = rootMidi + 8 as MidiNote;
     const diminishedSeventh = rootMidi + 9 as MidiNote;
     const minorSeventh = rootMidi + 10 as MidiNote;
     const majorSeventh = rootMidi + 11 as MidiNote;
-    
     let chord = [] as MidiNote[];
     switch (chordType) {
         case "major":
             chord =  [rootMidi, majorThird, perfectFifth] as MidiNote[];
+            break;
         case "minor":
             chord =  [rootMidi,minorThird, perfectFifth] as MidiNote[];
+            break;
         case "maj7":
-            chord =  [rootMidi, majorThird, perfectFifth,majorSeventh] as MidiNote[];
+            chord =  [rootMidi, majorThird, perfectFifth, majorSeventh] as MidiNote[];
+            break;
         case "min7":
             chord =  [rootMidi,minorThird, perfectFifth, minorSeventh] as MidiNote[];
+            break;
         case "7":
             chord =  [rootMidi, majorThird, perfectFifth, minorSeventh] as MidiNote[];
+            break;
         case "diminished":
             chord =  [rootMidi,minorThird, flatFifth, diminishedSeventh] as MidiNote[];
+            break;
         case "augmented":
-            chord =  [rootMidi, majorThird, rootMidi + 8] as MidiNote[];
+            chord =  [rootMidi, majorThird, augmentedFifth, minorSeventh] as MidiNote[];
+            break;
         case "sus2":
-            chord =  [rootMidi, rootMidi + 2, perfectFifth] as MidiNote[];
+            chord =  [rootMidi, second, perfectFifth, minorSeventh] as MidiNote[];
+            break;
         case "sus4":
-            chord =  [rootMidi, rootMidi + 5, perfectFifth] as MidiNote[];
+            chord =  [rootMidi,fourth, perfectFifth, minorSeventh] as MidiNote[];
+            break;
         default: 
-            chord =  [rootMidi, majorThird, perfectFifth] as MidiNote[];
+            chord =  [rootMidi] as MidiNote[];
     }
-
-    if ((chord.length === 3) && (inversion <=2)) {
+                                    
+    if (chord.length === 3) {
         return inverseTriadChord(chord, inversion as 0|1|2, chordType);
     }
     else{

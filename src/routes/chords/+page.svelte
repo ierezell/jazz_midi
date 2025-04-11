@@ -5,6 +5,7 @@
 	import {
 		AllChordTypes,
 		AllNotes,
+		MidiToNote,
 		RequestMidiAccess,
 		type Chord,
 		type MidiNote,
@@ -21,16 +22,22 @@
 	import Keyboard from '../../components/keyboard/Keyboard.svelte';
 	import errorSoundPath from '$lib/sounds/error.mp3';
 	import okSoundPath from '$lib/sounds/ok.mp3';
+	import Score from '../../components/Score.svelte';
 
 	let noteEvents: NoteEvent[] = $state([]);
 	let midiNotes = $derived(noteEvents.map((note) => note.noteNumber));
 	let midiAccess: MIDIAccess;
 	let selectedNote: Note = $state('C');
 	let selectedChordType: ChordType = $state('maj7');
+
 	let selectedNoteMiddleKey = $derived(selectedNote + '4') as NoteFullName;
 	let chord = $derived(chords(NoteToMidi[selectedNoteMiddleKey], selectedChordType));
 	let chordNotes = $derived(
 		[chord.root, chord.third, chord.fifth, chord.seventh].filter((n) => n != null && n != undefined)
+	);
+
+	let chordNameNotes = $derived(
+		chordNotes.map((note) => (MidiToNote[note].slice(0, -1) + '4') as NoteFullName)
 	);
 	let noteBuffer: MidiNote[] = [];
 	let feedbackMessage: string = $state('');
@@ -45,7 +52,6 @@
 			noteEvents = [note, ...noteEvents];
 			noteBuffer.push(note.noteNumber);
 			noteBuffer = [...new Set(noteBuffer)];
-
 			if (noteBuffer.every((n) => chordNotes.includes(n))) {
 				if (noteBuffer.length === chordNotes.length) {
 					feedbackMessage = 'Bravo!';
@@ -91,10 +97,16 @@
 <main>
 	<h1>Scales</h1>
 	<h2>Major Scale</h2>
-	<Keyboard midiNotes={chordNotes} middleC={60} octaves={2} />
+	<Score
+		{selectedNote}
+		leftHand={[chordNameNotes.map((note) => note.replace('4', '3') as NoteFullName)]}
+		rightHand={[chordNameNotes.map((note) => note.replace('4', '4') as NoteFullName)]}
+	/>
+	<Keyboard midiNotes={chordNotes} middleC={NoteToMidi[selectedNoteMiddleKey] + 11} octaves={2} />
 	<br />
 	<br />
-	<Keyboard {midiNotes} middleC={60} octaves={2} />
+	<Keyboard {midiNotes} middleC={NoteToMidi[selectedNoteMiddleKey] + 11} octaves={2} />
+
 	<label for="note-select">Select a Note:</label>
 	<select bind:value={selectedNote}>
 		<option value="">--Choose a Note--</option>
@@ -102,13 +114,15 @@
 			<option value={note}>{note}</option>
 		{/each}
 	</select>
-	<label for="chord-select">Select a Note:</label>
+
+	<label for="chord-select">Select a Type:</label>
 	<select bind:value={selectedChordType}>
-		<option value="">--Choose a Note--</option>
+		<option value="">--Choose a Chord Type--</option>
 		{#each AllChordTypes as chord}
 			<option value={chord}>{chord}</option>
 		{/each}
 	</select>
+
 	{#if feedbackMessage}
 		<p>{feedbackMessage}</p>
 	{/if}
