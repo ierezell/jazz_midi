@@ -95,33 +95,36 @@
 </script>
 
 <main>
-	<h1>Scales</h1>
-	<h2>Major Scale</h2>
-	<Score
-		{selectedNote}
-		leftHand={[chordNameNotes.map((note) => note.replace('4', '3') as NoteFullName)]}
-		rightHand={[chordNameNotes.map((note) => note.replace('4', '4') as NoteFullName)]}
-	/>
-	<Keyboard midiNotes={chordNotes} middleC={NoteToMidi[selectedNoteMiddleKey] + 11} octaves={2} />
-	<br />
-	<br />
-	<Keyboard {midiNotes} middleC={NoteToMidi[selectedNoteMiddleKey] + 11} octaves={2} />
+	<div class="select-container">
+		<label for="note-select">Note:</label>
+		<select bind:value={selectedNote}>
+			<option value="">--Choose a Note--</option>
+			{#each AllNotes as note}
+				<option value={note}>{note}</option>
+			{/each}
+		</select>
 
-	<label for="note-select">Select a Note:</label>
-	<select bind:value={selectedNote}>
-		<option value="">--Choose a Note--</option>
-		{#each AllNotes as note}
-			<option value={note}>{note}</option>
-		{/each}
-	</select>
+		<label for="chord-select">Type:</label>
+		<select bind:value={selectedChordType}>
+			<option value="">--Choose a Chord Type--</option>
+			{#each AllChordTypes as chord}
+				<option value={chord}>{chord}</option>
+			{/each}
+		</select>
+	</div>
 
-	<label for="chord-select">Select a Type:</label>
-	<select bind:value={selectedChordType}>
-		<option value="">--Choose a Chord Type--</option>
-		{#each AllChordTypes as chord}
-			<option value={chord}>{chord}</option>
-		{/each}
-	</select>
+	<div class="reference-container">
+		<Score
+			{selectedNote}
+			leftHand={[chordNameNotes.map((note) => note.replace('4', '3') as NoteFullName)]}
+			rightHand={[chordNameNotes.map((note) => note.replace('4', '4') as NoteFullName)]}
+		/>
+		<Keyboard midiNotes={chordNotes} middleC={NoteToMidi[selectedNoteMiddleKey] + 11} octaves={2} />
+	</div>
+
+	<div class="notesKeyboard">
+		<Keyboard {midiNotes} middleC={NoteToMidi[selectedNoteMiddleKey] + 11} octaves={2} />
+	</div>
 
 	{#if feedbackMessage}
 		<p>{feedbackMessage}</p>
@@ -129,21 +132,36 @@
 </main>
 
 <style>
-	main {
-		text-align: center;
-		padding: 1em;
-		margin: 0 auto;
+	.select-container {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-evenly;
+		align-items: center;
 	}
-	label {
-		display: block;
-		margin-top: 1em;
+
+	.reference-container {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-evenly;
+		align-items: center;
+		gap: 1em;
+		border: 2px solid black; /* Add a black border */
+		border-radius: 8px; /* Optional: Add rounded corners */
+		padding: 1em; /* Optional: Add padding inside the container */
 	}
-	select {
-		margin: 0.5em;
+
+	.reference-container > :first-child {
+		flex: 1; /* 1/4 size */
 	}
-	p {
-		font-size: 1.2em;
-		font-weight: bold;
-		margin-top: 1em;
+
+	.reference-container > :nth-child(2) {
+		flex: 3; /* 3/4 size */
+	}
+
+	@media (max-width: 768px) and (orientation: landscape) {
+		.reference-container {
+			flex-direction: column;
+			gap: 0.5em;
+		}
 	}
 </style>

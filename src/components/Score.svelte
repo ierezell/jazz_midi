@@ -15,29 +15,43 @@
 	let stringRightHand = $derived(fmt(rightHand));
 	let stringLeftHand = $derived(fmt(leftHand));
 
-	$effect(() => {
-		const container = document.getElementById('output');
-		if (container) {
-			container.innerHTML = '';
-		}
+	function renderScore(container: HTMLElement) {
+		// Clear the existing score
+		container.innerHTML = '';
 
+		const containerWidth = container?.offsetWidth ?? 350;
+		console.log(`Container width: ${containerWidth}`);
 		const f: Factory = new Factory({
-			renderer: { elementId: 'output', backend: Renderer.Backends.SVG, width: 600, height: 400 }
+			renderer: {
+				elementId: 'output',
+				backend: Renderer.Backends.SVG,
+				width: containerWidth,
+				height: containerWidth // Adjust height as needed
+			}
 		});
 
-		const score = f.EasyScore({ throwOnError: true });
-		score.set({ time: '4/4', stem: 'up' });
-
-		let x = 120;
-		let y = 80;
-
-		function appendSystem(width: number) {
-			const system = f.System({ x, y, width, spaceBetweenStaves: 10 });
-			x += width;
-			return system;
+		// Ensure the SVG resizes to fit the container
+		const svg = container.querySelector('svg');
+		if (svg) {
+			svg.setAttribute('width', '100%');
+			svg.setAttribute('height', 'auto');
+			svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 		}
 
-		let system = appendSystem(420);
+		const score = f.EasyScore({ throwOnError: true });
+		score.set({ stem: 'up' });
+
+		const system = f.System({
+			width: containerWidth,
+			autoWidth: true,
+			spaceBetweenStaves: containerWidth / 35,
+			noPadding: true,
+			noJustification: true,
+			formatOptions: {
+				alignRests: true,
+				autoBeam: true
+			}
+		});
 		if (rightHand.length > 0) {
 			system
 				.addStave({
@@ -48,8 +62,7 @@
 					]
 				})
 				.addClef('treble')
-				.addKeySignature(selectedNote)
-				.addTimeSignature('4/4');
+				.addKeySignature(selectedNote);
 		}
 
 		if (leftHand.length > 0) {
@@ -62,21 +75,33 @@
 					]
 				})
 				.addClef('bass')
-				.addKeySignature(selectedNote)
-				.addTimeSignature('4/4');
+				.addKeySignature(selectedNote);
 		}
 		system.addConnector('brace');
 		system.addConnector('singleRight');
 		system.addConnector('singleLeft');
 
 		f.draw();
+	}
+
+	$effect(() => {
+		const container = document.getElementById('output');
+		if (container) {
+			renderScore(container);
+		}
 	});
 </script>
 
-<div id="output"></div>
+<div id="output">
+	<svg></svg>
+</div>
 
 <style>
 	#output {
+		width: 100%; /* Make the container take full width */
+		height: auto;
+	}
+	#output > svg {
 		width: 100%;
 	}
 </style>
