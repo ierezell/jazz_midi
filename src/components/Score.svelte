@@ -1,6 +1,7 @@
 <!-- https://vexflow.github.io/vexflow-sandbox/?ver=5&file=minuet&dev=1 -->
 <script lang="ts">
-	import { Factory, Renderer, Registry, Voice } from 'vexflow';
+	import { onMount } from 'svelte';
+	import { Factory, Renderer, Voice } from 'vexflow';
 	import type { Note, NoteFullName } from '../midi/midi';
 
 	interface ScoreProps {
@@ -15,36 +16,23 @@
 	let stringRightHand = $derived(fmt(rightHand));
 	let stringLeftHand = $derived(fmt(leftHand));
 
-	function renderScore(container: HTMLElement) {
-		// Clear the existing score
-		container.innerHTML = '';
-
-		const containerWidth = container?.offsetWidth ?? 350;
-		console.log(`Container width: ${containerWidth}`);
+	function renderScore(width: number) {
 		const f: Factory = new Factory({
 			renderer: {
 				elementId: 'output',
-				backend: Renderer.Backends.SVG,
-				width: containerWidth,
-				height: containerWidth // Adjust height as needed
+				backend: Renderer.Backends.CANVAS,
+				width: width,
+				height: 340
 			}
 		});
-
-		// Ensure the SVG resizes to fit the container
-		const svg = container.querySelector('svg');
-		if (svg) {
-			svg.setAttribute('width', '100%');
-			svg.setAttribute('height', 'auto');
-			svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-		}
 
 		const score = f.EasyScore({ throwOnError: true });
 		score.set({ stem: 'up' });
 
 		const system = f.System({
-			width: containerWidth,
-			autoWidth: true,
-			spaceBetweenStaves: containerWidth / 35,
+			width: width,
+			// autoWidth: true,
+			// spaceBetweenStaves: width / 35,
 			noPadding: true,
 			noJustification: true,
 			formatOptions: {
@@ -85,23 +73,39 @@
 	}
 
 	$effect(() => {
-		const container = document.getElementById('output');
+		const container = document.getElementById('score-container');
 		if (container) {
-			renderScore(container);
+			
+			renderScore(container.getBoundingClientRect().width);
 		}
 	});
+	
+	onMount(() => {
+		window.addEventListener('resize', () => {
+			// debugger;
+			const container = document.getElementById('score-container');
+			if (container) {
+				console.log(`Container width: ${container.getBoundingClientRect().width}`);
+				
+				renderScore(container.getBoundingClientRect().width);
+			}
+		});
+	});
+
 </script>
 
-<div id="output">
-	<svg></svg>
+
+<div id="score-container">
+	<canvas id="output"></canvas>
 </div>
 
+
 <style>
-	#output {
-		width: 100%; /* Make the container take full width */
-		height: auto;
+	#score-container{
+		width: 100%;
+		height: 340px;
 	}
-	#output > svg {
+	#output {
 		width: 100%;
 	}
 </style>

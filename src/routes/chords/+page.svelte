@@ -1,28 +1,25 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
+	import errorSoundPath from '$lib/sounds/error.mp3';
+	import okSoundPath from '$lib/sounds/ok.mp3';
 	import { onMount } from 'svelte';
+	import Keyboard from '../../components/keyboard/Keyboard.svelte';
+	import Score from '../../components/Score.svelte';
 	import {
 		AllChordTypes,
 		AllNotes,
+		chords,
+		getMidiNote,
 		MidiToNote,
+		NoteToMidi,
 		RequestMidiAccess,
-		type Chord,
+		type ChordType,
 		type MidiNote,
+		type Note,
+		type NoteEvent,
 		type NoteFullName
 	} from '../../midi/midi';
-	import {
-		getMidiNote,
-		type NoteEvent,
-		chords,
-		type Note,
-		NoteToMidi,
-		type ChordType
-	} from '../../midi/midi';
-	import Keyboard from '../../components/keyboard/Keyboard.svelte';
-	import errorSoundPath from '$lib/sounds/error.mp3';
-	import okSoundPath from '$lib/sounds/ok.mp3';
-	import Score from '../../components/Score.svelte';
 
 	let noteEvents: NoteEvent[] = $state([]);
 	let midiNotes = $derived(noteEvents.map((note) => note.noteNumber));
@@ -140,22 +137,15 @@
 	}
 
 	.reference-container {
-		display: flex;
-		flex-direction: row;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 		justify-content: space-evenly;
 		align-items: center;
 		gap: 1em;
-		border: 2px solid black; /* Add a black border */
-		border-radius: 8px; /* Optional: Add rounded corners */
-		padding: 1em; /* Optional: Add padding inside the container */
-	}
-
-	.reference-container > :first-child {
-		flex: 1; /* 1/4 size */
-	}
-
-	.reference-container > :nth-child(2) {
-		flex: 3; /* 3/4 size */
+		width: 100%;
+		border: 2px solid black; 
+		border-radius: 8px; 
+		padding: 1em; 
 	}
 
 	@media (max-width: 768px) and (orientation: landscape) {
