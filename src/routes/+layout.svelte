@@ -1,9 +1,9 @@
 <script lang="ts">
-	import '../app.css';
-	import { page } from '$app/state';
-	import logo from '$lib/images/svelte-logo.svg';
-	import github from '$lib/images/github.svg';
 	import { base } from '$app/paths';
+	import { page } from '$app/state';
+	import github from '$lib/images/github.svg';
+	import logo from '$lib/images/svelte-logo.svg';
+	import '../app.css';
 	let { children } = $props();
 </script>
 
@@ -179,6 +179,64 @@
 	@media (min-width: 480px) {
 		footer {
 			padding: 12px 0;
+		}
+	}
+
+	/* Mobile responsiveness */
+	@media (max-width: 768px) {
+		header {
+			padding: 0 1rem;
+		}
+
+		.corner {
+			width: 2.5em;
+			height: 2.5em;
+		}
+
+		.corner img {
+			width: 1.5em;
+			height: 1.5em;
+		}
+
+		nav {
+			flex: 1;
+			margin: 0 0.5rem;
+		}
+
+		nav a {
+			padding: 0 0.3rem;
+			font-size: 0.7rem;
+		}
+
+		main {
+			padding: 0.5rem;
+			max-width: 100%;
+		}
+
+		svg {
+			width: 1.5em;
+			height: 2.5em;
+		}
+	}
+
+	@media (max-width: 480px) {
+		nav a {
+			padding: 0 0.2rem;
+			font-size: 0.65rem;
+		}
+
+		.corner {
+			width: 2em;
+			height: 2em;
+		}
+
+		.corner img {
+			width: 1.2em;
+			height: 1.2em;
+		}
+
+		ul {
+			height: 2.5em;
 		}
 	}
 </style>

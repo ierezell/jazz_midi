@@ -17,12 +17,16 @@
 	let stringLeftHand = $derived(fmt(leftHand));
 
 	function renderScore(width: number) {
+		// Adjust height based on screen size
+		const isMobile = width < 768;
+		const height = isMobile ? 280 : 340;
+
 		const f: Factory = new Factory({
 			renderer: {
 				elementId: 'output',
 				backend: Renderer.Backends.CANVAS,
 				width: width,
-				height: 340
+				height: height
 			}
 		});
 
@@ -75,37 +79,47 @@
 	$effect(() => {
 		const container = document.getElementById('score-container');
 		if (container) {
-			
 			renderScore(container.getBoundingClientRect().width);
 		}
 	});
-	
+
 	onMount(() => {
 		window.addEventListener('resize', () => {
 			// debugger;
 			const container = document.getElementById('score-container');
 			if (container) {
 				console.log(`Container width: ${container.getBoundingClientRect().width}`);
-				
+
 				renderScore(container.getBoundingClientRect().width);
 			}
 		});
 	});
-
 </script>
-
 
 <div id="score-container">
 	<canvas id="output"></canvas>
 </div>
 
-
 <style>
-	#score-container{
+	#score-container {
 		width: 100%;
 		height: 340px;
+		overflow-x: auto;
 	}
 	#output {
 		width: 100%;
+		max-width: 100%;
+	}
+
+	@media (max-width: 768px) {
+		#score-container {
+			height: 280px;
+		}
+	}
+
+	@media (max-width: 480px) {
+		#score-container {
+			height: 240px;
+		}
 	}
 </style>

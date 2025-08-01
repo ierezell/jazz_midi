@@ -246,9 +246,9 @@ export type NoteEvent = {
     time: number;
 }
 
-export type MIDICallback = (event: MIDIMessageEvent) => NoteEvent;
+export type MIDICallback = (event: MIDIMessageEvent) => void;
 
-export function getMidiNote(event: MIDIMessageEvent): NoteEvent {
+export function getMidiNote(event: MIDIMessageEvent): NoteEvent | null {
     // Mozilla doc : https://developer.mozilla.org/en-US/docs/Web/API/Web_MIDI_API
     // Doc high level : https://webaudio.github.io/web-midi-api/
     // Spec :  https://drive.google.com/file/d/1ewRrvMEFRPlKon6nfSCxqnTMEu70sz0c/view
@@ -271,19 +271,34 @@ export function getMidiNote(event: MIDIMessageEvent): NoteEvent {
     //  - 9 (0x9) means Note On (if velocity > 0)
     //  - 8 (0x8) means Note Off
     // Additionally, some devices send a Note On with velocity 0 to indicate Note Off.
-    let noteType: "on" | "off" = "off";
+    let noteType: "on" | "off";
     if (command === 9 && velocity > 0) {
         noteType = "on";
     } else if (command === 8 || (command === 9 && velocity === 0)) {
         noteType = "off";
     } else {
-        console.log(`Other MIDI message: [${Array.from(data).join(", ")}]`);
+        // This is not a note event (could be control change, program change, etc.)
+        console.log(`Non-note MIDI message: [${Array.from(data).join(", ")}] (command: ${command})`);
+        return null;
+    }
+
+    // Validate that the note number is within our supported range
+    if (noteNumber < 24 || noteNumber > 128) {
+        console.warn(`MIDI note ${noteNumber} is outside supported range (24-128)`);
+        return null;
+    }
+
+    // Validate that we have a mapping for this note
+    const midiNote = noteNumber as MidiNote;
+    if (!MidiToNote[midiNote]) {
+        console.warn(`No note mapping found for MIDI note ${noteNumber}`);
+        return null;
     }
 
     return {
-        noteNumber: noteNumber as MidiNote,
-        noteFullName: MidiToNote[noteNumber as MidiNote] as NoteFullName,
-        noteName: MidiToNote[noteNumber as MidiNote].slice(0, -1) as Note,
+        noteNumber: midiNote,
+        noteFullName: MidiToNote[midiNote] as NoteFullName,
+        noteName: MidiToNote[midiNote].slice(0, -1) as Note,
         velocity: velocity,
         time: event.timeStamp,
         type: noteType,
