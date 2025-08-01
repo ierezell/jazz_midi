@@ -29,6 +29,7 @@
 	let midiAccess: MIDIAccess;
 	let selectedNote: Note = $state('C');
 	let debugMode: boolean = $state(false);
+	let sequentialMode: boolean = $state(true); // Toggle for sequential vs any order
 	let virtualMidi: VirtualMidiInput | undefined = undefined;
 	let keyboardCleanup: (() => void) | null = null;
 
@@ -86,27 +87,58 @@
 
 		if (note.type === 'on') {
 			noteEvents = [note, ...noteEvents];
-			noteBuffer.push(note.noteNumber);
-			noteBuffer = [...new Set(noteBuffer)];
 
-			if (noteBuffer.every((n) => majorScaleMidiNotes.includes(n))) {
-				if (noteBuffer.length === 7) {
-					feedbackMessage = 'Excellent! Perfect scale! 🎵';
-					errorCount = 0; // Reset error count on success
-					if (okSound) {
-						okSound.play();
+			if (sequentialMode) {
+				// Sequential mode: notes must be played in order
+				const expectedNoteIndex = noteBuffer.length;
+				const expectedNote = majorScaleMidiNotes[expectedNoteIndex];
+
+				if (note.noteNumber === expectedNote) {
+					noteBuffer.push(note.noteNumber);
+
+					if (noteBuffer.length === 7) {
+						feedbackMessage = 'Excellent! Perfect scale in order! 🎵✨';
+						errorCount = 0; // Reset error count on success
+						if (okSound) {
+							okSound.play();
+						}
+						noteBuffer = [];
+					} else {
+						feedbackMessage = `Great! Note ${noteBuffer.length}/7 correct. Next: ${majorScaleOneOctaveNotes[expectedNoteIndex + 1]}`;
+					}
+				} else {
+					errorCount++;
+					const expectedNoteName = majorScaleOneOctaveNotes[expectedNoteIndex];
+					feedbackMessage = `Wrong note! Expected: ${expectedNoteName} (note ${expectedNoteIndex + 1}/7). Attempt ${errorCount}`;
+					if (errorSound) {
+						errorSound.play();
 					}
 					noteBuffer = [];
-				} else {
-					feedbackMessage = `Good! ${7 - noteBuffer.length} more note${7 - noteBuffer.length > 1 ? 's' : ''} to complete the scale`;
 				}
 			} else {
-				errorCount++;
-				feedbackMessage = `Incorrect note. Try again! (Attempt ${errorCount})`;
-				if (errorSound) {
-					errorSound.play();
+				// Any order mode: just check if all scale notes are played
+				noteBuffer.push(note.noteNumber);
+				noteBuffer = [...new Set(noteBuffer)];
+
+				if (noteBuffer.every((n) => majorScaleMidiNotes.includes(n))) {
+					if (noteBuffer.length === 7) {
+						feedbackMessage = 'Excellent! Perfect scale! 🎵';
+						errorCount = 0; // Reset error count on success
+						if (okSound) {
+							okSound.play();
+						}
+						noteBuffer = [];
+					} else {
+						feedbackMessage = `Good! ${7 - noteBuffer.length} more note${7 - noteBuffer.length > 1 ? 's' : ''} to complete the scale`;
+					}
+				} else {
+					errorCount++;
+					feedbackMessage = `Incorrect note. Try again! (Attempt ${errorCount})`;
+					if (errorSound) {
+						errorSound.play();
+					}
+					noteBuffer = [];
 				}
-				noteBuffer = [];
 			}
 		} else {
 			noteEvents = noteEvents.filter((n) => n.noteFullName !== note.noteFullName);
@@ -150,9 +182,14 @@
 		<h1>Scale Practice</h1>
 		<h2>Major Scales</h2>
 		<p class="subtitle">
-			Play all 7 notes of the major scale on your MIDI keyboard{debugMode
-				? ' or use computer keyboard controls'
-				: ''}
+			{#if sequentialMode}
+				Play all 7 notes of the major scale <strong>in order</strong> (Do-Re-Mi-Fa-Sol-La-Ti) on
+				your MIDI keyboard{debugMode ? ' or use computer keyboard controls' : ''}
+			{:else}
+				Play all 7 notes of the major scale <strong>in any order</strong> on your MIDI keyboard{debugMode
+					? ' or use computer keyboard controls'
+					: ''}
+			{/if}
 		</p>
 		{#if !debugMode}
 			<button onclick={toggleDebugMode} class="debug-toggle"> 🎹 Enable Computer Keyboard </button>
@@ -182,6 +219,21 @@
 					<option value={note}>{note}</option>
 				{/each}
 			</select>
+		</div>
+
+		<div class="control-group">
+			<label for="mode-toggle">Playing Mode:</label>
+			<div class="toggle-container">
+				<input
+					id="mode-toggle"
+					type="checkbox"
+					bind:checked={sequentialMode}
+					onchange={resetExercise}
+				/>
+				<label for="mode-toggle" class="toggle-label">
+					{sequentialMode ? 'Sequential Order' : 'Any Order'}
+				</label>
+			</div>
 		</div>
 
 		<button class="reset-btn" onclick={resetExercise}>Reset Exercise</button>
@@ -355,6 +407,59 @@
 		outline: none;
 		border-color: var(--color-theme-1);
 		box-shadow: 0 0 0 3px rgba(255, 62, 0, 0.1);
+	}
+
+	/* Toggle styles */
+	.toggle-container {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.toggle-container input[type='checkbox'] {
+		appearance: none;
+		width: 50px;
+		height: 25px;
+		background: #e0e0e0;
+		border-radius: 15px;
+		position: relative;
+		cursor: pointer;
+		transition: all 0.3s ease;
+		border: 2px solid transparent;
+	}
+
+	.toggle-container input[type='checkbox']:checked {
+		background: var(--color-theme-2);
+	}
+
+	.toggle-container input[type='checkbox']::before {
+		content: '';
+		position: absolute;
+		width: 19px;
+		height: 19px;
+		border-radius: 50%;
+		background: white;
+		top: 1px;
+		left: 1px;
+		transition: all 0.3s ease;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	}
+
+	.toggle-container input[type='checkbox']:checked::before {
+		transform: translateX(25px);
+	}
+
+	.toggle-container input[type='checkbox']:focus {
+		border-color: var(--color-theme-1);
+		box-shadow: 0 0 0 3px rgba(255, 62, 0, 0.1);
+	}
+
+	.toggle-label {
+		font-weight: 600;
+		color: var(--color-theme-2);
+		cursor: pointer;
+		font-size: 0.9rem;
+		margin: 0;
 	}
 
 	.reset-btn {

@@ -28,29 +28,6 @@
 		(i) => i + (middleC - Math.floor(octaves / 2) * 12)
 	);
 	const totalKeys = 12 * octaves;
-
-	function handleKeyClick(note: number) {
-		if (!debugMode || !virtualMidi) return;
-
-		const midiNote = note as MidiNote;
-
-		// Toggle the key (press if not pressed, release if pressed)
-		virtualMidi.toggleKey(midiNote);
-	}
-
-	function handleKeyMouseDown(note: number) {
-		if (!debugMode || !virtualMidi) return;
-
-		const midiNote = note as MidiNote;
-		virtualMidi.pressKey(midiNote);
-	}
-
-	function handleKeyMouseUp(note: number) {
-		if (!debugMode || !virtualMidi) return;
-
-		const midiNote = note as MidiNote;
-		virtualMidi.releaseKey(midiNote);
-	}
 </script>
 
 <div class="keyboard" bind:clientWidth={w} bind:clientHeight={h}>
@@ -60,10 +37,7 @@
 			pressed={midiNotes.includes(note as MidiNote)}
 			keyWidth={w / totalKeys}
 			keyHeight={h}
-			interactive={debugMode}
-			onclick={() => handleKeyClick(note)}
-			onmousedown={() => handleKeyMouseDown(note)}
-			onmouseup={() => handleKeyMouseUp(note)}
+			interactive={false}
 		/>
 	{/each}
 </div>
@@ -71,7 +45,7 @@
 {#if debugMode}
 	<div class="debug-info">
 		<p><strong>Debug Mode Active</strong></p>
-		<p>Click keys to simulate MIDI input</p>
+		<p>Use computer keyboard to simulate MIDI input</p>
 		<p>Active notes: {midiNotes.length > 0 ? midiNotes.join(', ') : 'None'}</p>
 	</div>
 {/if}

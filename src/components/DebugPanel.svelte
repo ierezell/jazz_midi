@@ -15,7 +15,7 @@
 
 	let selectedNote: Note = $state('C');
 	let selectedChordType: ChordType = $state('maj7');
-	let selectedOctave: number = $state(4);
+	let selectedOctave: number = $state(5);
 
 	function playChord() {
 		if (!virtualMidi) return;
@@ -52,7 +52,7 @@
 
 	function playRandomNote() {
 		if (!virtualMidi) return;
-		const randomMidi = (60 + Math.floor(Math.random() * 24)) as MidiNote; // C4 to B5
+		const randomMidi = (72 + Math.floor(Math.random() * 24)) as MidiNote; // C5 to B6
 		virtualMidi.pressKey(randomMidi);
 		setTimeout(() => virtualMidi!.releaseKey(randomMidi), 500);
 	}
@@ -82,7 +82,7 @@
 					<label>
 						Octave:
 						<select bind:value={selectedOctave}>
-							{#each [3, 4, 5, 6] as octave}
+							{#each [4, 5, 6] as octave}
 								<option value={octave}>{octave}</option>
 							{/each}
 						</select>

@@ -32,19 +32,91 @@
 	let midiAccess: MIDIAccess;
 	let selectedNote: Note = $state('C');
 	let selectedChordType: ChordType = $state('maj7');
+	let selectedInversion: 0 | 1 | 2 | 3 = $state(0);
+	let voicingMode: 'full' | 'left-hand' | 'right-hand' | 'split' = $state('full');
 	let debugMode: boolean = $state(false);
-	let virtualMidi: VirtualMidiInput | undefined = undefined;
+	let virtualMidi: VirtualMidiInput | undefined = $state(undefined);
 	let keyboardCleanup: (() => void) | null = null;
 
 	let selectedNoteMiddleKey = $derived(selectedNote + '4') as NoteFullName;
-	let chord = $derived(chords(NoteToMidi[selectedNoteMiddleKey], selectedChordType));
-	let chordNotes = $derived(
-		[chord.root, chord.third, chord.fifth, chord.seventh].filter((n) => n != null && n != undefined)
+	let chord = $derived(
+		chords(NoteToMidi[selectedNoteMiddleKey], selectedChordType, selectedInversion)
 	);
+
+	// Generate the expected notes based on voicing mode
+	let expectedNotes = $derived(() => {
+		const allChordNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
+			(n) => n != null && n != undefined
+		) as MidiNote[];
+
+		switch (voicingMode) {
+			case 'full':
+				return allChordNotes;
+			case 'left-hand':
+				// Left hand plays root and 7th (1-7 voicing)
+				return [chord.root, chord.seventh].filter((n) => n != null) as MidiNote[];
+			case 'right-hand':
+				// Right hand plays 3rd and 5th (3-5 voicing)
+				return [chord.third, chord.fifth].filter((n) => n != null) as MidiNote[];
+			case 'split':
+				// Split hands: 1-7 in left (lower octave), 3-5 in right (higher octave)
+				const leftHand = [chord.root - 12, (chord.seventh || chord.root) - 12].filter(
+					(n) => n >= 24
+				) as MidiNote[];
+				const rightHand = [chord.third, chord.fifth].filter((n) => n != null) as MidiNote[];
+				return [...leftHand, ...rightHand];
+			default:
+				return allChordNotes;
+		}
+	});
+
+	let chordNotes = $derived(expectedNotes());
 
 	let chordNameNotes = $derived(
 		chordNotes.map((note) => (MidiToNote[note].slice(0, -1) + '4') as NoteFullName)
 	);
+
+	// Derived score notes for proper bass/treble clef display
+	let scoreLeftHand = $derived.by(() => {
+		if (voicingMode === 'right-hand') return [];
+
+		// For split mode, show left hand parts in bass clef
+		if (voicingMode === 'split') {
+			// Left hand plays root and 7th in lower octave
+			const leftNotes = [chord.root - 12, (chord.seventh || chord.root) - 12].filter(
+				(n) => n >= 24
+			) as MidiNote[];
+			return [leftNotes.map((note: MidiNote) => MidiToNote[note])];
+		}
+
+		// For left hand mode, show all chord notes in bass clef (lower octave)
+		if (voicingMode === 'left-hand') {
+			return [chordNameNotes.map((note: NoteFullName) => note.replace('4', '3') as NoteFullName)];
+		}
+
+		// Default: show all notes in bass clef
+		return [chordNameNotes.map((note: NoteFullName) => note.replace('4', '3') as NoteFullName)];
+	});
+
+	let scoreRightHand = $derived.by(() => {
+		if (voicingMode === 'left-hand') return [];
+
+		// For split mode, show right hand parts in treble clef
+		if (voicingMode === 'split') {
+			// Right hand plays 3rd and 5th in normal octave
+			const rightNotes = [chord.third, chord.fifth].filter((n) => n != null) as MidiNote[];
+			return [rightNotes.map((note: MidiNote) => MidiToNote[note])];
+		}
+
+		// For right hand mode, show all chord notes in treble clef
+		if (voicingMode === 'right-hand') {
+			return [chordNameNotes.map((note: NoteFullName) => note as NoteFullName)];
+		}
+
+		// Default: show all notes in treble clef
+		return [chordNameNotes.map((note: NoteFullName) => note as NoteFullName)];
+	});
+
 	let noteBuffer: MidiNote[] = [];
 	let feedbackMessage: string = $state('');
 	let errorCount: number = $state(0);
@@ -81,41 +153,102 @@
 	}
 
 	function onMidiEvent(midiEvent: MIDIMessageEvent) {
-		console.log(
-			'MIDI event received:',
-			Array.from(midiEvent.data!)
-				.map((b) => b.toString(16).padStart(2, '0'))
-				.join(' ')
-		);
-
 		const note = getMidiNote(midiEvent);
 
 		// Skip non-note events
 		if (!note) {
-			console.log('Non-note event, skipping');
 			return;
 		}
-
-		console.log('Note event:', note);
 
 		if (note.type === 'on') {
 			noteEvents = [note, ...noteEvents];
 			noteBuffer.push(note.noteNumber);
 			noteBuffer = [...new Set(noteBuffer)];
-			if (noteBuffer.every((n) => chordNotes.includes(n))) {
-				if (noteBuffer.length === chordNotes.length) {
-					feedbackMessage = 'Bravo! Well done! 🎉';
-					errorCount = 0; // Reset error count on success
-					if (okSound) {
-						okSound.play();
+
+			// Hand detection (C4 = 60 is the dividing line)
+			const leftHandNotes = noteBuffer.filter((n) => n < 60);
+			const rightHandNotes = noteBuffer.filter((n) => n >= 60);
+
+			// Validate based on voicing mode
+			let isCorrect = false;
+			let progressMessage = '';
+
+			switch (voicingMode) {
+				case 'full':
+					isCorrect = noteBuffer.every((n) => chordNotes.includes(n));
+					if (isCorrect && noteBuffer.length === chordNotes.length) {
+						feedbackMessage = getInversionSuccessMessage();
+						errorCount = 0;
+						if (okSound) okSound.play();
+						noteBuffer = [];
+						return;
+					} else if (isCorrect) {
+						progressMessage = `Great! ${chordNotes.length - noteBuffer.length} more note${chordNotes.length - noteBuffer.length > 1 ? 's' : ''} to go`;
 					}
-					noteBuffer = [];
-				} else {
-					feedbackMessage = `Great! ${chordNotes.length - noteBuffer.length} more note${chordNotes.length - noteBuffer.length > 1 ? 's' : ''} to go`;
-				}
+					break;
+
+				case 'left-hand':
+					// Check if notes are in left hand range and correct
+					const expectedLeftNotes = chordNotes.filter((n) => n < 60);
+					isCorrect =
+						leftHandNotes.every((n) => expectedLeftNotes.includes(n)) &&
+						rightHandNotes.length === 0;
+					if (isCorrect && leftHandNotes.length === expectedLeftNotes.length) {
+						feedbackMessage = `Excellent left hand voicing! 🎹 (1-7: ${getChordToneNames(leftHandNotes)})`;
+						errorCount = 0;
+						if (okSound) okSound.play();
+						noteBuffer = [];
+						return;
+					} else if (isCorrect) {
+						progressMessage = `Left hand: ${leftHandNotes.length}/${expectedLeftNotes.length} notes correct`;
+					}
+					break;
+
+				case 'right-hand':
+					// Check if notes are in right hand range and correct
+					const expectedRightNotes = chordNotes.filter((n) => n >= 60);
+					isCorrect =
+						rightHandNotes.every((n) => expectedRightNotes.includes(n)) &&
+						leftHandNotes.length === 0;
+					if (isCorrect && rightHandNotes.length === expectedRightNotes.length) {
+						feedbackMessage = `Perfect right hand voicing! 🎹 (3-5: ${getChordToneNames(rightHandNotes)})`;
+						errorCount = 0;
+						if (okSound) okSound.play();
+						noteBuffer = [];
+						return;
+					} else if (isCorrect) {
+						progressMessage = `Right hand: ${rightHandNotes.length}/${expectedRightNotes.length} notes correct`;
+					}
+					break;
+
+				case 'split':
+					const expectedLeftSplit = chordNotes.filter((n) => n < 60);
+					const expectedRightSplit = chordNotes.filter((n) => n >= 60);
+					const leftCorrect = leftHandNotes.every((n) => expectedLeftSplit.includes(n));
+					const rightCorrect = rightHandNotes.every((n) => expectedRightSplit.includes(n));
+					isCorrect = leftCorrect && rightCorrect;
+
+					if (
+						isCorrect &&
+						leftHandNotes.length === expectedLeftSplit.length &&
+						rightHandNotes.length === expectedRightSplit.length
+					) {
+						feedbackMessage = `Outstanding split voicing! 🎹🎵 Left: ${getChordToneNames(leftHandNotes)} | Right: ${getChordToneNames(rightHandNotes)}`;
+						errorCount = 0;
+						if (okSound) okSound.play();
+						noteBuffer = [];
+						return;
+					} else if (leftCorrect || rightCorrect) {
+						progressMessage = `Left: ${leftHandNotes.length}/${expectedLeftSplit.length}, Right: ${rightHandNotes.length}/${expectedRightSplit.length}`;
+					}
+					break;
+			}
+
+			if (isCorrect && progressMessage) {
+				feedbackMessage = progressMessage;
 			} else {
 				errorCount++;
-				feedbackMessage = `Incorrect chord. Try again! (Attempt ${errorCount})`;
+				feedbackMessage = getErrorMessage();
 				if (errorSound) {
 					errorSound.play();
 				}
@@ -124,6 +257,54 @@
 		} else {
 			noteEvents = noteEvents.filter((n) => n.noteFullName !== note.noteFullName);
 		}
+	}
+
+	function getInversionSuccessMessage(): string {
+		const inversionNames = ['Root Position', '1st Inversion', '2nd Inversion', '3rd Inversion'];
+		return `Bravo! Perfect ${inversionNames[selectedInversion]} ${selectedNote}${selectedChordType}! 🎉`;
+	}
+
+	function getChordToneNames(notes: MidiNote[]): string {
+		// Convert MIDI notes to chord tone names (1, 3, 5, 7)
+		const chordToneMap = new Map([
+			[chord.root, '1'],
+			[chord.third, '3'],
+			[chord.fifth, '5'],
+			[chord.seventh, '7']
+		]);
+
+		return notes
+			.map(
+				(n) =>
+					chordToneMap.get(n) ||
+					chordToneMap.get((n + 12) as MidiNote) ||
+					chordToneMap.get((n - 12) as MidiNote) ||
+					'?'
+			)
+			.join('-');
+	}
+
+	function getErrorMessage(): string {
+		const voicingMessages = {
+			full: `Incorrect chord. Try the ${selectedInversion > 0 ? getInversionName() + ' ' : ''}${selectedNote}${selectedChordType}!`,
+			'left-hand': `Left hand only! Play 1-7 (${selectedNote}-${get7thName()}) in your left hand.`,
+			'right-hand': `Right hand only! Play 3-5 in your right hand.`,
+			split: `Split hands! Left: 1-7 (lower), Right: 3-5 (higher).`
+		};
+		return `${voicingMessages[voicingMode]} (Attempt ${errorCount})`;
+	}
+
+	function getInversionName(): string {
+		const names = ['root position', '1st inversion', '2nd inversion', '3rd inversion'];
+		return names[selectedInversion];
+	}
+
+	function get7thName(): string {
+		// Get the 7th note name for display
+		if (chord.seventh) {
+			return MidiToNote[chord.seventh].slice(0, -1);
+		}
+		return '';
 	}
 
 	function resetExercise() {
@@ -206,23 +387,65 @@
 			</select>
 		</div>
 
+		<div class="control-group">
+			<label for="inversion-select">Inversion:</label>
+			<select id="inversion-select" bind:value={selectedInversion} onchange={resetExercise}>
+				<option value={0}>Root Position</option>
+				<option value={1}>1st Inversion</option>
+				<option value={2}>2nd Inversion</option>
+				{#if selectedChordType === 'maj7' || selectedChordType === 'min7' || selectedChordType === '7'}
+					<option value={3}>3rd Inversion</option>
+				{/if}
+			</select>
+		</div>
+
+		<div class="control-group">
+			<label for="voicing-select">Voicing:</label>
+			<select id="voicing-select" bind:value={voicingMode} onchange={resetExercise}>
+				<option value="full">Full Chord</option>
+				<option value="left-hand">Left Hand (1-7)</option>
+				<option value="right-hand">Right Hand (3-5)</option>
+				<option value="split">Split Hands (1-7 Left, 3-5 Right)</option>
+			</select>
+		</div>
+
 		<button class="reset-btn" onclick={resetExercise}>Reset Exercise</button>
 	</div>
 
 	{#if selectedNote && selectedChordType}
 		<div class="exercise-container">
 			<div class="chord-display">
-				<h2 class="chord-name">{selectedNote}{selectedChordType}</h2>
+				<h2 class="chord-name">
+					{selectedNote}{selectedChordType}
+					{#if selectedInversion > 0}
+						<span class="inversion-indicator">
+							/{MidiToNote[
+								selectedInversion === 1
+									? chord.third
+									: selectedInversion === 2
+										? chord.fifth
+										: chord.seventh || chord.root
+							].slice(0, -1)}
+						</span>
+					{/if}
+				</h2>
+				<p class="voicing-info">
+					{#if voicingMode === 'full'}
+						Play all chord notes ({selectedInversion === 0 ? 'Root Position' : getInversionName()})
+					{:else if voicingMode === 'left-hand'}
+						<strong>Left Hand:</strong> Root + 7th ({selectedNote} + {get7thName()})
+					{:else if voicingMode === 'right-hand'}
+						<strong>Right Hand:</strong> 3rd + 5th
+					{:else if voicingMode === 'split'}
+						<strong>Left:</strong> 1-7 (lower) | <strong>Right:</strong> 3-5 (higher)
+					{/if}
+				</p>
 			</div>
 
 			<!-- Always show the score -->
 			<div class="score-container">
 				<h3>Musical Score</h3>
-				<Score
-					{selectedNote}
-					leftHand={[chordNameNotes.map((note) => note.replace('4', '3') as NoteFullName)]}
-					rightHand={[chordNameNotes.map((note) => note.replace('4', '4') as NoteFullName)]}
-				/>
+				<Score {selectedNote} leftHand={scoreLeftHand} rightHand={scoreRightHand} />
 			</div>
 
 			<!-- Show note names after 3 mistakes -->
@@ -244,7 +467,7 @@
 					<InteractiveKeyboard
 						midiNotes={chordNotes}
 						middleC={NoteToMidi[selectedNoteMiddleKey] + 11}
-						octaves={2}
+						octaves={voicingMode === 'split' ? 3 : 2}
 						{virtualMidi}
 						{debugMode}
 					/>
@@ -257,7 +480,7 @@
 				<InteractiveKeyboard
 					{midiNotes}
 					middleC={NoteToMidi[selectedNoteMiddleKey] + 11}
-					octaves={2}
+					octaves={voicingMode === 'split' ? 3 : 2}
 					{virtualMidi}
 					{debugMode}
 				/>
@@ -312,11 +535,11 @@
 	}
 
 	.controls-container {
-		display: flex;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 		gap: 1.5rem;
 		justify-content: center;
-		align-items: center;
+		align-items: end;
 		margin-bottom: 2rem;
 		padding: 1.5rem;
 		background: rgba(255, 255, 255, 0.6);
@@ -370,6 +593,9 @@
 		transition: all 0.2s ease;
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
+		grid-column: 1 / -1;
+		justify-self: center;
+		max-width: 200px;
 	}
 
 	.reset-btn:hover {
@@ -398,6 +624,19 @@
 		color: white;
 		margin: 0;
 		text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+	}
+
+	.inversion-indicator {
+		font-size: 0.7em;
+		opacity: 0.9;
+	}
+
+	.voicing-info {
+		color: white;
+		font-size: 1.1rem;
+		margin: 0.5rem 0 0 0;
+		opacity: 0.95;
+		font-weight: 500;
 	}
 
 	.score-container,

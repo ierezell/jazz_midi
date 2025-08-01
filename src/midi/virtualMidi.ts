@@ -122,9 +122,6 @@ export class VirtualMidiInput {
             type: 'midimessage'
         } as MIDIMessageEvent;
 
-        // Debug logging
-        console.log('Virtual MIDI event:', Array.from(data).map(b => b.toString(16).padStart(2, '0')).join(' '));
-
         // Dispatch to all listeners
         this.listeners.forEach(listener => listener(event));
     }
