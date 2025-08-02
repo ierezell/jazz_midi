@@ -76,6 +76,31 @@
 		chordNotes.map((note) => (MidiToNote[note].slice(0, -1) + '4') as NoteFullName)
 	);
 
+	// Calculate optimal keyboard range based on the notes we need to display
+	let keyboardRange = $derived.by(() => {
+		if (chordNotes.length === 0) return { middleC: 60, octaves: 2 };
+
+		const minNote = Math.min(...chordNotes);
+		const maxNote = Math.max(...chordNotes);
+		const noteRange = maxNote - minNote;
+
+		// Ensure we show at least from one C to the next C that encompasses all notes
+		const minC = Math.floor((minNote - 12) / 12) * 12 + 12; // Find C below the lowest note
+		const maxC = Math.ceil((maxNote + 12) / 12) * 12; // Find C above the highest note
+
+		// Calculate middle C position and octaves needed
+		const totalRange = maxC - minC;
+		const octaves = Math.max(2, Math.ceil(totalRange / 12));
+
+		// Position middle C to center the range, but ensure all notes are visible
+		const middleC = minC + Math.floor((octaves * 12) / 2) - 6; // -6 to center better
+
+		return {
+			middleC: Math.max(24, middleC), // Ensure we don't go below MIDI note 24
+			octaves: Math.min(7, octaves) // Cap at 7 octaves for screen space
+		};
+	});
+
 	// Derived score notes for proper bass/treble clef display
 	let scoreLeftHand = $derived.by(() => {
 		if (voicingMode === 'right-hand') return [];
@@ -466,8 +491,8 @@
 					<h3>💡 Hint: Keyboard Reference</h3>
 					<InteractiveKeyboard
 						midiNotes={chordNotes}
-						middleC={NoteToMidi[selectedNoteMiddleKey] + 11}
-						octaves={voicingMode === 'split' ? 3 : 2}
+						middleC={keyboardRange.middleC}
+						octaves={keyboardRange.octaves}
 						{virtualMidi}
 						{debugMode}
 					/>
@@ -479,8 +504,8 @@
 				<h3>Your Input</h3>
 				<InteractiveKeyboard
 					{midiNotes}
-					middleC={NoteToMidi[selectedNoteMiddleKey] + 11}
-					octaves={voicingMode === 'split' ? 3 : 2}
+					middleC={keyboardRange.middleC}
+					octaves={keyboardRange.octaves}
 					{virtualMidi}
 					{debugMode}
 				/>

@@ -26,6 +26,9 @@
 				<li aria-current={page.url.pathname === '/about' ? 'page' : undefined}>
 					<a href="{base}/about">About</a>
 				</li>
+				<li aria-current={page.url.pathname.startsWith('/random') ? 'page' : undefined}>
+					<a href="{base}/random">🎲 Random</a>
+				</li>
 				<li aria-current={page.url.pathname.startsWith('/two_fives_ones') ? 'page' : undefined}>
 					<a href="{base}/two_five_ones">II-V-I</a>
 				</li>
