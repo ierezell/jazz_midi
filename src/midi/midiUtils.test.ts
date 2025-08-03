@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MidiNote } from './midi';
 import {
-    ChordProgressionBuilder,
-    FrequencyCalculator,
-    IntervalCalculator,
-    isValidMidiNote,
-    isValidNote,
-    MIDIPerformanceMonitor,
-    safeGetMidiFromNote,
-    safeGetMidiNote,
-    safeGetNoteName,
-    safeRequestMidiAccess
+	ChordProgressionBuilder,
+	FrequencyCalculator,
+	IntervalCalculator,
+	isValidMidiNote,
+	isValidNote,
+	MIDIPerformanceMonitor,
+	safeGetMidiFromNote,
+	safeGetMidiNote,
+	safeGetNoteName,
+	safeRequestMidiAccess
 } from './midiUtils';
 
 describe('MIDI Utils', () => {
@@ -20,7 +20,7 @@ describe('MIDI Utils', () => {
 			expect(isValidMidiNote(127)).toBe(true);
 			expect(isValidMidiNote(24)).toBe(true);
 			expect(isValidMidiNote(128)).toBe(true);
-			
+
 			expect(isValidMidiNote(23)).toBe(false);
 			expect(isValidMidiNote(129)).toBe(false);
 			expect(isValidMidiNote(-1)).toBe(false);
@@ -32,7 +32,7 @@ describe('MIDI Utils', () => {
 			expect(isValidNote('C#')).toBe(true);
 			expect(isValidNote('Db')).toBe(true);
 			expect(isValidNote('B')).toBe(true);
-			
+
 			expect(isValidNote('X')).toBe(false);
 			expect(isValidNote('C##')).toBe(false);
 			expect(isValidNote('')).toBe(false);
@@ -60,20 +60,20 @@ describe('MIDI Utils', () => {
 			const mockNavigator = {
 				requestMIDIAccess: undefined
 			};
-			
+
 			// Test our function with a navigator that doesn't have requestMIDIAccess
 			const originalConsoleWarn = console.warn;
 			console.warn = vi.fn();
-			
+
 			// Simulate missing API by temporarily replacing navigator
 			const originalNav = global.navigator;
 			// @ts-ignore
 			global.navigator = mockNavigator;
-			
+
 			const result = await safeRequestMidiAccess();
 			expect(result).toBe(null);
 			expect(console.warn).toHaveBeenCalledWith('Web MIDI API not supported in this browser');
-			
+
 			// Restore
 			global.navigator = originalNav;
 			console.warn = originalConsoleWarn;
@@ -133,7 +133,7 @@ describe('MIDI Utils', () => {
 
 		it('should handle non-note MIDI messages', () => {
 			const controlChangeEvent = {
-				data: new Uint8Array([0xB0, 64, 127]), // Control change
+				data: new Uint8Array([0xb0, 64, 127]), // Control change
 				timeStamp: Date.now()
 			} as MIDIMessageEvent;
 

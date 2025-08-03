@@ -14,13 +14,19 @@
 		"lint": "prettier --check . && eslint .",
 		"test": "vitest",
 		"test:ui": "vitest --ui",
-		"test:coverage": "vitest --coverage"
+		"test:coverage": "vitest --coverage",
+		"test:unit": "node scripts/test-runner.js unit",
+		"test:integration": "node scripts/test-runner.js integration",
+		"test:e2e": "node scripts/test-runner.js e2e",
+		"test:all": "node scripts/test-runner.js all",
+		"test:ci": "node scripts/test-runner.js ci"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
 		"@fontsource/fira-mono": "^5.0.0",
 		"@neoconfetti/svelte": "^2.0.0",
+		"@playwright/test": "^1.54.2",
 		"@sveltejs/adapter-auto": "^4.0.0",
 		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",

@@ -13,7 +13,7 @@ describe('Mock MIDI Keyboard', () => {
 		it('should create a mock keyboard with default input device', () => {
 			const midiAccess = mockKeyboard.getMIDIAccess();
 			expect(midiAccess.inputs.size).toBe(1);
-			
+
 			const defaultInput = Array.from(midiAccess.inputs.values())[0];
 			expect(defaultInput.name).toBe('Mock MIDI Keyboard');
 			expect(defaultInput.type).toBe('input');
@@ -23,7 +23,7 @@ describe('Mock MIDI Keyboard', () => {
 		it('should handle MIDI callback setup', () => {
 			const callback = vi.fn();
 			mockKeyboard.setMIDICallback(callback);
-			
+
 			const midiAccess = mockKeyboard.getMIDIAccess();
 			const input = Array.from(midiAccess.inputs.values())[0];
 			expect(input.onmidimessage).toBe(callback);
@@ -47,13 +47,21 @@ describe('Mock MIDI Keyboard', () => {
 		});
 
 		it('should validate velocity range', () => {
-			expect(() => mockKeyboard.pressKey(72 as MidiNote, -1)).toThrow('Velocity must be between 0 and 127');
-			expect(() => mockKeyboard.pressKey(72 as MidiNote, 128)).toThrow('Velocity must be between 0 and 127');
+			expect(() => mockKeyboard.pressKey(72 as MidiNote, -1)).toThrow(
+				'Velocity must be between 0 and 127'
+			);
+			expect(() => mockKeyboard.pressKey(72 as MidiNote, 128)).toThrow(
+				'Velocity must be between 0 and 127'
+			);
 		});
 
 		it('should validate channel range', () => {
-			expect(() => mockKeyboard.pressKey(72 as MidiNote, 100, -1)).toThrow('Channel must be between 0 and 15');
-			expect(() => mockKeyboard.pressKey(72 as MidiNote, 100, 16)).toThrow('Channel must be between 0 and 15');
+			expect(() => mockKeyboard.pressKey(72 as MidiNote, 100, -1)).toThrow(
+				'Channel must be between 0 and 15'
+			);
+			expect(() => mockKeyboard.pressKey(72 as MidiNote, 100, 16)).toThrow(
+				'Channel must be between 0 and 15'
+			);
 		});
 
 		it('should track multiple pressed keys', () => {
@@ -86,7 +94,7 @@ describe('Mock MIDI Keyboard', () => {
 			mockKeyboard.setMIDICallback(callback);
 
 			const cMajorChord = [60, 64, 67] as MidiNote[]; // C, E, G
-			
+
 			mockKeyboard.playChord(cMajorChord, 100);
 			expect(callback).toHaveBeenCalledTimes(3);
 			expect(mockKeyboard.getPressedKeys()).toHaveLength(3);
@@ -106,7 +114,7 @@ describe('Mock MIDI Keyboard', () => {
 			mockKeyboard.releaseKey(72 as MidiNote);
 
 			expect(noteEvents).toHaveLength(2);
-			
+
 			const noteOn = noteEvents[0];
 			expect(noteOn.type).toBe('on');
 			expect(noteOn.noteNumber).toBe(72);
@@ -129,16 +137,24 @@ describe('Mock MIDI Keyboard', () => {
 			mockKeyboard.sendControlChange(64, 127);
 			expect(callback).toHaveBeenCalledWith(
 				expect.objectContaining({
-					data: new Uint8Array([0xB0, 64, 127])
+					data: new Uint8Array([0xb0, 64, 127])
 				})
 			);
 		});
 
 		it('should validate control change parameters', () => {
-			expect(() => mockKeyboard.sendControlChange(-1, 127)).toThrow('Controller number must be between 0 and 127');
-			expect(() => mockKeyboard.sendControlChange(128, 127)).toThrow('Controller number must be between 0 and 127');
-			expect(() => mockKeyboard.sendControlChange(64, -1)).toThrow('Controller value must be between 0 and 127');
-			expect(() => mockKeyboard.sendControlChange(64, 128)).toThrow('Controller value must be between 0 and 127');
+			expect(() => mockKeyboard.sendControlChange(-1, 127)).toThrow(
+				'Controller number must be between 0 and 127'
+			);
+			expect(() => mockKeyboard.sendControlChange(128, 127)).toThrow(
+				'Controller number must be between 0 and 127'
+			);
+			expect(() => mockKeyboard.sendControlChange(64, -1)).toThrow(
+				'Controller value must be between 0 and 127'
+			);
+			expect(() => mockKeyboard.sendControlChange(64, 128)).toThrow(
+				'Controller value must be between 0 and 127'
+			);
 		});
 	});
 
@@ -197,8 +213,8 @@ describe('Mock MIDI Keyboard', () => {
 
 			// Should have note on and note off for each note
 			expect(noteEvents).toHaveLength(6);
-			expect(noteEvents.filter(e => e.type === 'on')).toHaveLength(3);
-			expect(noteEvents.filter(e => e.type === 'off')).toHaveLength(3);
+			expect(noteEvents.filter((e) => e.type === 'on')).toHaveLength(3);
+			expect(noteEvents.filter((e) => e.type === 'off')).toHaveLength(3);
 		});
 	});
 });
@@ -213,9 +229,9 @@ describe('Mock MIDI API Integration', () => {
 	it('should mock the Web MIDI API', () => {
 		const mockKeyboard = mockWebMIDIAPI();
 		expect(navigator.requestMIDIAccess).toBeDefined();
-		
+
 		// Test that the mocked function returns our mock keyboard's access
-		navigator.requestMIDIAccess().then(access => {
+		navigator.requestMIDIAccess().then((access) => {
 			expect(access).toBe(mockKeyboard.getMIDIAccess());
 		});
 	});

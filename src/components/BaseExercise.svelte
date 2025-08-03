@@ -81,13 +81,17 @@
 		octaves: keyboardConfig.octaves,
 		interactive: exerciseState.debugMode,
 		showLabels: exerciseState.showNoteNames,
+		chordToneInfo: keyboardProps.chordToneInfo || [],
+		showChordTones: keyboardProps.showChordTones || false,
+		expectedNotes: expectedNotes,
 		...keyboardProps
 	});
 
 	// Default score props
 	let finalScoreProps = $derived({
-		title: exerciseTitle,
-		showClefs: true,
+		leftHand: scoreProps.leftHandNotes || [],
+		rightHand: scoreProps.rightHandNotes || [],
+		selectedNote: exerciseState.selectedNote,
 		...scoreProps
 	});
 
@@ -361,20 +365,108 @@
 			gap: 1rem;
 		}
 
+		.exercise-header h1 {
+			font-size: 1.6rem;
+			margin-bottom: 0.25rem;
+		}
+
+		.exercise-description {
+			font-size: 1rem;
+		}
+
 		.exercise-controls {
 			flex-direction: column;
-			gap: 0.5rem;
+			gap: 0.75rem;
+			padding: 0.75rem;
 		}
 
 		.control-group {
 			width: 100%;
 			justify-content: center;
+			flex-wrap: wrap;
+			gap: 0.5rem;
+		}
+
+		.control-group label {
+			min-width: 60px;
+			text-align: center;
+		}
+
+		select,
+		button {
+			min-height: 44px;
+			font-size: 1rem;
 		}
 
 		.progress-stats {
 			flex-direction: column;
 			text-align: center;
 			gap: 0.25rem;
+		}
+
+		.score-section {
+			min-height: 160px;
+			padding: 0.5rem;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.exercise-container {
+			padding: 0.25rem;
+			gap: 0.75rem;
+		}
+
+		.exercise-header h1 {
+			font-size: 1.4rem;
+		}
+
+		.exercise-description {
+			font-size: 0.9rem;
+		}
+
+		.exercise-controls {
+			padding: 0.5rem;
+			gap: 0.5rem;
+		}
+
+		.control-group {
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.control-group label {
+			margin-bottom: 0.25rem;
+		}
+
+		select,
+		button {
+			width: 100%;
+			max-width: 200px;
+		}
+
+		.score-section {
+			min-height: 120px;
+			padding: 0.25rem;
+		}
+
+		.debug-section {
+			padding: 0.5rem;
+		}
+	}
+
+	@media (max-width: 360px) {
+		.exercise-header h1 {
+			font-size: 1.2rem;
+		}
+
+		.exercise-description {
+			font-size: 0.85rem;
+		}
+
+		select,
+		button {
+			max-width: 180px;
+			font-size: 0.9rem;
 		}
 	}
 </style>

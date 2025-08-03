@@ -21,3 +21,39 @@ global.AudioContext = vi.fn().mockImplementation(() => ({
 	}),
 	destination: {}
 }));
+
+// Mock HTMLAudioElement
+(global as any).HTMLAudioElement = class MockAudio {
+	src = '';
+	volume = 1;
+	currentTime = 0;
+	paused = true;
+
+	play = vi.fn().mockResolvedValue(undefined);
+	pause = vi.fn();
+	load = vi.fn();
+	addEventListener = vi.fn();
+	removeEventListener = vi.fn();
+
+	constructor(src?: string) {
+		this.src = src || '';
+	}
+};
+
+// Mock Audio constructor
+(global as any).Audio = (global as any).HTMLAudioElement;
+
+// Mock window.matchMedia for responsive testing
+Object.defineProperty(window, 'matchMedia', {
+	writable: true,
+	value: vi.fn().mockImplementation((query) => ({
+		matches: false,
+		media: query,
+		onchange: null,
+		addListener: vi.fn(),
+		removeListener: vi.fn(),
+		addEventListener: vi.fn(),
+		removeEventListener: vi.fn(),
+		dispatchEvent: vi.fn()
+	}))
+});

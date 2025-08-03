@@ -5,8 +5,12 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}'],
-		environment: 'jsdom',
+		environment: 'happy-dom',
 		setupFiles: ['./src/test/setup.ts'],
-		globals: true
+		globals: true,
+		alias: {
+			'$app': '@sveltejs/kit/app',
+			'$env': '@sveltejs/kit/env'
+		}
 	}
 });

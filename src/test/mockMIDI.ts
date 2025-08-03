@@ -71,7 +71,7 @@ export class MockMIDIKeyboard {
 	 * Set a callback for MIDI message events
 	 */
 	setMIDICallback(callback: (event: MIDIMessageEvent) => void): void {
-		this.inputs.forEach(input => {
+		this.inputs.forEach((input) => {
 			input.onmidimessage = callback;
 		});
 	}
@@ -117,7 +117,7 @@ export class MockMIDIKeyboard {
 	 */
 	releaseAllKeys(): void {
 		const keysToRelease = Array.from(this.pressedKeys);
-		keysToRelease.forEach(key => this.releaseKey(key));
+		keysToRelease.forEach((key) => this.releaseKey(key));
 	}
 
 	/**
@@ -131,14 +131,14 @@ export class MockMIDIKeyboard {
 	 * Simulate playing a chord
 	 */
 	playChord(notes: MidiNote[], velocity: number = 100, channel: number = 0): void {
-		notes.forEach(note => this.pressKey(note, velocity, channel));
+		notes.forEach((note) => this.pressKey(note, velocity, channel));
 	}
 
 	/**
 	 * Simulate releasing a chord
 	 */
 	releaseChord(notes: MidiNote[], channel: number = 0): void {
-		notes.forEach(note => this.releaseKey(note, channel));
+		notes.forEach((note) => this.releaseKey(note, channel));
 	}
 
 	/**
@@ -150,7 +150,7 @@ export class MockMIDIKeyboard {
 	): Promise<void> {
 		for (const { note, duration, velocity = 100 } of notes) {
 			this.pressKey(note, velocity, channel);
-			await new Promise(resolve => setTimeout(resolve, duration));
+			await new Promise((resolve) => setTimeout(resolve, duration));
 			this.releaseKey(note, channel);
 		}
 	}
@@ -169,7 +169,7 @@ export class MockMIDIKeyboard {
 			throw new Error('Channel must be between 0 and 15');
 		}
 
-		const message = this.createMIDIMessage(0xB0 | channel, controller, value);
+		const message = this.createMIDIMessage(0xb0 | channel, controller, value);
 		this.sendMIDIMessage(message);
 	}
 
@@ -225,7 +225,7 @@ export class MockMIDIKeyboard {
 
 	private sendMIDIMessage(message: MIDIMessageEvent): void {
 		// Send to all input devices
-		this.inputs.forEach(input => {
+		this.inputs.forEach((input) => {
 			if (input.onmidimessage && input.state === 'connected') {
 				input.onmidimessage(message);
 			}
@@ -234,7 +234,9 @@ export class MockMIDIKeyboard {
 		// Process and send to note event callbacks
 		try {
 			const noteEvent = getMidiNote(message);
-			this.eventCallbacks.forEach(callback => callback(noteEvent));
+			if (noteEvent) {
+				this.eventCallbacks.forEach((callback) => callback(noteEvent));
+			}
 		} catch (error) {
 			console.warn('Error processing MIDI message:', error);
 		}
@@ -254,7 +256,7 @@ export function createMockMIDIAccess(): Promise<MockMIDIAccess> {
  */
 export function mockWebMIDIAPI(): MockMIDIKeyboard {
 	const keyboard = new MockMIDIKeyboard();
-	
+
 	// Replace the navigator.requestMIDIAccess function
 	Object.defineProperty(navigator, 'requestMIDIAccess', {
 		writable: true,

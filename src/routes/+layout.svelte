@@ -3,8 +3,19 @@
 	import { page } from '$app/state';
 	import github from '$lib/images/github.svg';
 	import logo from '$lib/images/svelte-logo.svg';
+	import { userStatsService } from '$lib/services/UserStatsService';
+	import { onDestroy, onMount } from 'svelte';
 	import '../app.css';
 	let { children } = $props();
+
+	// Track practice sessions
+	onMount(() => {
+		userStatsService.startSession();
+	});
+
+	onDestroy(() => {
+		userStatsService.endSession();
+	});
 </script>
 
 <div class="app">
@@ -37,6 +48,9 @@
 				</li>
 				<li aria-current={page.url.pathname.startsWith('/chords') ? 'page' : undefined}>
 					<a href="{base}/chords">Chords</a>
+				</li>
+				<li aria-current={page.url.pathname.startsWith('/profile') ? 'page' : undefined}>
+					<a href="{base}/profile">👤 Profile</a>
 				</li>
 			</ul>
 			<svg viewBox="0 0 2 3" aria-hidden="true">
@@ -188,12 +202,14 @@
 	/* Mobile responsiveness */
 	@media (max-width: 768px) {
 		header {
-			padding: 0 1rem;
+			padding: 0.5rem;
+			flex-wrap: nowrap;
 		}
 
 		.corner {
 			width: 2.5em;
 			height: 2.5em;
+			flex-shrink: 0;
 		}
 
 		.corner img {
@@ -204,15 +220,27 @@
 		nav {
 			flex: 1;
 			margin: 0 0.5rem;
+			min-width: 0;
+		}
+
+		ul {
+			overflow-x: auto;
+			scrollbar-width: none;
+			-ms-overflow-style: none;
+		}
+
+		ul::-webkit-scrollbar {
+			display: none;
 		}
 
 		nav a {
-			padding: 0 0.3rem;
+			padding: 0 0.4rem;
 			font-size: 0.7rem;
+			white-space: nowrap;
 		}
 
 		main {
-			padding: 0.5rem;
+			padding: 0.75rem;
 			max-width: 100%;
 		}
 
@@ -223,8 +251,12 @@
 	}
 
 	@media (max-width: 480px) {
+		header {
+			padding: 0.25rem;
+		}
+
 		nav a {
-			padding: 0 0.2rem;
+			padding: 0 0.3rem;
 			font-size: 0.65rem;
 		}
 
@@ -240,6 +272,21 @@
 
 		ul {
 			height: 2.5em;
+		}
+
+		main {
+			padding: 0.5rem;
+		}
+	}
+
+	@media (max-width: 360px) {
+		nav a {
+			padding: 0 0.2rem;
+			font-size: 0.6rem;
+		}
+
+		ul {
+			gap: 0.1rem;
 		}
 	}
 </style>

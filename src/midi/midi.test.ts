@@ -142,7 +142,7 @@ describe('MIDI Module', () => {
 		it('should handle sus chords', () => {
 			const cSus2 = chords(72 as MidiNote, 'sus2');
 			expect(cSus2.third).toBe(74); // D (2nd)
-			
+
 			const cSus4 = chords(72 as MidiNote, 'sus4');
 			expect(cSus4.third).toBe(77); // F (4th)
 		});
@@ -156,11 +156,11 @@ describe('MIDI Module', () => {
 			} as MIDIMessageEvent;
 
 			const noteEvent = getMidiNote(mockEvent);
-			expect(noteEvent.noteNumber).toBe(60);
-			expect(noteEvent.type).toBe('on');
-			expect(noteEvent.noteFullName).toBe('C3');
-			expect(noteEvent.noteName).toBe('C');
-			expect(noteEvent.velocity).toBe(100);
+			expect(noteEvent!.noteNumber).toBe(60);
+			expect(noteEvent!.type).toBe('on');
+			expect(noteEvent!.noteFullName).toBe('C3');
+			expect(noteEvent!.noteName).toBe('C');
+			expect(noteEvent!.velocity).toBe(100);
 		});
 
 		it('should parse note off message correctly', () => {
@@ -170,9 +170,9 @@ describe('MIDI Module', () => {
 			} as MIDIMessageEvent;
 
 			const noteEvent = getMidiNote(mockEvent);
-			expect(noteEvent.noteNumber).toBe(60);
-			expect(noteEvent.type).toBe('off');
-			expect(noteEvent.velocity).toBe(0);
+			expect(noteEvent!.noteNumber).toBe(60);
+			expect(noteEvent!.type).toBe('off');
+			expect(noteEvent!.velocity).toBe(0);
 		});
 
 		it('should handle note on with zero velocity as note off', () => {
@@ -182,7 +182,7 @@ describe('MIDI Module', () => {
 			} as MIDIMessageEvent;
 
 			const noteEvent = getMidiNote(mockEvent);
-			expect(noteEvent.type).toBe('off');
+			expect(noteEvent!.type).toBe('off');
 		});
 
 		it('should handle different MIDI channels', () => {
@@ -192,8 +192,8 @@ describe('MIDI Module', () => {
 			} as MIDIMessageEvent;
 
 			const noteEvent = getMidiNote(mockEvent);
-			expect(noteEvent.type).toBe('on');
-			expect(noteEvent.noteNumber).toBe(60);
+			expect(noteEvent!.type).toBe('on');
+			expect(noteEvent!.noteNumber).toBe(60);
 		});
 	});
 
@@ -203,7 +203,7 @@ describe('MIDI Module', () => {
 			const c4 = 72;
 			const cSharp4 = c4 + 1;
 			const d4 = c4 + 2;
-			
+
 			expect(MidiToNote[cSharp4 as MidiNote]).toBe('C#4');
 			expect(MidiToNote[d4 as MidiNote]).toBe('D4');
 		});

@@ -1,0 +1,243 @@
+/* Responsive Utility Classes for Jazz MIDI App */
+
+/* Container utilities */
+.responsive-container {
+	width: 100%;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 1rem;
+	box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+	.responsive-container {
+		padding: 0 0.5rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.responsive-container {
+		padding: 0 0.25rem;
+	}
+}
+
+/* Flexbox utilities */
+.flex-responsive {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+}
+
+.flex-responsive > * {
+	flex: 1;
+	min-width: 280px;
+}
+
+@media (max-width: 768px) {
+	.flex-responsive {
+		gap: 0.75rem;
+	}
+
+	.flex-responsive > * {
+		min-width: 240px;
+	}
+}
+
+@media (max-width: 480px) {
+	.flex-responsive {
+		gap: 0.5rem;
+		flex-direction: column;
+	}
+
+	.flex-responsive > * {
+		min-width: auto;
+		width: 100%;
+	}
+}
+
+/* Grid utilities */
+.grid-responsive {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 1rem;
+}
+
+@media (max-width: 768px) {
+	.grid-responsive {
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: 0.75rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.grid-responsive {
+		grid-template-columns: 1fr;
+		gap: 0.5rem;
+	}
+}
+
+/* Touch-friendly button utilities */
+.btn-touch {
+	min-height: 44px;
+	min-width: 44px;
+	padding: 0.75rem 1.5rem;
+	font-size: 1rem;
+	touch-action: manipulation;
+	cursor: pointer;
+	border: none;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+}
+
+.btn-touch:active {
+	transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+	.btn-touch {
+		padding: 0.875rem 1.75rem;
+		font-size: 1.1rem;
+	}
+}
+
+/* Input utilities */
+.input-touch {
+	min-height: 44px;
+	padding: 0.75rem;
+	font-size: 1rem;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+	.input-touch {
+		padding: 0.875rem;
+		font-size: 1.1rem;
+	}
+}
+
+/* Typography utilities */
+.text-responsive {
+	font-size: clamp(0.875rem, 2.5vw, 1.125rem);
+	line-height: 1.6;
+}
+
+.heading-responsive {
+	font-size: clamp(1.25rem, 4vw, 2rem);
+	line-height: 1.2;
+}
+
+.subheading-responsive {
+	font-size: clamp(1rem, 3vw, 1.5rem);
+	line-height: 1.4;
+}
+
+/* Spacing utilities */
+.spacing-responsive {
+	margin: clamp(0.5rem, 2vw, 2rem);
+	padding: clamp(0.5rem, 2vw, 2rem);
+}
+
+.gap-responsive {
+	gap: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+/* Visibility utilities */
+.mobile-only {
+	display: none;
+}
+
+.desktop-only {
+	display: block;
+}
+
+@media (max-width: 768px) {
+	.mobile-only {
+		display: block;
+	}
+
+	.desktop-only {
+		display: none;
+	}
+}
+
+/* Scroll utilities */
+.scroll-container {
+	overflow-x: auto;
+	overflow-y: hidden;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+}
+
+.scroll-container::-webkit-scrollbar {
+	height: 6px;
+}
+
+.scroll-container::-webkit-scrollbar-track {
+	background: #f1f1f1;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+	background: #c1c1c1;
+	border-radius: 3px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb:hover {
+	background: #a1a1a1;
+}
+
+/* Card utilities */
+.card-responsive {
+	padding: clamp(0.75rem, 3vw, 2rem);
+	border-radius: clamp(4px, 1vw, 12px);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	background: white;
+	border: 1px solid #e1e5e9;
+}
+
+/* Keyboard specific utilities */
+.keyboard-responsive {
+	width: 100%;
+	min-height: clamp(80px, 15vw, 200px);
+	max-height: clamp(120px, 20vw, 250px);
+	touch-action: none;
+	overflow-x: auto;
+	overflow-y: hidden;
+}
+
+/* Exercise specific utilities */
+.exercise-responsive {
+	max-width: 100%;
+	margin: 0 auto;
+	padding: clamp(0.5rem, 2vw, 2rem);
+}
+
+.controls-responsive {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
+	gap: clamp(0.5rem, 2vw, 1rem);
+	padding: clamp(0.5rem, 2vw, 1rem);
+}
+
+@media (max-width: 480px) {
+	.controls-responsive {
+		flex-direction: column;
+	}
+}
+
+/* Score specific utilities */
+.score-responsive {
+	width: 100%;
+	min-height: clamp(160px, 25vw, 340px);
+	overflow-x: auto;
+	overflow-y: hidden;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background: white;
+	border-radius: clamp(4px, 1vw, 8px);
+	border: 1px solid #e1e5e9;
+}

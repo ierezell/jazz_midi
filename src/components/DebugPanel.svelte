@@ -1,17 +1,27 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import type { ChordType, MidiNote, Note } from '../midi/midi';
+	import type { ChordType, MidiNote, Note, NoteEvent } from '../midi/midi';
 	import { AllChordTypes, AllNotes, chords, NoteToMidi } from '../midi/midi';
 	import type { VirtualMidiInput } from '../midi/virtualMidi';
 
 	interface DebugPanelProps {
-		virtualMidi: VirtualMidiInput | undefined;
-		debugMode: boolean;
-		onToggleDebugMode: () => void;
+		virtualMidi?: VirtualMidiInput;
+		debugMode?: boolean;
+		onToggleDebugMode?: () => void;
+		noteEvents?: NoteEvent[];
+		expectedNotes?: MidiNote[];
+		currentNotes?: MidiNote[];
 	}
 
-	let { virtualMidi, debugMode, onToggleDebugMode }: DebugPanelProps = $props();
+	let {
+		virtualMidi,
+		debugMode = true,
+		onToggleDebugMode,
+		noteEvents = [],
+		expectedNotes = [],
+		currentNotes = []
+	}: DebugPanelProps = $props();
 
 	let selectedNote: Note = $state('C');
 	let selectedChordType: ChordType = $state('maj7');
@@ -68,82 +78,103 @@
 
 	{#if debugMode}
 		<div class="debug-content">
-			<div class="section">
-				<h4>Virtual MIDI Controls</h4>
-				<div class="control-group">
-					<label>
-						Root Note:
-						<select bind:value={selectedNote}>
-							{#each AllNotes as note}
-								<option value={note}>{note}</option>
-							{/each}
-						</select>
-					</label>
-					<label>
-						Octave:
-						<select bind:value={selectedOctave}>
-							{#each [4, 5, 6] as octave}
-								<option value={octave}>{octave}</option>
-							{/each}
-						</select>
-					</label>
-					<label>
-						Chord Type:
-						<select bind:value={selectedChordType}>
-							{#each AllChordTypes as chordType}
-								<option value={chordType}>{chordType}</option>
-							{/each}
-						</select>
-					</label>
+			{#if virtualMidi}
+				<div class="section">
+					<h4>Virtual MIDI Controls</h4>
+					<div class="control-group">
+						<label>
+							Root Note:
+							<select bind:value={selectedNote}>
+								{#each AllNotes as note}
+									<option value={note}>{note}</option>
+								{/each}
+							</select>
+						</label>
+						<label>
+							Octave:
+							<select bind:value={selectedOctave}>
+								{#each [4, 5, 6] as octave}
+									<option value={octave}>{octave}</option>
+								{/each}
+							</select>
+						</label>
+						<label>
+							Chord Type:
+							<select bind:value={selectedChordType}>
+								{#each AllChordTypes as chordType}
+									<option value={chordType}>{chordType}</option>
+								{/each}
+							</select>
+						</label>
+					</div>
 				</div>
-			</div>
 
-			<div class="section">
-				<h4>Quick Actions</h4>
-				<div class="button-group">
-					<button onclick={playChord} class="action-btn">
-						Play {selectedNote}{selectedChordType}
-					</button>
-					<button onclick={stopChord} class="action-btn stop"> Stop All Notes </button>
-					<button onclick={playScale} class="action-btn">
-						Play {selectedNote} Scale
-					</button>
-					<button onclick={playRandomNote} class="action-btn"> Random Note </button>
+				<div class="section">
+					<h4>Quick Actions</h4>
+					<div class="button-group">
+						<button onclick={playChord} class="action-btn">
+							Play {selectedNote}{selectedChordType}
+						</button>
+						<button onclick={stopChord} class="action-btn stop"> Stop All Notes </button>
+						<button onclick={playScale} class="action-btn">
+							Play {selectedNote} Scale
+						</button>
+						<button onclick={playRandomNote} class="action-btn"> Random Note </button>
+					</div>
 				</div>
-			</div>
+			{/if}
 
-			<div class="section">
-				<h4>Keyboard Shortcuts</h4>
-				<div class="shortcuts">
-					<div class="shortcut-row">
-						<strong>Lower Row (White Keys):</strong><br />
-						<kbd>Z</kbd> <span>C5</span>
-						<kbd>X</kbd> <span>D5</span>
-						<kbd>C</kbd> <span>E5</span>
-						<kbd>V</kbd> <span>F5</span>
-						<kbd>B</kbd> <span>G5</span>
-						<kbd>N</kbd> <span>A5</span>
-						<kbd>M</kbd> <span>B5</span>
-					</div>
-					<div class="shortcut-row">
-						<strong>Lower Row (Black Keys):</strong><br />
-						<kbd>S</kbd> <span>C#5</span>
-						<kbd>D</kbd> <span>D#5</span>
-						<kbd>G</kbd> <span>F#5</span>
-						<kbd>H</kbd> <span>G#5</span>
-						<kbd>J</kbd> <span>A#5</span>
-					</div>
-					<div class="shortcut-row">
-						<strong>Upper Row (White Keys):</strong><br />
-						<kbd>Q</kbd> <span>C6</span>
-						<kbd>W</kbd> <span>D6</span>
-						<kbd>E</kbd> <span>E6</span>
-						<kbd>R</kbd> <span>F6</span>
-						<kbd>T</kbd> <span>G6</span>
-						<kbd>Y</kbd> <span>A6</span>
+			{#if expectedNotes.length > 0 || currentNotes.length > 0}
+				<div class="section">
+					<h4>Exercise Status</h4>
+					<div class="status-info">
+						{#if expectedNotes.length > 0}
+							<div>Expected Notes: {expectedNotes.join(', ')}</div>
+						{/if}
+						{#if currentNotes.length > 0}
+							<div>Current Notes: {currentNotes.join(', ')}</div>
+						{/if}
+						{#if noteEvents.length > 0}
+							<div>Recent Events: {noteEvents.length}</div>
+						{/if}
 					</div>
 				</div>
-			</div>
+			{/if}
+
+			{#if virtualMidi}
+				<div class="section">
+					<h4>Keyboard Shortcuts</h4>
+					<div class="shortcuts">
+						<div class="shortcut-row">
+							<strong>Lower Row (White Keys):</strong><br />
+							<kbd>Z</kbd> <span>C5</span>
+							<kbd>X</kbd> <span>D5</span>
+							<kbd>C</kbd> <span>E5</span>
+							<kbd>V</kbd> <span>F5</span>
+							<kbd>B</kbd> <span>G5</span>
+							<kbd>N</kbd> <span>A5</span>
+							<kbd>M</kbd> <span>B5</span>
+						</div>
+						<div class="shortcut-row">
+							<strong>Lower Row (Black Keys):</strong><br />
+							<kbd>S</kbd> <span>C#5</span>
+							<kbd>D</kbd> <span>D#5</span>
+							<kbd>G</kbd> <span>F#5</span>
+							<kbd>H</kbd> <span>G#5</span>
+							<kbd>J</kbd> <span>A#5</span>
+						</div>
+						<div class="shortcut-row">
+							<strong>Upper Row (White Keys):</strong><br />
+							<kbd>Q</kbd> <span>C6</span>
+							<kbd>W</kbd> <span>D6</span>
+							<kbd>E</kbd> <span>E6</span>
+							<kbd>R</kbd> <span>F6</span>
+							<kbd>T</kbd> <span>G6</span>
+							<kbd>Y</kbd> <span>A6</span>
+						</div>
+					</div>
+				</div>
+			{/if}
 
 			<div class="section">
 				<h4>Status</h4>

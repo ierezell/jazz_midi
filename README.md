@@ -1,29 +1,46 @@
 # jazz_midi
 
-- [ ] Verify it works on mobile.
-- [ ] Put some UI indication like # for scales to learn.
-- [ ] Better UI. 
-- [ ] Better Sounds.
-- [ ] Remove the need of MIDI keyboard and play on real keyboard ? awsedrf etc..
-- [ ] Find a virtual midi keyboard on windows for tests
-- [ ] Better learn svelte and improve the loading etc...
-- [ ] More span (resizing if needed) for the keyboard ?
-- [ ] Move the span of the keyboard if needed ?
-- [ ] Add randomization for next when user got right after x tries.
+A comprehensive jazz practice application with exercise tracking, progress statistics, and performance analytics.
+
+## ✨ New Features
+
+### 🎯 Profile & Statistics System
+
+- **Comprehensive User Profiles**: Track your learning journey with detailed statistics
+- **Exercise Performance Tracking**: Automatic recording of all exercise attempts and completions
+- **Mastery Progression**: Track your progress on individual chords, scales, and progressions
+- **Achievement System**: Unlock achievements as you reach practice milestones
+- **Practice Session Tracking**: Monitor your daily practice time and consistency
+- **Data Export/Import**: Backup and restore your practice data
+
+### 📊 Statistics Dashboard
+
+- **Success Rate Tracking**: Monitor your accuracy across all exercise types
+- **Time Analysis**: Track total practice time and session duration
+- **Streak Tracking**: Current and longest practice streaks
+- **Performance Trends**: See your improvement over time
+- **Category Breakdown**: Detailed stats for chords, scales, and progressions
+
+### 🎵 Exercise Integration
+
+- **Automatic Tracking**: All exercises now automatically record results
+- **Real-time Stats Widget**: Quick stats overlay on exercise pages
+- **Progress Visualization**: See your improvement in real-time
+- **Adaptive Difficulty**: System tracks mastery levels (beginner → expert)
+
+## 🚀 Getting Started
+
+1. Navigate to any exercise page (Chords, Scales, etc.)
+2. Complete exercises to start building your statistics
+3. Visit the **Profile** page to view your comprehensive progress
+4. Use the stats widget on exercise pages for quick progress updates
+
+## 📋 Roadmap
+
 - [ ] Add timer to practice (do it faster than....).
 - [ ] Add a metronome training.
 - [ ] Add metronome acceleration training
-- [ ] Add chords to practice (maj7, min7, 7, dom).
-- [ ] Add exploded chords (1-3 right hand 5-7 left hand and vice versa).
 - [ ] Add rootless chords.
-- [ ] Add chords inversion.
-- [ ] Do a flashcard thingy for chords and scales.
-- [ ] Add two-five-ones.
-- [ ] Add two-five-ones + Scale right hand.
-- [ ] Add partition.
 - [ ] Partition note reading exercices
-- [ ] Chords reading exercices
-- [ ] Add other exercices (ones I got from teacher) 
-- [ ] Colors for dominant, third, fifth etc...
-- [ ] Add play something I will tell you what it is (chord or scale)
-- [ ] Add a MIDI file reader so it shows the notes ? 
+- [ ] Add other exercices (ones I got from teacher)
+- [ ] Add a MIDI file reader so it shows the notes ?

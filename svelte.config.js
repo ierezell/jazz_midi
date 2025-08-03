@@ -6,7 +6,7 @@ const config = {
 	preprocess: vitePreprocess(),
 	kit: {
 		paths: {
-			base: process.env.NODE_ENV === 'production' ? '/jazz_midi' : '',
+			base: process.env.NODE_ENV === 'production' ? '/jazz_midi' : ''
 		},
 		adapter: adapter({
 			pages: 'docs',
