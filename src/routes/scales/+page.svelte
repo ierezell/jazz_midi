@@ -6,7 +6,7 @@
 	import { audioManager } from '../../lib/managers/AudioManager';
 	import { midiManager } from '../../lib/managers/MIDIManager';
 	import type { BaseExerciseState, MidiNote, Note, NoteEvent, NoteFullName } from '../../lib/types';
-	import { getMidiNote, majorScales, NoteToMidi, midiNoteToNoteName } from '../../midi/midi';
+	import { majorScales, midiNoteToNoteName, NoteToMidi } from '../../midi/midi';
 
 	// ===== STATE =====
 	let selectedNote: Note = $state('C');

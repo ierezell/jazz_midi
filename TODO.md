@@ -1,4 +1,0 @@
-- Debug is not the same on chord pages. 
-- Random should have the same UI as each specific page 
-- Color should be red when hitting a wrong note
-- Stats should be per note / scale

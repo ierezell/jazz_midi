@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MidiNote, NoteEvent } from '../midi/midi';
-import { chords, getScale } from '../midi/midi';
-import { FrequencyCalculator, IntervalCalculator, safeGetMidiNote } from '../midi/midiUtils';
+import type { MidiNote, NoteEvent } from '../src/midi/midi';
+import { chords, getScale } from '../src/midi/midi';
+import { FrequencyCalculator, IntervalCalculator, safeGetMidiNote } from '../src/midi/midiUtils';
 import { MockMIDIKeyboard } from '../test/mockMIDI';
 
 describe('MIDI Integration Tests', () => {

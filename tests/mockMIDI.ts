@@ -1,4 +1,4 @@
-import { type MidiNote, type NoteEvent, getMidiNote } from '../midi/midi';
+import { type MidiNote, type NoteEvent, getMidiNote } from '../src/midi/midi';
 
 export interface MockMIDIDevice {
 	id: string;

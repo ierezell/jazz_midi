@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type MidiNote } from '../midi/midi';
+import { type MidiNote } from '../src/midi/midi';
 import { MockMIDIKeyboard, createMockMIDIAccess, mockWebMIDIAPI } from './mockMIDI';
 
 describe('Mock MIDI Keyboard', () => {

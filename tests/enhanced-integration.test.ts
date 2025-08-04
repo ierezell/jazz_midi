@@ -4,11 +4,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BaseExerciseController } from '../lib/controllers/BaseExerciseController';
-import { AudioManager } from '../lib/managers/AudioManager';
-import { MIDIManager } from '../lib/managers/MIDIManager';
-import type { NoteEvent, MidiNote } from '../lib/types';
-import { midiNoteToNoteName } from '../midi/midi';
+import { BaseExerciseController } from '../src/lib/controllers/BaseExerciseController';
+import { AudioManager } from '../src/lib/managers/AudioManager';
+import { MIDIManager } from '../src/lib/managers/MIDIManager';
+import type { MidiNote, NoteEvent } from '../src/lib/types';
+import { midiNoteToNoteName } from '../src/midi/midi';
 import { createMockMIDIAccess, MockMIDIKeyboard } from './mockMIDI';
 
 // Create a concrete implementation for testing
@@ -16,6 +16,12 @@ class TestExerciseController extends BaseExerciseController {
 	private expectedNotes: MidiNote[] = [60, 64, 67]; // C major chord
 
 	processNoteInput(note: NoteEvent): void {
+		// First, update the state properly by adding the note event
+		this.state.noteEvents = [note, ...this.state.noteEvents];
+		
+		// Call the protected method from base class through a public interface
+		this.updateStateFromEvents();
+
 		if (note.type === 'on') {
 			if (this.expectedNotes.includes(note.noteNumber)) {
 				// Correct note
@@ -26,6 +32,29 @@ class TestExerciseController extends BaseExerciseController {
 				this.state.feedbackMessage = 'Wrong note!';
 			}
 		}
+	}
+
+	// Public method to trigger state updates
+	updateStateFromEvents(): void {
+		// Track currently pressed notes by processing events chronologically
+		const noteState = new Map<MidiNote, boolean>();
+
+		// Sort events by time (newest first, so reverse to get oldest first)
+		const sortedEvents = [...this.state.noteEvents].reverse();
+
+		// Process events in chronological order
+		for (const event of sortedEvents) {
+			if (event.type === 'on') {
+				noteState.set(event.noteNumber, true);
+			} else if (event.type === 'off') {
+				noteState.set(event.noteNumber, false);
+			}
+		}
+
+		// Only include notes that are currently pressed
+		this.state.midiNotes = Array.from(noteState.entries())
+			.filter(([_, isPressed]) => isPressed)
+			.map(([noteNumber, _]) => noteNumber);
 	}
 
 	getExpectedNotes(): MidiNote[] {

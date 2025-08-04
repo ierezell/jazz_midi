@@ -30,8 +30,8 @@
 		showLabels = false
 	}: InteractiveKeyboardProps = $props();
 
-	let w = $state(10);
-	let h = $state(10);
+	let clientWidth = $state(10);
+	let clientHeight = $state(10);
 
 	let keys = [...Array(octaves * 12 + 1).keys()].map(
 		(i) => i + (middleC - Math.floor(octaves / 2) * 12)
@@ -39,7 +39,7 @@
 	const totalKeys = 12 * octaves;
 
 	// Create a lookup map for chord tone info
-	let chordToneMap = $derived.by(() => {
+	let chordToneMidiMap = $derived.by(() => {
 		const map = new Map<number, ChordToneInfo>();
 		chordToneInfo.forEach((info) => {
 			map.set(info.noteNumber, info);
@@ -48,17 +48,17 @@
 	});
 </script>
 
-<div class="keyboard" bind:clientWidth={w} bind:clientHeight={h}>
+<div class="keyboard" bind:clientWidth bind:clientHeight>
 	{#each keys as note}
-		{@const chordTone = chordToneMap.get(note)}
+		{@const chordTone = chordToneMidiMap.get(note)}
 		{@const isPressed = midiNotes.includes(note as MidiNote)}
 		{@const isWrong =
 			isPressed && expectedNotes.length > 0 && !expectedNotes.includes(note as MidiNote)}
 		<Key
 			noteNum={note}
 			pressed={isPressed}
-			keyWidth={w / totalKeys}
-			keyHeight={h}
+			keyWidth={clientWidth / totalKeys}
+			keyHeight={clientHeight}
 			interactive={false}
 			chordToneRole={chordTone?.role ?? 'none'}
 			chordToneColor={chordTone?.color ?? 'transparent'}
