@@ -4,8 +4,8 @@ import {
 	createChordToneMapping,
 	DEFAULT_CHORD_TONE_COLORS,
 	getChordToneColor
-} from '../src/lib/types/chordTones';
-import type { MidiNote } from '../src/midi/midi';
+} from './chordTones';
+import type { MidiNote } from '../../midi/midi';
 
 describe('Chord Tone System', () => {
 	const testChord = {
@@ -42,15 +42,15 @@ describe('Chord Tone System', () => {
 
 		expect(mapping.length).toBe(13); // 60 to 72 inclusive
 
-		const rootNote = mapping.find((m) => m.noteNumber === 60);
+		                const rootNote = mapping.find((m: { noteNumber: number }) => m.noteNumber === 60);
 		expect(rootNote?.role).toBe('root');
 		expect(rootNote?.color).toBe(DEFAULT_CHORD_TONE_COLORS.root);
 
-		const thirdNote = mapping.find((m) => m.noteNumber === 64);
+		                const thirdNote = mapping.find((m: { noteNumber: number }) => m.noteNumber === 64);
 		expect(thirdNote?.role).toBe('third');
 		expect(thirdNote?.color).toBe(DEFAULT_CHORD_TONE_COLORS.third);
 
-		const nonChordNote = mapping.find((m) => m.noteNumber === 62);
+		                const nonChordNote = mapping.find((m: { noteNumber: number }) => m.noteNumber === 62);
 		expect(nonChordNote?.role).toBe('none');
 		expect(nonChordNote?.color).toBe(DEFAULT_CHORD_TONE_COLORS.none);
 	});

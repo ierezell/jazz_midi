@@ -8,23 +8,23 @@
 	import { userStatsService } from '../../lib/services/UserStatsService';
 	import type {
 		BaseExerciseState,
-		ChordToneInfo,
 		MidiNote,
 		Note,
 		NoteEvent,
-		NoteFullName
-	} from '../../lib/types';
-	import { createChordToneMapping } from '../../lib/types';
+		NoteFullName,
+		ChordType
+	} from '$lib/types';
 	import {
 		AllChordTypes,
 		AllNotes,
 		chords,
 		majorScales,
-		midiNoteToNoteName,
 		minorScales,
 		NoteToMidi,
-		type ChordType
-	} from '../../midi/midi';
+		midiNoteToNoteName,
+		MusicTheoryUtils,
+		type ChordToneInfo
+	} from '$lib/core';
 
 	// Exercise types
 	type ExerciseType = 'chord' | 'scale-major' | 'scale-minor' | 'ii-v-i';
@@ -65,7 +65,7 @@
 			currentExercise.chordType || 'maj7',
 			currentExercise.inversion || 0
 		);
-		return createChordToneMapping(chord);
+		return MusicTheoryUtils.Chord.createChordToneMapping(chord, rootMidi, currentExercise.chordType || 'maj7', currentExercise.inversion || 0);
 	});
 
 	// Exercise state for BaseExercise

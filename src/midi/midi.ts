@@ -719,7 +719,10 @@ export type ChordType =
 	| 'diminished'
 	| 'augmented'
 	| 'sus2'
-	| 'sus4';
+	| 'sus4'
+	| 'dom7'
+	| 'half-dim7'
+	| 'dim7';
 
 export const AllChordTypes: ChordType[] = [
 	'major',
@@ -730,7 +733,10 @@ export const AllChordTypes: ChordType[] = [
 	'diminished',
 	'augmented',
 	'sus2',
-	'sus4'
+	'sus4',
+	'dom7',
+	'half-dim7',
+	'dim7'
 ];
 
 export type Chord = {
@@ -876,19 +882,26 @@ export const chords = (
 			chord = [rootMidi, minorThird, perfectFifth, minorSeventh] as MidiNote[];
 			break;
 		case '7':
+		case 'dom7':
 			chord = [rootMidi, majorThird, perfectFifth, minorSeventh] as MidiNote[];
 			break;
 		case 'diminished':
-			chord = [rootMidi, minorThird, flatFifth, diminishedSeventh] as MidiNote[];
+			chord = [rootMidi, minorThird, flatFifth] as MidiNote[];
 			break;
 		case 'augmented':
-			chord = [rootMidi, majorThird, augmentedFifth, minorSeventh] as MidiNote[];
+			chord = [rootMidi, majorThird, augmentedFifth] as MidiNote[];
 			break;
 		case 'sus2':
-			chord = [rootMidi, second, perfectFifth, minorSeventh] as MidiNote[];
+			chord = [rootMidi, second, perfectFifth] as MidiNote[];
 			break;
 		case 'sus4':
-			chord = [rootMidi, fourth, perfectFifth, minorSeventh] as MidiNote[];
+			chord = [rootMidi, fourth, perfectFifth] as MidiNote[];
+			break;
+		case 'dim7':
+			chord = [rootMidi, minorThird, flatFifth, diminishedSeventh] as MidiNote[];
+			break;
+		case 'half-dim7':
+			chord = [rootMidi, minorThird, flatFifth, minorSeventh] as MidiNote[];
 			break;
 		default:
 			chord = [rootMidi] as MidiNote[];

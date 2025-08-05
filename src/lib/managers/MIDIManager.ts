@@ -14,9 +14,29 @@ import {
 	type VirtualMidiInput
 } from '../../midi/virtualMidi';
 import { DEFAULT_MIDI_CONFIG } from '../config';
-import type { MIDIConfiguration, MIDIEventHandlers } from '../types';
+import type { MIDIConfiguration, MIDIEventHandlers, NoteEvent } from '../types';
 
-export class MIDIManager {
+export interface IMIDIManager {
+	initialize(): Promise<boolean>;
+	connectMIDI(): Promise<boolean>;
+	isConnectedToMIDI(): boolean;
+	setEventHandlers(handlers: Partial<MIDIEventHandlers>): void;
+	onError(callback: (error: Error) => void): void;
+	toggleVirtualKeyboard(enabled: boolean): void;
+	setupVirtualKeyboard(): void;
+	getMIDIDevices(): { inputs: MIDIInput[]; outputs: MIDIOutput[] };
+	updateConfig(newConfig: Partial<MIDIConfiguration>): void;
+	getConfig(): MIDIConfiguration;
+	cleanup(): void;
+	reset(): void;
+	connect(callback: (event: NoteEvent) => void): void;
+	disconnect(): void;
+	enableDebugMode(): void;
+	disableDebugMode(): void;
+	resetExercise(): void;
+}
+
+export class MIDIManager implements IMIDIManager {
 	private midiAccess: MIDIAccess | null = null;
 	private virtualMidi: VirtualMidiInput | null = null;
 	private keyboardCleanup: (() => void) | null = null;
@@ -241,6 +261,34 @@ export class MIDIManager {
 	reset(): void {
 		this.cleanup();
 		this.config = { ...DEFAULT_MIDI_CONFIG };
+	}
+
+	connect(callback: (event: NoteEvent) => void): void {
+		this.setEventHandlers({
+			onNoteOn: callback,
+			onNoteOff: callback
+		});
+	}
+
+	disconnect(): void {
+		this.cleanup();
+	}
+
+	enableDebugMode(): void {
+		if (!this.virtualMidi) {
+			this.setupVirtualKeyboard();
+		}
+	}
+
+	disableDebugMode(): void {
+		this.cleanupVirtualKeyboard();
+	}
+
+	resetExercise(): void {
+		this.eventHandlers = {};
+		if (this.virtualMidi) {
+			this.virtualMidi.releaseAllKeys();
+		}
 	}
 }
 

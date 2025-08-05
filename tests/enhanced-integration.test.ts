@@ -6,7 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaseExerciseController } from '../src/lib/controllers/BaseExerciseController';
 import { AudioManager } from '../src/lib/managers/AudioManager';
-import { MIDIManager } from '../src/lib/managers/MIDIManager';
+import { MIDIManager, type IMIDIManager } from '../src/lib/managers/MIDIManager';
 import type { MidiNote, NoteEvent } from '../src/lib/types';
 import { midiNoteToNoteName } from '../src/midi/midi';
 import { createMockMIDIAccess, MockMIDIKeyboard } from './mockMIDI';
@@ -98,7 +98,7 @@ function createNoteEvent(
 describe('Enhanced Integration Tests', () => {
 	let exerciseController: TestExerciseController;
 	let audioManager: AudioManager;
-	let midiManager: MIDIManager;
+	let midiManager: IMIDIManager;
 	let mockKeyboard: MockMIDIKeyboard;
 
 	beforeEach(async () => {

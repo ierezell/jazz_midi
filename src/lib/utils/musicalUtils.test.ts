@@ -28,6 +28,9 @@ describe('ChordUtils', () => {
 			expect(ChordUtils.getChordSymbol('C', 'minor')).toBe('Cm');
 			expect(ChordUtils.getChordSymbol('C', 'maj7')).toBe('Cmaj7');
 			expect(ChordUtils.getChordSymbol('F', '7')).toBe('F7');
+			expect(ChordUtils.getChordSymbol('D', 'dim7')).toBe('Ddim7');
+			expect(ChordUtils.getChordSymbol('E', 'half-dim7')).toBe('Eø');
+			expect(ChordUtils.getChordSymbol('G', 'dom7')).toBe('G7');
 		});
 	});
 
@@ -44,6 +47,20 @@ describe('ChordUtils', () => {
 			const result = ChordUtils.identifyChord(notes);
 			expect(result?.root).toBe('C');
 			expect(result?.chordType).toBe('minor');
+		});
+
+		it('should identify diminished seventh chord', () => {
+			const notes: MidiNote[] = [60, 63, 66, 69]; // C, Eb, Gb, Bbb
+			const result = ChordUtils.identifyChord(notes);
+			expect(result?.root).toBe('C');
+			expect(result?.chordType).toBe('dim7');
+		});
+
+		it('should identify half-diminished seventh chord', () => {
+			const notes: MidiNote[] = [60, 63, 66, 70]; // C, Eb, Gb, Bb
+			const result = ChordUtils.identifyChord(notes);
+			expect(result?.root).toBe('C');
+			expect(result?.chordType).toBe('half-dim7');
 		});
 
 		it('should return null for insufficient notes', () => {

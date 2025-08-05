@@ -4,7 +4,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MIDIEventHandlers } from '../types';
-import { midiManager, MIDIManager } from './MIDIManager';
+import { midiManager, MIDIManager, type IMIDIManager } from './MIDIManager';
 
 // Mock MIDI utilities
 vi.mock('../../midi/midiUtils', () => ({
@@ -38,7 +38,7 @@ vi.mock('../../midi/virtualMidi', () => ({
 }));
 
 describe('MIDIManager', () => {
-	let manager: MIDIManager;
+	let manager: IMIDIManager;
 	let mockEventHandlers: MIDIEventHandlers;
 
 	beforeEach(() => {

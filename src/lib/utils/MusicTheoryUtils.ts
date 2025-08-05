@@ -86,7 +86,10 @@ export class ChordUtils {
 			maj7: 'maj7',
 			min7: 'm7',
 			'7': '7',
+			dom7: '7',
 			diminished: '°',
+			'dim7': '°7',
+			'half-dim7': 'ø',
 			augmented: '+',
 			sus2: 'sus2',
 			sus4: 'sus4'
@@ -105,7 +108,10 @@ export class ChordUtils {
 			maj7: 'Major Seventh',
 			min7: 'Minor Seventh',
 			'7': 'Dominant Seventh',
-			diminished: 'Diminished',
+			dom7: 'Dominant Seventh',
+			diminished: 'Diminished Triad',
+			'dim7': 'Diminished Seventh',
+			'half-dim7': 'Half-diminished Seventh',
 			augmented: 'Augmented',
 			sus2: 'Suspended Second',
 			sus4: 'Suspended Fourth'
@@ -284,7 +290,10 @@ export class ValidationUtils {
 			'maj7',
 			'min7',
 			'7',
+			'dom7',
 			'diminished',
+			'dim7',
+			'half-dim7',
 			'augmented',
 			'sus2',
 			'sus4'

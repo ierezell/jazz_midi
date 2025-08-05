@@ -113,7 +113,10 @@ export class ChordUtils {
 			maj7: 'maj7',
 			min7: 'm7',
 			'7': '7',
+			dom7: '7',
 			diminished: 'dim',
+			'dim7': '°7',
+			'half-dim7': 'ø',
 			augmented: 'aug',
 			sus2: 'sus2',
 			sus4: 'sus4'

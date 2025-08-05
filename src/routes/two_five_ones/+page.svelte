@@ -6,16 +6,17 @@
 	import { audioManager } from '../../lib/managers/AudioManager';
 	import { midiManager } from '../../lib/managers/MIDIManager';
 	import { userStatsService } from '../../lib/services/UserStatsService';
-	import type {
-		BaseExerciseState,
-		ChordToneInfo,
-		MidiNote,
-		Note,
-		NoteEvent,
-		NoteFullName
-	} from '../../lib/types';
-	import { createChordToneMapping } from '../../lib/types';
-	import { chords, midiNoteToNoteName, MidiToNote, NoteToMidi } from '../../midi/midi';
+	import type { BaseExerciseState, MidiNote, Note, NoteEvent, NoteFullName } from '$lib/types';
+	import {
+		AllNotes,
+		chords,
+		getMidiNote,
+		MidiToNote,
+		NoteToMidi,
+		midiNoteToNoteName,
+		MusicTheoryUtils,
+		type ChordToneInfo
+	} from '$lib/core';
 
 	// ===== STATE =====
 	let selectedNote: Note = $state('C');
@@ -45,25 +46,21 @@
 
 	let progressionChords = $derived([twoChord, fiveChord, oneChord]);
 	let chordNames = $derived([
-		`${MidiToNote[twoChordRoot].slice(0, -1)}m7`,
-		`${MidiToNote[fiveChordRoot].slice(0, -1)}7`,
-		`${MidiToNote[oneChordRoot].slice(0, -1)}maj7`
+		`${MidiToNote[twoChordRoot as MidiNote].slice(0, -1)}m7`,
+		`${MidiToNote[fiveChordRoot as MidiNote].slice(0, -1)}7`,
+		`${MidiToNote[oneChordRoot as MidiNote].slice(0, -1)}maj7`
 	]);
 
 	let currentChord = $derived(progressionChords[currentChordIndex]);
 	let currentExpectedNotes = $derived(
-		[currentChord.root, currentChord.third, currentChord.fifth, currentChord.seventh].filter(
-			(n) => n != null
-		) as MidiNote[]
+		[currentChord.root, currentChord.third, currentChord.fifth, currentChord.seventh].filter(n => n != null) as MidiNote[]
 	);
 
 	// For the full progression
 	let allExpectedNotes = $derived.by(() => {
 		const allNotes: MidiNote[] = [];
-		progressionChords.forEach((chord) => {
-			const notes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
-				(n) => n != null
-			) as MidiNote[];
+		progressionChords.forEach(chord => {
+			const notes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(n => n != null) as MidiNote[];
 			allNotes.push(...notes);
 		});
 		return allNotes;
@@ -72,7 +69,9 @@
 	let expectedNotes = $derived(currentExpectedNotes);
 
 	let chordToneMapping = $derived.by((): ChordToneInfo[] => {
-		return createChordToneMapping(currentChord);
+		const chordType = currentChordIndex === 0 ? 'min7' : currentChordIndex === 1 ? '7' : 'maj7';
+		const rootNote = currentChordIndex === 0 ? twoChordRoot : currentChordIndex === 1 ? fiveChordRoot : oneChordRoot;
+		return MusicTheoryUtils.Chord.createChordToneMapping(currentChord, rootNote, chordType, 0);
 	});
 
 	// Exercise state for BaseExercise
@@ -92,9 +91,7 @@
 
 	// Score properties - show current chord
 	let scoreProps = $derived({
-		notes: currentExpectedNotes.map((note) =>
-			midiNoteToNoteName(note as MidiNote)
-		) as NoteFullName[],
+		notes: currentExpectedNotes.map(note => midiNoteToNoteName(note as MidiNote)) as NoteFullName[],
 		highlightedNotes: currentNotes.map((note) => midiNoteToNoteName(note as MidiNote)),
 		title: `${selectedNote} ii-V-I: ${chordNames[currentChordIndex]} (${currentChordIndex + 1}/3)`
 	});
@@ -133,7 +130,7 @@
 			completed = true;
 			feedbackMessage = `Perfect! Complete ${selectedNote} ii-V-I progression! 🎵✨`;
 			audioManager.playSuccess();
-
+			
 			// Track progress
 			const timeSpent = (Date.now() - startTime) / 1000;
 			const accuracy = Math.round((12 / (12 + mistakes)) * 100); // 12 total notes in progression
@@ -154,8 +151,8 @@
 		if (event.type === 'on') {
 			if (expectedNotes.includes(event.noteNumber)) {
 				const activeCorrect = noteEvents
-					.filter((e) => e.type === 'on')
-					.filter((e) => expectedNotes.includes(e.noteNumber));
+					.filter(e => e.type === 'on')
+					.filter(e => expectedNotes.includes(e.noteNumber));
 
 				if (activeCorrect.length === expectedNotes.length) {
 					nextChord();
@@ -174,7 +171,7 @@
 	onMount(() => {
 		midiManager.connect(onMidiEvent);
 		audioManager.initialize();
-
+		
 		return () => {
 			midiManager.disconnect();
 		};
@@ -196,7 +193,7 @@
 		onDebugToggle={toggleDebug}
 		onReset={resetExercise}
 		customControls={true}
-	>
+	>	
 		<!-- Custom controls for progression exercise -->
 		<div class="progression-controls">
 			<div class="control-group">
@@ -205,14 +202,10 @@
 				</button>
 				<button onclick={resetExercise} class="reset-btn">Reset</button>
 			</div>
-
+			
 			<div class="chord-progress">
 				{#each chordNames as chordName, index}
-					<div
-						class="chord-indicator"
-						class:active={index === currentChordIndex}
-						class:completed={index < currentChordIndex}
-					>
+					<div class="chord-indicator" class:active={index === currentChordIndex} class:completed={index < currentChordIndex}>
 						{chordName}
 					</div>
 				{/each}
@@ -226,8 +219,7 @@
 			</div>
 			<div class="progress">
 				Progress: {Math.round(
-					(currentNotes.filter((n) => expectedNotes.includes(n)).length / expectedNotes.length) *
-						100
+					(currentNotes.filter((n) => expectedNotes.includes(n)).length / expectedNotes.length) * 100
 				)}%
 			</div>
 			<div class="mistakes">
@@ -262,8 +254,7 @@
 		align-items: center;
 	}
 
-	.debug-btn,
-	.reset-btn {
+	.debug-btn, .reset-btn {
 		padding: 0.5rem 1rem;
 		border: 1px solid #ccc;
 		border-radius: 4px;
@@ -277,8 +268,7 @@
 		border-color: var(--color-debug-border, #2196f3);
 	}
 
-	.debug-btn:hover,
-	.reset-btn:hover {
+	.debug-btn:hover, .reset-btn:hover {
 		background: #f5f5f5;
 		transform: translateY(-1px);
 	}
@@ -323,9 +313,7 @@
 		flex-wrap: wrap;
 	}
 
-	.current-chord,
-	.progress,
-	.mistakes {
+	.current-chord, .progress, .mistakes {
 		font-weight: 500;
 	}
 
@@ -340,26 +328,16 @@
 	}
 
 	@keyframes bounce {
-		0%,
-		20%,
-		50%,
-		80%,
-		100% {
-			transform: translateY(0);
-		}
-		40% {
-			transform: translateY(-10px);
-		}
-		60% {
-			transform: translateY(-5px);
-		}
+		0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+		40% { transform: translateY(-10px); }
+		60% { transform: translateY(-5px); }
 	}
 
 	@media (max-width: 768px) {
 		.progression-exercise {
 			padding: 1rem;
 		}
-
+		
 		.progression-controls {
 			flex-direction: column;
 			gap: 1rem;

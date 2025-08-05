@@ -27,6 +27,7 @@ export interface ExerciseSettings {
 	timeLimit?: number;
 	showHints: boolean;
 	enableMetronome: boolean;
+	completed?: boolean;
 }
 
 export interface ExerciseResult {

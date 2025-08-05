@@ -6,20 +6,21 @@
 
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	// Import from the new core system
 	import {
 		configManager,
 		createChordExerciseState,
 		ExerciseStateManager,
-		MusicTheoryUtils
-	} from '../../lib/core';
-	// Import existing MIDI types and functions
-	import { audioManager } from '../../lib/managers/AudioManager';
-	import { midiManager } from '../../lib/managers/MIDIManager';
-	import type { ChordType, Note, NoteEvent } from '../../midi/midi';
-	import { AllChordTypes, AllNotes } from '../../midi/midi';
+		MusicTheoryUtils,
+		type ChordType,
+		type Note,
+		type NoteEvent,
+		AllChordTypes,
+		AllNotes
+	} from '$lib/core';
+	import { audioManager } from '$lib/managers/AudioManager';
+	import { midiManager } from '$lib/managers/MIDIManager';
 	// Import components
-	import BaseExercise from '../../components/BaseExercise.svelte';
+	import BaseExercise from '$components/BaseExercise.svelte';
 
 	// ===== DEMONSTRATION OF NEW ARCHITECTURE =====
 
@@ -33,7 +34,8 @@
 		tempo: 120,
 		allowedMistakes: 3,
 		showHints: true,
-		enableMetronome: false
+		enableMetronome: false,
+		completed: false
 	});
 
 	const stateManager = new ExerciseStateManager(exerciseState);
@@ -208,22 +210,22 @@
 	<!-- Metrics showing the improvements -->
 	<div class="metrics">
 		<div class="metric">
-			<label>Progress:</label>
+			<label for="progress">Progress:</label>
 			<div class="progress-bar">
 				<div class="fill" style="width: {progress}%"></div>
 			</div>
 			<span>{progress}%</span>
 		</div>
 		<div class="metric">
-			<label>Accuracy:</label>
+			<label for="accuracy">Accuracy:</label>
 			<span>{accuracy}%</span>
 		</div>
 		<div class="metric">
-			<label>Mistakes:</label>
+			<label for="mistakes">Mistakes:</label>
 			<span>{currentState.mistakes}</span>
 		</div>
 		<div class="metric">
-			<label>Time:</label>
+			<label for="time">Time:</label>
 			<span>{Math.round(timeElapsed / 1000)}s</span>
 		</div>
 	</div>
@@ -248,7 +250,7 @@
 
 		<div class="control-group">
 			<label>Chord Type:</label>
-			<select value={currentState.chord.type} onchange={(e) => updateChordType(e.target.value)}>
+			<select value={currentState.chord.type} onchange={(e) => updateChordType((e.target as HTMLSelectElement).value as ChordType)}>
 				{#each AllChordTypes as type}
 					<option value={type}>{type}</option>
 				{/each}
@@ -259,7 +261,7 @@
 			<label>Inversion:</label>
 			<select
 				value={currentState.chord.inversion}
-				onchange={(e) => updateInversion(parseInt(e.target.value))}
+				onchange={(e) => updateInversion(parseInt((e.target as HTMLSelectElement).value) as 0 | 1 | 2 | 3)}
 			>
 				<option value={0}>Root</option>
 				<option value={1}>1st</option>
@@ -270,7 +272,7 @@
 
 		<div class="control-group">
 			<label>Voicing:</label>
-			<select value={currentState.chord.voicing} onchange={(e) => updateVoicing(e.target.value)}>
+			<select value={currentState.chord.voicing} onchange={(e) => updateVoicing((e.target as HTMLSelectElement).value as 'full' | 'left-hand' | 'right-hand' | 'split')}>
 				<option value="full">Full</option>
 				<option value="left-hand">Left Hand</option>
 				<option value="right-hand">Right Hand</option>
@@ -309,7 +311,7 @@
 			showLabels: currentState.ui.showNoteNames
 		}}
 		scoreProps={{
-			title: chordSymbol,
+			title: chordSymbol.toString(),
 			showClefs: true
 		}}
 		onNoteSelect={updateKey}

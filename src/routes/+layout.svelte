@@ -5,7 +5,7 @@
 	import logo from '$lib/images/svelte-logo.svg';
 	import { userStatsService } from '$lib/services/UserStatsService';
 	import { onDestroy, onMount } from 'svelte';
-	import '../app.css';
+	import '../styles/app.css';
 	let { children } = $props();
 
 	// Track practice sessions

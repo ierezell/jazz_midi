@@ -172,7 +172,10 @@ export class ChordExerciseController extends BaseExerciseController {
 			maj7: 'maj7',
 			min7: 'm7',
 			'7': '7',
+			dom7: '7',
 			diminished: '°',
+			'dim7': '°7',
+			'half-dim7': 'ø',
 			augmented: '+',
 			sus2: 'sus2',
 			sus4: 'sus4'

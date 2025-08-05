@@ -29,7 +29,8 @@ export abstract class BaseExerciseController {
 			errorCount: 0,
 			showNoteNames: false,
 			showKeyboard: false,
-			feedbackMessage: ''
+			feedbackMessage: '',
+			completed: false
 		};
 
 		this.setupMIDIHandlers();

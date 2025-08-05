@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MidiNote, NoteEvent } from '../src/midi/midi';
 import { chords, getScale } from '../src/midi/midi';
 import { FrequencyCalculator, IntervalCalculator, safeGetMidiNote } from '../src/midi/midiUtils';
-import { MockMIDIKeyboard } from '../test/mockMIDI';
+import { MockMIDIKeyboard } from './mockMIDI';
 
 describe('MIDI Integration Tests', () => {
 	let mockKeyboard: MockMIDIKeyboard;
@@ -13,7 +13,7 @@ describe('MIDI Integration Tests', () => {
 		capturedEvents = [];
 
 		// Set up event capture
-		mockKeyboard.addNoteEventCallback((event) => {
+		                mockKeyboard.addNoteEventCallback((event: NoteEvent) => {
 			capturedEvents.push(event);
 		});
 	});
@@ -144,7 +144,7 @@ describe('MIDI Integration Tests', () => {
 	describe('Error Handling Integration', () => {
 		it('should gracefully handle invalid MIDI messages', () => {
 			const callback = vi.fn();
-			mockKeyboard.setMIDICallback((event) => {
+			                        mockKeyboard.setMIDICallback((event: MIDIMessageEvent) => {
 				const result = safeGetMidiNote(event);
 				callback(result);
 			});

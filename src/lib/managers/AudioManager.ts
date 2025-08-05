@@ -16,6 +16,13 @@ export class AudioManager {
 	}
 
 	/**
+	 * Initialize audio system
+	 */
+	async initialize(): Promise<void> {
+		await this.preloadSounds();
+	}
+
+	/**
 	 * Preload audio files
 	 */
 	private async preloadSounds(): Promise<void> {
