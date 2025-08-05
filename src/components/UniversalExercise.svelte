@@ -1,18 +1,17 @@
 <script lang="ts">
-import type { ChordType, MidiNote, Note, NoteEvent, NoteFullName } from '$lib/types';
-import { audioManager } from '$lib/managers/AudioManager';
-import { midiManager } from '$lib/managers/MIDIManager';
-import { userStatsService } from '$lib/services/UserStatsService';
-import { onDestroy, onMount } from 'svelte';
-import { chords, NoteToMidi, majorScales, MidiToNote } from '$lib/core';
-
-interface ExerciseResult {
-    success: boolean;
-    timeElapsed: number;
-    mistakes: number;
-    accuracy: number;
-    score: number;
-}
+	import { chords, majorScales, MidiToNote, NoteToMidi } from '$lib/core';
+	import { audioManager } from '$lib/managers/AudioManager';
+	import { midiManager } from '$lib/managers/MIDIManager';
+	import { userStatsService } from '$lib/services/UserStatsService';
+	import type {
+		ChordType,
+		ExerciseResult,
+		MidiNote,
+		Note,
+		NoteEvent,
+		NoteFullName
+	} from '$lib/types';
+	import { onDestroy, onMount } from 'svelte';
 	// Component imports
 	import DebugPanel from './DebugPanel.svelte';
 	import InteractiveKeyboard from './keyboard/InteractiveKeyboard.svelte';
@@ -149,7 +148,7 @@ interface ExerciseResult {
 		voicing: string
 	): MidiNote[] {
 		const rootMidi = NoteToMidi[`${root}4` as NoteFullName];
-		const chord = chords(rootMidi, chordType, inversion);
+		const chord = chords(rootMidi, chordType, inversion as 0 | 1 | 2 | 3);
 
 		let notes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
 			(n) => n !== undefined
@@ -174,8 +173,10 @@ interface ExerciseResult {
 
 	function getScaleNotes(root: Note, sequential: boolean): MidiNote[] {
 		const scale = majorScales[root];
-		const middleScale = scale.map((note: NoteFullName) => note.slice(0, -1) + '4' as NoteFullName).slice(0, 8);
-		return middleScale.map((note) => NoteToMidi[note]);
+		const middleScale = scale
+			.map((note: NoteFullName) => (note.slice(0, -1) + '4') as NoteFullName)
+			.slice(0, 8);
+		return middleScale.map((note: NoteFullName) => NoteToMidi[note]);
 	}
 
 	function getProgressionNotes(): MidiNote[] {
@@ -235,12 +236,13 @@ interface ExerciseResult {
 		const timeElapsed = Date.now() - startTime;
 		const accuracy = Math.round(((expectedNotes.length - mistakes) / expectedNotes.length) * 100);
 
-		const result = {
+		const result: ExerciseResult = {
 			success,
-			timeElapsed,
-			mistakes,
+			completedNotes: currentNotes,
+			expectedNotes: expectedNotes,
 			accuracy,
-			score: Math.max(0, accuracy - mistakes * 5)
+			timeElapsed,
+			errorsCount: mistakes
 		};
 
 		// Create exercise result for statistics tracking
@@ -251,7 +253,7 @@ interface ExerciseResult {
 			accuracy,
 			timeElapsed,
 			mistakes,
-			score: result.score,
+			score: Math.max(0, accuracy - mistakes * 5),
 			timestamp: new Date()
 		};
 
@@ -388,7 +390,7 @@ Eliminates duplication across chord, scale, and progression exercises */
 		{#if showScore}
 			<div class="score-container">
 				<Score
-					leftHand={type === 'chord' && voicing !== 'right-hand' 
+					leftHand={type === 'chord' && voicing !== 'right-hand'
 						? [expectedNotes.slice(0, 2).map((n) => MidiToNote[n])]
 						: []}
 					rightHand={type === 'chord' && voicing !== 'left-hand'
@@ -406,8 +408,8 @@ Eliminates duplication across chord, scale, and progression exercises */
 					midiNotes={currentNotes}
 					middleC={keyboardRange.middleC}
 					octaves={keyboardRange.octaves}
-					debugMode={debugMode}
-					expectedNotes={expectedNotes}
+					{debugMode}
+					{expectedNotes}
 					showLabels={showNoteNames}
 				/>
 			</div>

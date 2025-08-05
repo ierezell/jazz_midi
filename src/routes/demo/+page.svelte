@@ -5,22 +5,22 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
 	import {
+		AllChordTypes,
+		AllNotes,
 		configManager,
 		createChordExerciseState,
 		ExerciseStateManager,
 		MusicTheoryUtils,
 		type ChordType,
 		type Note,
-		type NoteEvent,
-		AllChordTypes,
-		AllNotes
+		type NoteEvent
 	} from '$lib/core';
 	import { audioManager } from '$lib/managers/AudioManager';
 	import { midiManager } from '$lib/managers/MIDIManager';
+	import { onDestroy, onMount } from 'svelte';
 	// Import components
-	import BaseExercise from '$components/BaseExercise.svelte';
+	import BaseExercise from '../../components/BaseExercise.svelte';
 
 	// ===== DEMONSTRATION OF NEW ARCHITECTURE =====
 
@@ -28,14 +28,13 @@
 	const config = configManager.getConfig();
 	const exerciseConfig = configManager.getSection('exercise');
 
-	// 2. Exercise State Management (unified across all exercise types)
+	// Exercise settings (remove completed property)
 	const exerciseState = createChordExerciseState('demo-chord', {
 		key: 'C',
 		tempo: 120,
 		allowedMistakes: 3,
 		showHints: true,
-		enableMetronome: false,
-		completed: false
+		enableMetronome: false
 	});
 
 	const stateManager = new ExerciseStateManager(exerciseState);
@@ -52,8 +51,11 @@
 		return unsubscribe;
 	});
 
-	// 4. Using consolidated utilities
+	// 4. Using consolidated utilities (with type guards)
 	let expectedNotes = $derived.by(() => {
+		// Type guard to ensure we're working with a chord exercise
+		if (currentState.type !== 'chord') return [];
+
 		// This replaces all the duplicate chord calculation logic
 		return MusicTheoryUtils.Chord.getChordNotes(
 			currentState.settings.key,
@@ -69,6 +71,7 @@
 	});
 
 	let chordSymbol = $derived(() => {
+		if (currentState.type !== 'chord') return 'Unknown';
 		return MusicTheoryUtils.Chord.getChordSymbol(
 			currentState.settings.key,
 			currentState.chord.type
@@ -105,8 +108,9 @@
 		stateManager.addNoteEvent(note);
 	}
 
-	// 6. Simplified control handlers
+	// 6. Simplified control handlers with type guards
 	function updateChordType(type: ChordType): void {
+		if (currentState.type !== 'chord') return;
 		// Type-safe state updates
 		stateManager.updateState({
 			chord: { ...currentState.chord, type }
@@ -115,13 +119,15 @@
 	}
 
 	function updateInversion(inversion: 0 | 1 | 2 | 3): void {
+		if (currentState.type !== 'chord') return;
 		stateManager.updateState({
 			chord: { ...currentState.chord, inversion }
 		} as any);
 		stateManager.setExpectedNotes(expectedNotes);
 	}
 
-	function updateVoicing(voicing: typeof currentState.chord.voicing): void {
+	function updateVoicing(voicing: 'close' | 'open' | 'drop2' | 'drop3' | 'shell'): void {
+		if (currentState.type !== 'chord') return;
 		stateManager.updateState({
 			chord: { ...currentState.chord, voicing }
 		} as any);
@@ -201,8 +207,8 @@
 	<div class="exercise-info">
 		<h2 class="chord-display">{chordSymbol}</h2>
 		<div class="exercise-details">
-			<span>Voicing: {currentState.chord.voicing}</span>
-			<span>Inversion: {currentState.chord.inversion}</span>
+			<span>Voicing: {currentState.type === 'chord' ? currentState.chord.voicing : 'N/A'}</span>
+			<span>Inversion: {currentState.type === 'chord' ? currentState.chord.inversion : 'N/A'}</span>
 			<span>Status: {currentState.status}</span>
 		</div>
 	</div>
@@ -240,8 +246,12 @@
 	<!-- Controls demonstrating the clean API -->
 	<div class="controls">
 		<div class="control-group">
-			<label>Key:</label>
-			<select value={currentState.settings.key} onchange={(e) => updateKey(e.target.value)}>
+			<label for="key-select">Key:</label>
+			<select
+				id="key-select"
+				value={currentState.settings.key}
+				onchange={(e) => updateKey((e.target as HTMLSelectElement).value as Note)}
+			>
 				{#each AllNotes as note}
 					<option value={note}>{note}</option>
 				{/each}
@@ -249,8 +259,12 @@
 		</div>
 
 		<div class="control-group">
-			<label>Chord Type:</label>
-			<select value={currentState.chord.type} onchange={(e) => updateChordType((e.target as HTMLSelectElement).value as ChordType)}>
+			<label for="chord-type-select">Chord Type:</label>
+			<select
+				id="chord-type-select"
+				value={currentState.type === 'chord' ? currentState.chord.type : 'maj7'}
+				onchange={(e) => updateChordType((e.target as HTMLSelectElement).value as ChordType)}
+			>
 				{#each AllChordTypes as type}
 					<option value={type}>{type}</option>
 				{/each}
@@ -258,10 +272,12 @@
 		</div>
 
 		<div class="control-group">
-			<label>Inversion:</label>
+			<label for="inversion-select">Inversion:</label>
 			<select
-				value={currentState.chord.inversion}
-				onchange={(e) => updateInversion(parseInt((e.target as HTMLSelectElement).value) as 0 | 1 | 2 | 3)}
+				id="inversion-select"
+				value={currentState.type === 'chord' ? currentState.chord.inversion : 0}
+				onchange={(e) =>
+					updateInversion(parseInt((e.target as HTMLSelectElement).value) as 0 | 1 | 2 | 3)}
 			>
 				<option value={0}>Root</option>
 				<option value={1}>1st</option>
@@ -271,12 +287,20 @@
 		</div>
 
 		<div class="control-group">
-			<label>Voicing:</label>
-			<select value={currentState.chord.voicing} onchange={(e) => updateVoicing((e.target as HTMLSelectElement).value as 'full' | 'left-hand' | 'right-hand' | 'split')}>
-				<option value="full">Full</option>
-				<option value="left-hand">Left Hand</option>
-				<option value="right-hand">Right Hand</option>
-				<option value="split">Split</option>
+			<label for="voicing-select">Voicing:</label>
+			<select
+				id="voicing-select"
+				value={currentState.type === 'chord' ? currentState.chord.voicing : 'close'}
+				onchange={(e) =>
+					updateVoicing(
+						(e.target as HTMLSelectElement).value as 'close' | 'open' | 'drop2' | 'drop3' | 'shell'
+					)}
+			>
+				<option value="close">Close</option>
+				<option value="open">Open</option>
+				<option value="drop2">Drop 2</option>
+				<option value="drop3">Drop 3</option>
+				<option value="shell">Shell</option>
 			</select>
 		</div>
 
@@ -298,7 +322,8 @@
 			errorCount: currentState.mistakes,
 			showNoteNames: currentState.ui.showNoteNames,
 			showKeyboard: currentState.ui.showKeyboard,
-			feedbackMessage: currentState.feedback.message
+			feedbackMessage: currentState.feedback.message,
+			completed: currentState.status === 'completed'
 		}}
 		exerciseTitle="Chord Practice (Improved)"
 		exerciseDescription="Demonstrating the new consolidated architecture"

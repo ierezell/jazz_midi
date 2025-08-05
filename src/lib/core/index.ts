@@ -26,3 +26,12 @@ export * from '../utils/MusicTheoryUtils';
 // Re-export existing managers for backward compatibility
 export { audioManager } from '../managers/AudioManager';
 export { midiManager } from '../managers/MIDIManager';
+
+// Re-export MIDI utilities and types for convenience
+export {
+	AllChordTypes, AllNotes, chords, getMidiNote, majorScales, midiNoteToNoteName, MidiToNote, minorScales,
+	NoteToMidi
+} from '../../midi/midi';
+
+// Re-export additional types
+export type { ChordToneInfo } from '../types/chordTones';

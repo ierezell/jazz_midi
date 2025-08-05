@@ -1,30 +1,30 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import BaseExercise from '../../components/BaseExercise.svelte';
-	import { audioManager } from '../../lib/managers/AudioManager';
-	import { midiManager } from '../../lib/managers/MIDIManager';
-	import { userStatsService } from '../../lib/services/UserStatsService';
-	import type {
-		BaseExerciseState,
-		MidiNote,
-		Note,
-		NoteEvent,
-		NoteFullName,
-		ChordType
-	} from '$lib/types';
 	import {
 		AllChordTypes,
 		AllNotes,
 		chords,
 		majorScales,
-		minorScales,
-		NoteToMidi,
 		midiNoteToNoteName,
+		minorScales,
 		MusicTheoryUtils,
+		NoteToMidi,
 		type ChordToneInfo
 	} from '$lib/core';
+	import type {
+		BaseExerciseState,
+		ChordType,
+		MidiNote,
+		Note,
+		NoteEvent,
+		NoteFullName
+	} from '$lib/types';
+	import { onMount } from 'svelte';
+	import BaseExercise from '../../components/BaseExercise.svelte';
+	import { audioManager } from '../../lib/managers/AudioManager';
+	import { midiManager } from '../../lib/managers/MIDIManager';
+	import { userStatsService } from '../../lib/services/UserStatsService';
 
 	// Exercise types
 	type ExerciseType = 'chord' | 'scale-major' | 'scale-minor' | 'ii-v-i';
@@ -54,7 +54,7 @@
 
 	// ===== COMPUTED PROPERTIES =====
 	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
-	let expectedNotes = $derived(currentExercise?.expectedNotes || []);
+	let expectedNotes = $derived((currentExercise as Exercise | null)?.expectedNotes || []);
 
 	let chordToneMapping = $derived.by((): ChordToneInfo[] => {
 		if (!currentExercise || currentExercise.type !== 'chord') return [];
@@ -65,7 +65,12 @@
 			currentExercise.chordType || 'maj7',
 			currentExercise.inversion || 0
 		);
-		return MusicTheoryUtils.Chord.createChordToneMapping(chord, rootMidi, currentExercise.chordType || 'maj7', currentExercise.inversion || 0);
+		return MusicTheoryUtils.Chord.createChordToneMapping(
+			chord,
+			rootMidi,
+			currentExercise.chordType || 'maj7',
+			currentExercise.inversion || 0
+		);
 	});
 
 	// Exercise state for BaseExercise
@@ -85,9 +90,9 @@
 
 	// Score properties
 	let scoreProps = $derived({
-		notes: currentExercise?.scoreNotes || [],
+		notes: (currentExercise as Exercise | null)?.scoreNotes || [],
 		highlightedNotes: currentNotes.map((note) => midiNoteToNoteName(note as MidiNote)),
-		title: currentExercise?.description || 'Random Exercise'
+		title: (currentExercise as Exercise | null)?.description || 'Random Exercise'
 	});
 
 	// ===== FUNCTIONS =====
@@ -130,10 +135,10 @@
 			case 'scale-major': {
 				const scaleNotes = majorScales[key];
 				const middleOctaveNotes = Array.from(
-					new Set(scaleNotes.map((note) => note.slice(0, -1) as Note))
+					new Set(scaleNotes.map((note: NoteFullName) => note.slice(0, -1) as Note))
 				);
-				const middleKeyboard = middleOctaveNotes.map((note) => (note + '4') as NoteFullName);
-				const expectedNotes = middleKeyboard.map((note) => NoteToMidi[note]);
+				const middleKeyboard = middleOctaveNotes.map((note: Note) => (note + '4') as NoteFullName);
+				const expectedNotes = middleKeyboard.map((note: NoteFullName) => NoteToMidi[note]);
 
 				return {
 					type,
@@ -146,10 +151,10 @@
 			case 'scale-minor': {
 				const scaleNotes = minorScales[key];
 				const middleOctaveNotes = Array.from(
-					new Set(scaleNotes.map((note) => note.slice(0, -1) as Note))
+					new Set(scaleNotes.map((note: NoteFullName) => note.slice(0, -1) as Note))
 				);
-				const middleKeyboard = middleOctaveNotes.map((note) => (note + '4') as NoteFullName);
-				const expectedNotes = middleKeyboard.map((note) => NoteToMidi[note]);
+				const middleKeyboard = middleOctaveNotes.map((note: Note) => (note + '4') as NoteFullName);
+				const expectedNotes = middleKeyboard.map((note: NoteFullName) => NoteToMidi[note]);
 
 				return {
 					type,

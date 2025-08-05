@@ -56,7 +56,7 @@ export interface ChordExerciseState extends ExerciseState {
 	chord: {
 		type: ChordType;
 		inversion: 0 | 1 | 2 | 3;
-		voicing: 'full' | 'left-hand' | 'right-hand' | 'split';
+		voicing: 'close' | 'open' | 'drop2' | 'drop3' | 'shell';
 	};
 }
 
@@ -406,7 +406,7 @@ export function createChordExerciseState(
 		chord: {
 			type: 'maj7',
 			inversion: 0,
-			voicing: 'full'
+			voicing: 'close'
 		}
 	};
 }

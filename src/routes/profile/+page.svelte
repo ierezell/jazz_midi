@@ -435,10 +435,28 @@
 
 <!-- Export Dialog -->
 {#if showExportDialog}
-	<div class="modal-overlay" onclick={() => (showExportDialog = false)}>
-		<div class="modal" onclick={(e) => e.stopPropagation()}>
+	<div
+		class="modal-overlay"
+		role="button"
+		tabindex="0"
+		onclick={() => (showExportDialog = false)}
+		onkeydown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				showExportDialog = false;
+			}
+		}}
+	>
+		<div
+			class="modal"
+			role="dialog"
+			aria-labelledby="export-dialog-title"
+			tabindex="0"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
 			<div class="modal-header">
-				<h3>Export Your Data</h3>
+				<h3 id="export-dialog-title">Export Your Data</h3>
 				<button onclick={() => (showExportDialog = false)} class="close-btn">×</button>
 			</div>
 			<div class="modal-content">

@@ -28,9 +28,11 @@
 	// Create a lookup map for chord tone info
 	let chordToneMap = $derived.by(() => {
 		const map = new Map<number, ChordToneInfo>();
-		chordToneInfo.forEach((info) => {
-			map.set(info.noteNumber, info);
-		});
+		if (Array.isArray(chordToneInfo)) {
+			chordToneInfo.forEach((info) => {
+				map.set(info.noteNumber, info);
+			});
+		}
 		return map;
 	});
 </script>

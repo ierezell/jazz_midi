@@ -4,15 +4,15 @@
  */
 
 import {
-	AllNotes,
-	chords,
-	majorScales,
-	minorScales,
-	NoteToMidi,
-	type ChordType,
-	type MidiNote,
-	type Note,
-	type NoteFullName
+    AllNotes,
+    chords,
+    majorScales,
+    minorScales,
+    NoteToMidi,
+    type ChordType,
+    type MidiNote,
+    type Note,
+    type NoteFullName
 } from '../../midi/midi';
 
 // ===== CHORD UTILITIES =====
@@ -131,6 +131,29 @@ export class ChordUtils {
 			'iii-vi-ii-V': ['min7', 'min7', 'min7', '7'] as ChordType[],
 			'Giant Steps': ['maj7', '7', 'maj7', '7'] as ChordType[]
 		};
+	}
+
+	/**
+	 * Create chord tone mapping for exercises
+	 */
+	static createChordToneMapping(
+		chord: any, 
+		rootMidi: MidiNote, 
+		chordType: ChordType, 
+		inversion: number
+	): any {
+		// Get chord notes using the existing chords function
+		const chordNotes = chords(rootMidi, chordType, inversion as 0 | 1 | 2 | 3);
+		
+		// Create mapping of chord tones to their roles
+		const mapping = {
+			notes: [chordNotes.root, chordNotes.third, chordNotes.fifth, chordNotes.seventh].filter(n => n !== undefined),
+			roles: ['root', 'third', 'fifth', 'seventh'],
+			type: chordType,
+			inversion
+		};
+		
+		return mapping;
 	}
 }
 
