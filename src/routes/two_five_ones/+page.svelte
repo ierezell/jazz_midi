@@ -165,7 +165,6 @@
 			? `Play ${randomNote} ii-V-I progression`
 			: 'Play each chord in sequence: ii7 - V7 - Imaj7'}
 		initialSelectedNote={randomMode ? randomNote : 'C'}
-		exerciseType="progression"
 		{randomMode}
 		{generateExpectedNotes}
 		{validateNoteEvent}

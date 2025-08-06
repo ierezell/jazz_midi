@@ -19,9 +19,11 @@
 		exerciseTitle: string;
 		exerciseDescription?: string;
 		initialSelectedNote?: Note;
-		exerciseType: 'chord' | 'scale' | 'progression';
+
 		randomMode?: boolean;
 		generateExpectedNotes: (selectedNote: Note, ...args: any[]) => MidiNote[];
+		generateScoreProps?: (selectedNote: Note) => Partial<BaseScoreProps>;
+		generateKeyboardProps?: (selectedNote: Note) => Partial<BaseKeyboardProps>;
 		validateNoteEvent?: (
 			event: NoteEvent,
 			expectedNotes: MidiNote[],
@@ -41,9 +43,11 @@
 		exerciseTitle,
 		exerciseDescription = '',
 		initialSelectedNote = 'C',
-		exerciseType,
+
 		randomMode = false,
 		generateExpectedNotes,
+		generateScoreProps,
+		generateKeyboardProps,
 		validateNoteEvent,
 		isCompleted,
 		scoreProps = {},
@@ -185,6 +189,19 @@
 		chordToneInfo: keyboardProps.chordToneInfo || [],
 		showChordTones: keyboardProps.showChordTones || showChordTones,
 		expectedNotes: expectedNotes,
+		...(generateKeyboardProps
+			? (() => {
+					console.log(
+						'BaseExercise: calling generateKeyboardProps for selectedNote:',
+						selectedNote
+					);
+					const generatedProps = generateKeyboardProps(selectedNote);
+					console.log('BaseExercise: generated keyboard props:', generatedProps);
+					return {
+						...generatedProps
+					};
+				})()
+			: {}),
 		...keyboardProps
 	});
 
@@ -192,7 +209,24 @@
 		leftHand: scoreProps.leftHandNotes || [],
 		rightHand: scoreProps.rightHandNotes || [],
 		selectedNote: selectedNote,
+		...(generateScoreProps
+			? (() => {
+					console.log('BaseExercise: calling generateScoreProps for selectedNote:', selectedNote);
+					const generatedProps = generateScoreProps(selectedNote);
+					console.log('BaseExercise: generated score props:', generatedProps);
+					return {
+						leftHand: generatedProps.leftHandNotes || [],
+						rightHand: generatedProps.rightHandNotes || [],
+						...generatedProps
+					};
+				})()
+			: {}),
 		...scoreProps
+	});
+
+	// Debug log to see final score props
+	$effect(() => {
+		console.log('BaseExercise finalScoreProps changed:', finalScoreProps);
 	});
 
 	function handleNoteSelectEvent(event: Event) {

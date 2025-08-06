@@ -35,6 +35,18 @@
 		return scaleNotes;
 	}
 
+	// Generate score data for notation
+	function generateScorePropsForExercise(selectedNote: Note) {
+		const scaleNotes = generateExpectedNotes(selectedNote);
+		const noteNames = scaleNotes.map((midi) => MidiToNote[midi]);
+
+		return {
+			title: `${selectedNote} Major Scale`,
+			leftHandNotes: [],
+			rightHandNotes: noteNames.map((note) => [note]) // Each scale note as individual note
+		};
+	}
+
 	// Scale-specific validation logic
 	function validateScaleNote(
 		event: NoteEvent,
@@ -139,10 +151,10 @@
 		: sequentialMode
 			? 'Play the scale notes in order'
 			: 'Play all scale notes in any order'}
-	exerciseType="scale"
 	initialSelectedNote={randomMode ? randomNote : undefined}
 	{randomMode}
 	{generateExpectedNotes}
+	generateScoreProps={generateScorePropsForExercise}
 	validateNoteEvent={validateScaleNote}
 	isCompleted={isScaleCompleted}
 	customControls={true}

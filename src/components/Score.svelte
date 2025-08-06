@@ -1,13 +1,19 @@
 <script lang="ts">
+	import type { Note, NoteFullName } from '$lib/types/notes';
 	import { onMount } from 'svelte';
 	import { Factory, Renderer, Voice } from 'vexflow';
-	import type { Note, NoteFullName } from '../lib/midi/midi';
 	interface ScoreProps {
 		leftHand: NoteFullName[][];
 		rightHand: NoteFullName[][];
 		selectedNote: Note;
 	}
 	let { leftHand, rightHand, selectedNote }: ScoreProps = $props();
+
+	// Debug logging to see what props we receive
+	$effect(() => {
+		console.log('Score props updated:', { leftHand, rightHand, selectedNote });
+	});
+
 	const fmt = (group: NoteFullName[][]) =>
 		group?.map((chord) => (chord.length > 1 ? `(${chord.join(' ')})` : chord[0])).join(', ') || '';
 	let stringRightHand = $derived(fmt(rightHand));
@@ -26,6 +32,16 @@
 		} else {
 			height = 340;
 		}
+
+		// Clear the canvas element first
+		const canvas = document.getElementById('output') as HTMLCanvasElement;
+		if (!canvas) return;
+
+		const ctx = canvas.getContext('2d');
+		if (!ctx) return;
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
 		const f: Factory = new Factory({
 			renderer: {
 				elementId: 'output',
@@ -34,8 +50,9 @@
 				height: height
 			}
 		});
-		const score = f.EasyScore({ throwOnError: true });
-		score.set({ stem: 'up' });
+
+		const score = f.EasyScore({ throwOnError: false });
+
 		const spaceBetweenStaves = isMobile ? Math.max(20, width / 40) : width / 35;
 		const system = f.System({
 			width: Math.max(300, width),
@@ -47,49 +64,107 @@
 				autoBeam: true
 			}
 		});
-		if (rightHand && rightHand.length > 0) {
-			system
-				.addStave({
+
+		// Only proceed if we have notes to render
+		if ((!rightHand || rightHand.length === 0) && (!leftHand || leftHand.length === 0)) {
+			console.log('No notes to render, rendering test chord');
+			// Render a test C major chord for debugging
+			const testRightHand = 'C4, E4, G4';
+			try {
+				const stave = system.addStave({
+					voices: [
+						score
+							.voice(score.notes(testRightHand, { clef: 'treble', stem: 'up' }))
+							.setMode(Voice.Mode.SOFT)
+					]
+				});
+				stave.addClef('treble');
+				if (selectedNote) {
+					stave.addKeySignature(selectedNote);
+				}
+				f.draw();
+			} catch (error) {
+				console.error('Error rendering test chord:', error);
+			}
+			return;
+		}
+
+		console.log('Rendering score with notes:', { stringLeftHand, stringRightHand });
+
+		try {
+			if (rightHand && rightHand.length > 0 && stringRightHand) {
+				const stave = system.addStave({
 					voices: [
 						score
 							.voice(score.notes(stringRightHand, { clef: 'treble', stem: 'up' }))
 							.setMode(Voice.Mode.SOFT)
 					]
-				})
-				.addClef('treble')
-				.addKeySignature(selectedNote);
-		}
-		if (leftHand && leftHand.length > 0) {
-			system
-				.addStave({
+				});
+				stave.addClef('treble');
+				if (selectedNote) {
+					stave.addKeySignature(selectedNote);
+				}
+			}
+
+			if (leftHand && leftHand.length > 0 && stringLeftHand) {
+				const stave = system.addStave({
 					voices: [
 						score
 							.voice(score.notes(stringLeftHand, { clef: 'bass', stem: 'down' }))
 							.setMode(Voice.Mode.SOFT)
 					]
-				})
-				.addClef('bass')
-				.addKeySignature(selectedNote);
+				});
+				stave.addClef('bass');
+				if (selectedNote) {
+					stave.addKeySignature(selectedNote);
+				}
+			}
+
+			// Only add connectors if we have both hands
+			if (rightHand && rightHand.length > 0 && leftHand && leftHand.length > 0) {
+				system.addConnector('brace');
+				system.addConnector('singleRight');
+				system.addConnector('singleLeft');
+			}
+
+			f.draw();
+		} catch (error) {
+			console.error('Error rendering VexFlow score:', error);
 		}
-		system.addConnector('brace');
-		system.addConnector('singleRight');
-		system.addConnector('singleLeft');
-		f.draw();
 	}
 	$effect(() => {
-		const container = document.getElementById('score-container');
-		if (container) {
-			renderScore(container.getBoundingClientRect().width);
-		}
-	});
-	onMount(() => {
-		window.addEventListener('resize', () => {
+		// This effect will re-run whenever leftHand, rightHand, or selectedNote changes
+		console.log('Score $effect triggered with props:', { leftHand, rightHand, selectedNote });
+		// Add a small delay to ensure DOM is ready
+		setTimeout(() => {
 			const container = document.getElementById('score-container');
 			if (container) {
-				console.log(`Container width: ${container.getBoundingClientRect().width}`);
-				renderScore(container.getBoundingClientRect().width);
+				const width = container.getBoundingClientRect().width;
+				if (width > 0) {
+					// Ensure container has dimensions
+					renderScore(width);
+				}
 			}
-		});
+		}, 100);
+	});
+	onMount(() => {
+		const handleResize = () => {
+			const container = document.getElementById('score-container');
+			if (container) {
+				const width = container.getBoundingClientRect().width;
+				console.log(`Container width: ${width}`);
+				if (width > 0) {
+					renderScore(width);
+				}
+			}
+		};
+
+		window.addEventListener('resize', handleResize);
+
+		// Clean up event listener
+		return () => {
+			window.removeEventListener('resize', handleResize);
+		};
 	});
 </script>
 

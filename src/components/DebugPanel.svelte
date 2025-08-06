@@ -13,7 +13,6 @@
 		noteEvents?: NoteEvent[];
 		expectedNotes?: MidiNote[];
 		currentNotes?: MidiNote[];
-		exerciseType?: 'chord' | 'scale' | 'progression';
 	}
 	let {
 		virtualMidi,
@@ -21,8 +20,7 @@
 		onToggleDebugMode,
 		noteEvents = [],
 		expectedNotes = [],
-		currentNotes = [],
-		exerciseType = 'chord'
+		currentNotes = []
 	}: DebugPanelProps = $props();
 	let selectedNote: Note = $state('C');
 	let selectedChordType: ChordType = $state('maj7');

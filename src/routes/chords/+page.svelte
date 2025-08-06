@@ -2,7 +2,7 @@
 
 <script lang="ts">
 	import { calculateOptimalRange, chords } from '$lib/MusicTheoryUtils';
-	import { AllChordTypes, NoteToMidi } from '$lib/types/notes.constants';
+	import { AllChordTypes, MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
 	import type {
 		ChordToneColors,
 		ChordToneInfo,
@@ -47,6 +47,72 @@
 			if (randomInversion !== undefined) inversion = randomInversion;
 		}
 	});
+
+	// Generate score data for notation
+	function generateScoreData(selectedNote: Note): {
+		leftHandNotes: NoteFullName[][];
+		rightHandNotes: NoteFullName[][];
+	} {
+		const rootNote = (selectedNote + '4') as NoteFullName;
+		const rootMidi = NoteToMidi[rootNote];
+		const currentChord = chords(rootMidi, chordType, inversion);
+
+		console.log('Generating score data:', {
+			rootNote,
+			rootMidi,
+			currentChord,
+			chordType,
+			voicing,
+			inversion
+		});
+
+		const allChordNotes = [
+			currentChord.root,
+			currentChord.third,
+			currentChord.fifth,
+			currentChord.seventh
+		].filter((note) => note !== undefined) as MidiNote[];
+
+		switch (voicing) {
+			case 'full':
+				// All notes in right hand as a single chord
+				const fullResult = {
+					leftHandNotes: [],
+					rightHandNotes: [allChordNotes.map((midi) => MidiToNote[midi])]
+				};
+				console.log('Full voicing result:', fullResult);
+				return fullResult;
+			case 'left-hand':
+				const leftOnly = [currentChord.root, currentChord.seventh].filter(
+					(note) => note !== undefined
+				) as MidiNote[];
+				return {
+					leftHandNotes: [leftOnly.map((midi) => MidiToNote[midi])],
+					rightHandNotes: []
+				};
+			case 'right-hand':
+				const rightOnly = [currentChord.third, currentChord.fifth];
+				return {
+					leftHandNotes: [],
+					rightHandNotes: [rightOnly.map((midi) => MidiToNote[midi])]
+				};
+			case 'split':
+				const leftHand = [
+					currentChord.root - 12,
+					(currentChord.seventh || currentChord.root) - 12
+				].filter((note) => note >= 24) as MidiNote[];
+				const rightHand = [currentChord.third, currentChord.fifth];
+				return {
+					leftHandNotes: [leftHand.map((midi) => MidiToNote[midi])],
+					rightHandNotes: [rightHand.map((midi) => MidiToNote[midi])]
+				};
+			default:
+				return {
+					leftHandNotes: [],
+					rightHandNotes: [allChordNotes.map((midi) => MidiToNote[midi])]
+				};
+		}
+	}
 
 	// Generate expected notes for a given root note
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
@@ -109,7 +175,7 @@
 		voicing = target.value as typeof voicing;
 	}
 
-	// Derived values for display
+	// Derived values for display and score
 	let chordInfo = $derived.by(() => {
 		const symbols: Record<ChordType, string> = {
 			major: 'M',
@@ -131,6 +197,33 @@
 			inversion: inversion
 		};
 	});
+
+	// Function to get score props with current settings
+	function generateScorePropsForExercise(selectedNote: Note) {
+		try {
+			const scoreData = generateScoreData(selectedNote);
+			console.log('Generated score data:', {
+				selectedNote,
+				chordType,
+				voicing,
+				inversion,
+				scoreData
+			});
+			return {
+				title: chordInfo.name,
+				leftHandNotes: scoreData.leftHandNotes,
+				rightHandNotes: scoreData.rightHandNotes
+			};
+		} catch (error) {
+			console.error('Error generating score data:', error);
+			// Return a default C major chord if there's an error
+			return {
+				title: 'C Major',
+				leftHandNotes: [],
+				rightHandNotes: [['C4', 'E4', 'G4']] as NoteFullName[][]
+			};
+		}
+	}
 
 	function analyzeChordTone(
 		noteNumber: MidiNote,
@@ -195,6 +288,24 @@
 
 		return createChordToneMapping(startNote as MidiNote, endNote as MidiNote, chordObject);
 	}
+
+	// Function to generate keyboard props with current settings
+	function generateKeyboardPropsForExercise(selectedNote: Note) {
+		console.log(
+			'Generating keyboard props for note:',
+			selectedNote,
+			'chordType:',
+			chordType,
+			'inversion:',
+			inversion
+		);
+		const chordToneInfo = createChordToneInfo(selectedNote);
+		console.log('Generated chord tone info:', chordToneInfo);
+		return {
+			chordToneInfo,
+			showChordTones: true
+		};
+	}
 	// Custom completion handler for random mode
 	function onExerciseComplete() {
 		if (randomMode && onRandomComplete) {
@@ -211,15 +322,12 @@
 	exerciseDescription={randomMode
 		? `Play the ${randomNote}${chordType} chord`
 		: 'Practice playing jazz chords with different voicings and inversions'}
-	exerciseType="chord"
 	initialSelectedNote={randomMode ? randomNote : undefined}
 	{randomMode}
 	{generateExpectedNotes}
+	generateScoreProps={generateScorePropsForExercise}
+	generateKeyboardProps={generateKeyboardPropsForExercise}
 	validateNoteEvent={validateChordNote}
-	keyboardProps={{
-		chordToneInfo: [],
-		showChordTones: true
-	}}
 	scoreProps={{
 		title: chordInfo.name
 	}}

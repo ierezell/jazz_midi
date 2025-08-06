@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ChordToneRole } from '../../lib/types/types';
+	import type { ChordToneRole } from '$lib/types/types';
 	let {
 		noteNum,
 		pressed,

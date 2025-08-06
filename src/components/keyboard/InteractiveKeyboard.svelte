@@ -3,29 +3,26 @@
 <script lang="ts">
 	import type { MidiNote } from '$lib/types/notes';
 	import type { ChordToneInfo } from '$lib/types/types';
-	import type { VirtualMidiInput } from '$lib/virtualMidi';
 	import Key from './Key.svelte';
 	interface InteractiveKeyboardProps {
 		midiNotes: MidiNote[];
 		middleC: number;
 		octaves: number;
-		virtualMidi?: VirtualMidiInput;
+
 		debugMode?: boolean;
 		chordToneInfo?: ChordToneInfo[];
 		showChordTones?: boolean;
 		expectedNotes?: MidiNote[];
-		showLabels?: boolean;
 	}
 	let {
 		midiNotes,
 		middleC,
 		octaves,
-		virtualMidi,
+
 		debugMode = false,
 		chordToneInfo = [],
 		showChordTones = false,
-		expectedNotes = [],
-		showLabels = false
+		expectedNotes = []
 	}: InteractiveKeyboardProps = $props();
 	let clientWidth = $state(10);
 	let clientHeight = $state(10);

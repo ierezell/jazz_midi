@@ -1,4 +1,4 @@
-import type { MidiNote } from './midi';
+import type { MidiNote } from '$lib/types/notes';
 export interface VirtualMidiOptions {
 	velocity?: number;
 	channel?: number;
