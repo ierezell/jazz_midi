@@ -1,13 +1,16 @@
 {
-    "cSpell.words": [
-        "fira",
-        "IMIDI",
-        "locrian",
-        "mixolydian",
-        "neoconfetti",
-        "onmidimessage",
-        "vexflow",
-        "voicings",
-        "webmidi"
-    ]
+	"cSpell.words": [
+		"arpeggiated",
+		"Cmaj",
+		"fira",
+		"Imaj",
+		"IMIDI",
+		"locrian",
+		"mixolydian",
+		"neoconfetti",
+		"onmidimessage",
+		"vexflow",
+		"voicings",
+		"webmidi"
+	]
 }

@@ -1,33 +1,25 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import type { Achievement, UserProfile, UserStatistics } from '$lib/services/UserStatsService';
-	import { userStatsService } from '$lib/services/UserStatsService';
+	import type { Achievement, UserProfile, UserStatistics } from '$lib/UserStatsService';
+	import { userStatsService } from '$lib/UserStatsService';
 	import { onMount } from 'svelte';
 	import StatsWidget from '../../components/StatsWidget.svelte';
 	import type { PageData } from './$types';
-
 	let { data }: { data: PageData } = $props();
-
 	let profile = $state<UserProfile>(data.profile);
 	let statistics = $state<UserStatistics>(data.statistics);
 	let achievements = $state<Achievement[]>(data.achievements);
 	let isEditing = $state(false);
 	let showExportDialog = $state(false);
 	let exportData = $state('');
-
-	// Reactive computations
 	let completionRate = $derived(
 		statistics.totalExercises > 0
 			? Math.round((statistics.completedExercises / statistics.totalExercises) * 100)
 			: 0
 	);
-
 	let levelProgress = $derived(Math.round(((profile.experiencePoints % 1000) / 1000) * 100));
-
 	let nextLevelXP = $derived(profile.level * 1000 - profile.experiencePoints);
-
-	// Format time in hours and minutes
 	function formatTime(minutes: number): string {
 		const hours = Math.floor(minutes / 60);
 		const mins = Math.round(minutes % 60);
@@ -36,8 +28,6 @@
 		}
 		return `${mins}m`;
 	}
-
-	// Format date for display
 	function formatDate(date: Date): string {
 		return new Intl.DateTimeFormat('en-US', {
 			year: 'numeric',
@@ -45,8 +35,6 @@
 			day: 'numeric'
 		}).format(date);
 	}
-
-	// Get mastery level color
 	function getMasteryColor(level: string): string {
 		switch (level) {
 			case 'expert':
@@ -59,30 +47,22 @@
 				return '#6c757d';
 		}
 	}
-
-	// Get trend arrow
 	function getTrendArrow(trend: number): string {
 		if (trend > 0) return '↗️';
 		if (trend < 0) return '↘️';
 		return '→';
 	}
-
-	// Edit profile
 	function toggleEdit(): void {
 		isEditing = !isEditing;
 	}
-
 	function saveProfile(): void {
 		userStatsService.updateProfile(profile);
 		isEditing = false;
 	}
-
-	// Export/Import functionality
 	function handleExport(): void {
 		exportData = userStatsService.exportData();
 		showExportDialog = true;
 	}
-
 	function handleImport(event: Event): void {
 		const input = event.target as HTMLInputElement;
 		const file = input.files?.[0];
@@ -91,7 +71,6 @@
 			reader.onload = (e) => {
 				const data = e.target?.result as string;
 				if (userStatsService.importData(data)) {
-					// Refresh data
 					profile = userStatsService.getProfile();
 					statistics = userStatsService.getStatistics();
 					achievements = userStatsService.getAchievements();
@@ -103,20 +82,16 @@
 			reader.readAsText(file);
 		}
 	}
-
 	function copyExportData(): void {
 		navigator.clipboard.writeText(exportData);
 		alert('Data copied to clipboard!');
 	}
-
-	// Subscribe to statistics updates
 	onMount(() => {
 		const unsubscribe = userStatsService.subscribe((newStats) => {
 			statistics = newStats;
 			profile = userStatsService.getProfile();
 			achievements = userStatsService.getAchievements();
 		});
-
 		return () => {
 			unsubscribe();
 		};
@@ -127,9 +102,7 @@
 	<title>Profile - Jazz MIDI</title>
 	<meta name="description" content="Your jazz practice progress and statistics" />
 </svelte:head>
-
 <div class="profile-container">
-	<!-- Header with Profile Info -->
 	<header class="profile-header">
 		<div class="avatar-section">
 			<div class="avatar">
@@ -155,8 +128,6 @@
 				</div>
 			</div>
 		</div>
-
-		<!-- Level Progress -->
 		<div class="level-progress">
 			<div class="progress-header">
 				<span>Level {profile.level}</span>
@@ -167,8 +138,6 @@
 			</div>
 		</div>
 	</header>
-
-	<!-- Quick Stats Overview -->
 	<section class="stats-overview">
 		<div class="stat-card highlight">
 			<div class="stat-icon">🎯</div>
@@ -177,7 +146,6 @@
 				<div class="stat-label">Success Rate</div>
 			</div>
 		</div>
-
 		<div class="stat-card">
 			<div class="stat-icon">📊</div>
 			<div class="stat-content">
@@ -185,7 +153,6 @@
 				<div class="stat-label">Avg Score</div>
 			</div>
 		</div>
-
 		<div class="stat-card">
 			<div class="stat-icon">⏱️</div>
 			<div class="stat-content">
@@ -193,7 +160,6 @@
 				<div class="stat-label">Practice Time</div>
 			</div>
 		</div>
-
 		<div class="stat-card">
 			<div class="stat-icon">🔥</div>
 			<div class="stat-content">
@@ -202,18 +168,13 @@
 			</div>
 		</div>
 	</section>
-
-	<!-- Detailed Stats Widget -->
 	<section class="detailed-stats">
 		<h2>Detailed Progress</h2>
 		<StatsWidget showDetailed={true} />
 	</section>
-
-	<!-- Exercise Type Breakdown -->
 	<section class="exercise-breakdown">
 		<h2>Exercise Performance</h2>
 		<div class="exercise-grid">
-			<!-- Chords -->
 			<div class="exercise-card">
 				<div class="exercise-header">
 					<h3>🎵 Chords</h3>
@@ -247,8 +208,6 @@
 					</div>
 				</div>
 			</div>
-
-			<!-- Scales -->
 			<div class="exercise-card">
 				<div class="exercise-header">
 					<h3>🎼 Scales</h3>
@@ -282,8 +241,6 @@
 					</div>
 				</div>
 			</div>
-
-			<!-- Progressions -->
 			<div class="exercise-card">
 				<div class="exercise-header">
 					<h3>🎸 Progressions</h3>
@@ -319,12 +276,8 @@
 			</div>
 		</div>
 	</section>
-
-	<!-- Mastery Progress -->
 	<section class="mastery-section">
 		<h2>Mastery Progress</h2>
-
-		<!-- Mastered Chords -->
 		{#if statistics.masteredChords.length > 0}
 			<div class="mastery-category">
 				<h3>🎵 Mastered Chords</h3>
@@ -338,8 +291,6 @@
 				</div>
 			</div>
 		{/if}
-
-		<!-- Currently Learning -->
 		{#if statistics.masteredChords.some((c) => c.isLearning)}
 			<div class="mastery-category">
 				<h3>📚 Currently Learning</h3>
@@ -362,8 +313,6 @@
 			</div>
 		{/if}
 	</section>
-
-	<!-- Achievements -->
 	<section class="achievements-section">
 		<h2>🏆 Achievements</h2>
 		<div class="achievements-grid">
@@ -389,8 +338,6 @@
 			{/each}
 		</div>
 	</section>
-
-	<!-- Recent Activity -->
 	{#if statistics.recentSessions.length > 0}
 		<section class="activity-section">
 			<h2>📅 Recent Sessions</h2>
@@ -413,8 +360,6 @@
 			</div>
 		</section>
 	{/if}
-
-	<!-- Data Management -->
 	<section class="data-section">
 		<h2>⚙️ Data Management</h2>
 		<div class="data-actions">
@@ -432,8 +377,6 @@
 		</div>
 	</section>
 </div>
-
-<!-- Export Dialog -->
 {#if showExportDialog}
 	<div
 		class="modal-overlay"
@@ -482,7 +425,6 @@
 		min-height: 100vh;
 		color: white;
 	}
-
 	.profile-header {
 		background: rgba(255, 255, 255, 0.1);
 		backdrop-filter: blur(10px);
@@ -490,14 +432,12 @@
 		padding: 2rem;
 		margin-bottom: 2rem;
 	}
-
 	.avatar-section {
 		display: flex;
 		align-items: center;
 		gap: 2rem;
 		margin-bottom: 2rem;
 	}
-
 	.avatar {
 		width: 120px;
 		height: 120px;
@@ -509,17 +449,14 @@
 		font-size: 3rem;
 		border: 4px solid rgba(255, 255, 255, 0.3);
 	}
-
 	.profile-info {
 		flex: 1;
 	}
-
 	.profile-name {
 		font-size: 2.5rem;
 		font-weight: bold;
 		margin: 0 0 0.5rem 0;
 	}
-
 	.name-input {
 		font-size: 2.5rem;
 		font-weight: bold;
@@ -530,13 +467,11 @@
 		color: white;
 		margin-bottom: 1rem;
 	}
-
 	.edit-actions {
 		display: flex;
 		gap: 1rem;
 		margin-bottom: 1rem;
 	}
-
 	.edit-btn,
 	.save-btn,
 	.cancel-btn {
@@ -548,58 +483,48 @@
 		cursor: pointer;
 		transition: background 0.2s;
 	}
-
 	.edit-btn:hover,
 	.save-btn:hover {
 		background: rgba(255, 255, 255, 0.3);
 	}
-
 	.cancel-btn:hover {
 		background: rgba(220, 53, 69, 0.3);
 	}
-
 	.profile-meta {
 		display: flex;
 		gap: 0.5rem;
 		color: rgba(255, 255, 255, 0.8);
 		font-size: 1.1rem;
 	}
-
 	.level-progress {
 		margin-top: 1rem;
 	}
-
 	.progress-header {
 		display: flex;
 		justify-content: space-between;
 		margin-bottom: 0.5rem;
 		font-weight: 500;
 	}
-
 	.progress-bar {
 		height: 1rem;
 		background: rgba(255, 255, 255, 0.2);
 		border-radius: 0.5rem;
 		overflow: hidden;
 	}
-
 	.progress-bar.small {
 		height: 0.5rem;
 	}
-
 	.progress-fill {
 		height: 100%;
 		background: linear-gradient(90deg, #4caf50, #8bc34a);
 		transition: width 0.3s ease;
 	}
-
 	.stats-overview {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 		gap: 1.5rem;
 		margin-bottom: 2rem;
 	}
-
 	.stat-card {
 		background: rgba(255, 255, 255, 0.1);
 		backdrop-filter: blur(10px);
@@ -610,30 +535,24 @@
 		gap: 1rem;
 		transition: transform 0.2s;
 	}
-
 	.stat-card:hover {
 		transform: translateY(-5px);
 	}
-
 	.stat-card.highlight {
 		background: linear-gradient(135deg, #4caf50, #45a049);
 	}
-
 	.stat-icon {
 		font-size: 2rem;
 	}
-
 	.stat-value {
 		font-size: 2rem;
 		font-weight: bold;
 		margin-bottom: 0.25rem;
 	}
-
 	.stat-label {
 		color: rgba(255, 255, 255, 0.8);
 		font-size: 0.9rem;
 	}
-
 	.exercise-breakdown,
 	.mastery-section,
 	.achievements-section,
@@ -645,7 +564,6 @@
 		padding: 2rem;
 		margin-bottom: 2rem;
 	}
-
 	.exercise-breakdown h2,
 	.mastery-section h2,
 	.achievements-section h2,
@@ -657,33 +575,28 @@
 		align-items: center;
 		gap: 0.5rem;
 	}
-
 	.exercise-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 		gap: 1.5rem;
 	}
-
 	.exercise-card {
 		background: rgba(255, 255, 255, 0.1);
 		border-radius: 0.75rem;
 		padding: 1.5rem;
 	}
-
 	.exercise-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 1rem;
 	}
-
 	.exercise-header h3 {
 		margin: 0;
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 	}
-
 	.mastery-badge {
 		padding: 0.25rem 0.75rem;
 		border-radius: 1rem;
@@ -692,93 +605,77 @@
 		color: white;
 		text-transform: capitalize;
 	}
-
 	.exercise-stats {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 	}
-
 	.stat-row {
 		display: flex;
 		justify-content: space-between;
 		padding: 0.25rem 0;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
-
 	.mastery-category {
 		margin-bottom: 2rem;
 	}
-
 	.mastery-category h3 {
 		margin-bottom: 1rem;
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 	}
-
 	.mastery-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 		gap: 1rem;
 	}
-
 	.mastery-item {
 		background: rgba(255, 255, 255, 0.1);
 		border-radius: 0.5rem;
 		padding: 1rem;
 		text-align: center;
 	}
-
 	.mastery-name {
 		font-weight: bold;
 		margin-bottom: 0.5rem;
 	}
-
 	.mastery-level {
 		color: #4caf50;
 		font-weight: bold;
 	}
-
 	.learning-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 		gap: 1rem;
 	}
-
 	.learning-item {
 		background: rgba(255, 255, 255, 0.1);
 		border-radius: 0.5rem;
 		padding: 1rem;
 	}
-
 	.learning-header {
 		display: flex;
 		justify-content: space-between;
 		margin-bottom: 0.5rem;
 	}
-
 	.learning-name {
 		font-weight: bold;
 	}
-
 	.learning-progress {
 		color: #ffc107;
 		font-weight: bold;
 	}
-
 	.learning-meta {
 		font-size: 0.8rem;
 		color: rgba(255, 255, 255, 0.7);
 		margin-top: 0.5rem;
 	}
-
 	.achievements-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 		gap: 1.5rem;
 	}
-
 	.achievement-card {
 		background: rgba(255, 255, 255, 0.05);
 		border: 2px solid rgba(255, 255, 255, 0.1);
@@ -788,87 +685,72 @@
 		gap: 1rem;
 		transition: all 0.3s ease;
 	}
-
 	.achievement-card.unlocked {
 		background: rgba(255, 215, 0, 0.1);
 		border-color: rgba(255, 215, 0, 0.3);
 		box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
 	}
-
 	.achievement-icon {
 		font-size: 2rem;
 		flex-shrink: 0;
 	}
-
 	.achievement-content {
 		flex: 1;
 	}
-
 	.achievement-name {
 		margin: 0 0 0.5rem 0;
 		font-weight: bold;
 	}
-
 	.achievement-description {
 		margin: 0 0 1rem 0;
 		color: rgba(255, 255, 255, 0.8);
 		font-size: 0.9rem;
 	}
-
 	.achievement-progress {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 		margin-bottom: 0.5rem;
 	}
-
 	.progress-text {
 		font-size: 0.8rem;
 		color: rgba(255, 255, 255, 0.8);
 	}
-
 	.unlock-date {
 		font-size: 0.8rem;
 		color: #ffd700;
 		font-weight: bold;
 	}
-
 	.sessions-list {
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
 	}
-
 	.session-item {
 		background: rgba(255, 255, 255, 0.1);
 		border-radius: 0.5rem;
 		padding: 1rem;
 		border-left: 4px solid #4caf50;
 	}
-
 	.session-date {
 		font-weight: bold;
 		margin-bottom: 0.5rem;
 	}
-
 	.session-stats {
 		display: flex;
 		gap: 0.5rem;
 		color: rgba(255, 255, 255, 0.8);
 		margin-bottom: 0.25rem;
 	}
-
 	.session-category {
 		font-size: 0.9rem;
 		color: rgba(255, 255, 255, 0.7);
 	}
-
 	.data-actions {
 		display: flex;
 		gap: 1rem;
 		flex-wrap: wrap;
 	}
-
 	.action-btn {
 		background: rgba(255, 255, 255, 0.1);
 		border: 2px solid rgba(255, 255, 255, 0.2);
@@ -883,29 +765,23 @@
 		transition: all 0.2s;
 		font-weight: 500;
 	}
-
 	.action-btn:hover {
 		background: rgba(255, 255, 255, 0.2);
 		border-color: rgba(255, 255, 255, 0.3);
 		transform: translateY(-2px);
 	}
-
 	.action-btn.export {
 		background: rgba(76, 175, 80, 0.2);
 		border-color: rgba(76, 175, 80, 0.4);
 	}
-
 	.action-btn.import {
 		background: rgba(33, 150, 243, 0.2);
 		border-color: rgba(33, 150, 243, 0.4);
 	}
-
 	.action-btn.secondary {
 		background: rgba(108, 117, 125, 0.2);
 		border-color: rgba(108, 117, 125, 0.4);
 	}
-
-	/* Modal Styles */
 	.modal-overlay {
 		position: fixed;
 		top: 0;
@@ -918,7 +794,6 @@
 		justify-content: center;
 		z-index: 1000;
 	}
-
 	.modal {
 		background: #2c3e50;
 		border-radius: 1rem;
@@ -929,7 +804,6 @@
 		overflow: hidden;
 		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 	}
-
 	.modal-header {
 		background: #34495e;
 		padding: 1.5rem;
@@ -938,12 +812,10 @@
 		align-items: center;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
-
 	.modal-header h3 {
 		margin: 0;
 		color: white;
 	}
-
 	.close-btn {
 		background: none;
 		border: none;
@@ -958,16 +830,13 @@
 		align-items: center;
 		justify-content: center;
 	}
-
 	.close-btn:hover {
 		background: rgba(255, 255, 255, 0.1);
 	}
-
 	.modal-content {
 		padding: 1.5rem;
 		color: white;
 	}
-
 	.export-textarea {
 		width: 100%;
 		height: 300px;
@@ -981,61 +850,49 @@
 		resize: vertical;
 		margin: 1rem 0;
 	}
-
 	.modal-actions {
 		display: flex;
 		gap: 1rem;
 		justify-content: flex-end;
 		margin-top: 1rem;
 	}
-
-	/* Responsive Design */
 	@media (max-width: 768px) {
 		.profile-container {
 			padding: 1rem;
 		}
-
 		.avatar-section {
 			flex-direction: column;
 			text-align: center;
 			gap: 1rem;
 		}
-
 		.avatar {
 			width: 100px;
 			height: 100px;
 			font-size: 2.5rem;
 		}
-
 		.profile-name,
 		.name-input {
 			font-size: 2rem;
 		}
-
 		.stats-overview {
 			grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 			gap: 1rem;
 		}
-
 		.exercise-grid,
 		.achievements-grid,
 		.learning-grid {
 			grid-template-columns: 1fr;
 		}
-
 		.mastery-grid {
 			grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
 		}
-
 		.data-actions {
 			flex-direction: column;
 		}
-
 		.modal {
 			width: 95%;
 			margin: 1rem;
 		}
-
 		.export-textarea {
 			height: 200px;
 		}

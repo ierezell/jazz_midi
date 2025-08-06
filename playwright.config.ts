@@ -3,8 +3,6 @@ export const e2eConfig = {
 	timeout: 30000,
 	browsers: ['chromium', 'firefox', 'webkit'],
 	mobile: ['iPhone', 'Pixel'],
-
-	// Test categories
 	tests: {
 		smoke: ['home', 'navigation', 'basic-interaction'],
 		regression: ['chord-exercise', 'scale-exercise', 'progression-exercise'],

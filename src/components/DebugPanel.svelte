@@ -1,10 +1,11 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import type { ChordType, MidiNote, Note, NoteEvent } from '../midi/midi';
-	import { AllChordTypes, AllNotes, chords, NoteToMidi } from '../midi/midi';
-	import type { VirtualMidiInput } from '../midi/virtualMidi';
-
+	import { chords } from '$lib/MusicTheoryUtils';
+	import type { ChordType, MidiNote, Note } from '$lib/types/notes';
+	import { AllChordTypes, AllNotes, NoteToMidi } from '$lib/types/notes.constants';
+	import type { NoteEvent } from '$lib/types/types';
+	import type { VirtualMidiInput } from '../lib/virtualMidi';
 	interface DebugPanelProps {
 		virtualMidi?: VirtualMidiInput;
 		debugMode?: boolean;
@@ -14,7 +15,6 @@
 		currentNotes?: MidiNote[];
 		exerciseType?: 'chord' | 'scale' | 'progression';
 	}
-
 	let {
 		virtualMidi,
 		debugMode = true,
@@ -24,11 +24,9 @@
 		currentNotes = [],
 		exerciseType = 'chord'
 	}: DebugPanelProps = $props();
-
 	let selectedNote: Note = $state('C');
 	let selectedChordType: ChordType = $state('maj7');
 	let selectedOctave: number = $state(5);
-
 	function playChord() {
 		if (!virtualMidi) return;
 		const rootNote = (selectedNote + selectedOctave) as keyof typeof NoteToMidi;
@@ -36,24 +34,17 @@
 		const chordNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
 			(n) => n != null && n != undefined
 		) as MidiNote[];
-
 		virtualMidi.playChord(chordNotes);
 	}
-
 	function stopChord() {
 		if (!virtualMidi) return;
 		virtualMidi.releaseAllKeys();
 	}
-
 	function playScale() {
 		if (!virtualMidi) return;
 		const rootNote = (selectedNote + selectedOctave) as keyof typeof NoteToMidi;
 		const root = NoteToMidi[rootNote];
-
-		// Play C major scale from root
 		const majorScale = [0, 2, 4, 5, 7, 9, 11, 12].map((interval) => (root + interval) as MidiNote);
-
-		// Play notes in sequence
 		majorScale.forEach((note, index) => {
 			setTimeout(() => {
 				virtualMidi!.pressKey(note);
@@ -61,10 +52,9 @@
 			}, index * 400);
 		});
 	}
-
 	function playRandomNote() {
 		if (!virtualMidi) return;
-		const randomMidi = (72 + Math.floor(Math.random() * 24)) as MidiNote; // C5 to B6
+		const randomMidi = (72 + Math.floor(Math.random() * 24)) as MidiNote;
 		virtualMidi.pressKey(randomMidi);
 		setTimeout(() => virtualMidi!.releaseKey(randomMidi), 500);
 	}
@@ -77,7 +67,6 @@
 			{debugMode ? 'Hide' : 'Show'} Debug
 		</button>
 	</div>
-
 	{#if debugMode}
 		<div class="debug-content">
 			{#if virtualMidi}
@@ -110,7 +99,6 @@
 						</label>
 					</div>
 				</div>
-
 				<div class="section">
 					<h4>Quick Actions</h4>
 					<div class="button-group">
@@ -125,7 +113,6 @@
 					</div>
 				</div>
 			{/if}
-
 			{#if expectedNotes.length > 0 || currentNotes.length > 0}
 				<div class="section">
 					<h4>Exercise Status</h4>
@@ -142,7 +129,6 @@
 					</div>
 				</div>
 			{/if}
-
 			{#if virtualMidi}
 				<div class="section">
 					<h4>Keyboard Shortcuts</h4>
@@ -177,7 +163,6 @@
 					</div>
 				</div>
 			{/if}
-
 			<div class="section">
 				<h4>Status</h4>
 				<div class="status">
@@ -211,7 +196,6 @@
 		font-family: 'Courier New', monospace;
 		font-size: 0.9rem;
 	}
-
 	.debug-header {
 		display: flex;
 		justify-content: space-between;
@@ -219,12 +203,10 @@
 		padding: 12px 16px;
 		border-bottom: 1px solid #333;
 	}
-
 	.debug-header h3 {
 		margin: 0;
 		font-size: 1.1rem;
 	}
-
 	.toggle-btn {
 		background: #007acc;
 		color: white;
@@ -234,21 +216,17 @@
 		cursor: pointer;
 		font-size: 0.8rem;
 	}
-
 	.toggle-btn:hover {
 		background: #005a9e;
 	}
-
 	.debug-content {
 		padding: 16px;
 		max-height: 70vh;
 		overflow-y: auto;
 	}
-
 	.section {
 		margin-bottom: 20px;
 	}
-
 	.section h4 {
 		margin: 0 0 10px 0;
 		color: #ffd700;
@@ -256,19 +234,16 @@
 		border-bottom: 1px solid #333;
 		padding-bottom: 4px;
 	}
-
 	.control-group {
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
 	}
-
 	.control-group label {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 	}
-
 	.control-group select {
 		background: #333;
 		color: white;
@@ -277,13 +252,11 @@
 		border-radius: 3px;
 		width: 100px;
 	}
-
 	.button-group {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 8px;
 	}
-
 	.action-btn {
 		background: #28a745;
 		color: white;
@@ -294,38 +267,31 @@
 		font-size: 0.8rem;
 		transition: background 0.2s;
 	}
-
 	.action-btn:hover {
 		background: #218838;
 	}
-
 	.action-btn.stop {
 		background: #dc3545;
 	}
-
 	.action-btn.stop:hover {
 		background: #c82333;
 	}
-
 	.shortcuts {
 		font-size: 0.8rem;
 		line-height: 1.4;
 	}
-
 	.shortcut-row {
 		margin-bottom: 10px;
 		padding: 6px;
 		background: rgba(0, 122, 204, 0.1);
 		border-radius: 4px;
 	}
-
 	.shortcut-row strong {
 		color: #007acc;
 		font-size: 0.75rem;
 		display: block;
 		margin-bottom: 4px;
 	}
-
 	kbd {
 		background: #555;
 		color: #ffd700;
@@ -335,23 +301,19 @@
 		font-size: 0.8rem;
 		margin-right: 8px;
 	}
-
 	.status p {
 		margin: 4px 0;
 		display: flex;
 		justify-content: space-between;
 	}
-
 	.count {
 		color: #ffd700;
 		font-weight: bold;
 	}
-
 	.status-good {
 		color: #28a745;
 		font-weight: bold;
 	}
-
 	@media (max-width: 768px) {
 		.debug-panel {
 			position: relative;
@@ -360,71 +322,57 @@
 			right: 0;
 			margin: 10px 0;
 		}
-
 		.debug-content {
 			padding: 10px;
 		}
-
 		.section {
 			margin-bottom: 15px;
 		}
-
 		.control-group {
 			gap: 6px;
 		}
-
 		.control-group select {
 			width: 80px;
 			font-size: 0.8rem;
 		}
-
 		.button-group {
 			grid-template-columns: 1fr;
 			gap: 6px;
 		}
-
 		.action-btn {
 			padding: 6px 10px;
 			font-size: 0.75rem;
 		}
-
 		.shortcuts {
 			font-size: 0.7rem;
 		}
-
 		kbd {
 			font-size: 0.7rem;
 			padding: 1px 4px;
 		}
 	}
-
 	@media (max-width: 480px) {
 		.debug-header h3 {
 			font-size: 0.9rem;
 		}
-
 		.toggle-btn {
 			font-size: 0.7rem;
 			padding: 4px 8px;
 		}
-
 		.section h4 {
 			font-size: 0.85rem;
 		}
-
 		.control-group label {
 			flex-direction: column;
 			gap: 4px;
 			align-items: flex-start;
 		}
-
 		.control-group select {
 			width: 100%;
 			max-width: 120px;
 		}
-
 		.shortcuts {
-			display: none; /* Hide keyboard shortcuts on very small screens */
+			display: none;
 		}
 	}
 </style>

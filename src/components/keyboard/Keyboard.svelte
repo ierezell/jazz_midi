@@ -1,8 +1,7 @@
 <script lang="ts">
-	import type { ChordToneInfo } from '../../lib/types';
-	import type { MidiNote } from '../../midi/midi';
+	import type { MidiNote } from '$lib/types/notes';
+	import type { ChordToneInfo } from '$lib/types/types';
 	import Key from './Key.svelte';
-
 	interface KeyboardProps {
 		midiNotes: MidiNote[];
 		middleC: number;
@@ -19,13 +18,10 @@
 	}: KeyboardProps = $props();
 	let w = $state(10);
 	let h = $state(10);
-
 	let keys = [...Array(octaves * 12 + 1).keys()].map(
 		(i) => i + (middleC - Math.floor(octaves / 2) * 12)
 	);
-	const totalKeys = 12 * octaves; // Approximate number of keys for 7 octaves
-
-	// Create a lookup map for chord tone info
+	const totalKeys = 12 * octaves;
 	let chordToneMap = $derived.by(() => {
 		const map = new Map<number, ChordToneInfo>();
 		if (Array.isArray(chordToneInfo)) {
@@ -63,7 +59,6 @@
 		max-height: 200px;
 		touch-action: none;
 	}
-
 	@media (max-width: 768px) {
 		.keyboard {
 			height: 50%;
@@ -72,7 +67,6 @@
 			aspect-ratio: 5 / 1;
 		}
 	}
-
 	@media (max-width: 480px) {
 		.keyboard {
 			height: 45%;
@@ -81,7 +75,6 @@
 			aspect-ratio: 4 / 1;
 		}
 	}
-
 	@media (max-width: 360px) {
 		.keyboard {
 			min-height: 70px;

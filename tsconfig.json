@@ -10,13 +10,7 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler",
-		"typeRoots": [
-			"./node_modules/@types",
-			"./src/types"
-		]
+		"typeRoots": ["./node_modules/@types", "src/lib/typeses"]
 	},
-	"exclude": [
-		"node_modules",
-		"docs"
-	]
+	"exclude": ["node_modules", "docs"]
 }

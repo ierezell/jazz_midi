@@ -1,11 +1,10 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import type { ChordToneInfo } from '../../lib/types';
-	import type { MidiNote } from '../../midi/midi';
-	import type { VirtualMidiInput } from '../../midi/virtualMidi';
+	import type { MidiNote } from '$lib/types/notes';
+	import type { ChordToneInfo } from '$lib/types/types';
+	import type { VirtualMidiInput } from '$lib/virtualMidi';
 	import Key from './Key.svelte';
-
 	interface InteractiveKeyboardProps {
 		midiNotes: MidiNote[];
 		middleC: number;
@@ -17,7 +16,6 @@
 		expectedNotes?: MidiNote[];
 		showLabels?: boolean;
 	}
-
 	let {
 		midiNotes,
 		middleC,
@@ -29,16 +27,12 @@
 		expectedNotes = [],
 		showLabels = false
 	}: InteractiveKeyboardProps = $props();
-
 	let clientWidth = $state(10);
 	let clientHeight = $state(10);
-
 	let keys = [...Array(octaves * 12 + 1).keys()].map(
 		(i) => i + (middleC - Math.floor(octaves / 2) * 12)
 	);
 	const totalKeys = 12 * octaves;
-
-	// Create a lookup map for chord tone info
 	let chordToneMidiMap = $derived.by(() => {
 		const map = new Map<number, ChordToneInfo>();
 		if (Array.isArray(chordToneInfo)) {
@@ -69,7 +63,6 @@
 		/>
 	{/each}
 </div>
-
 {#if debugMode}
 	<div class="debug-info">
 		<p><strong>Debug Mode Active</strong></p>
@@ -91,7 +84,6 @@
 		overflow-x: auto;
 		overflow-y: hidden;
 	}
-
 	.debug-info {
 		margin-top: 1rem;
 		padding: 0.5rem;
@@ -101,47 +93,39 @@
 		font-size: 0.9rem;
 		color: #333;
 	}
-
 	.debug-info p {
 		margin: 0.25rem 0;
 	}
-
-	/* Mobile responsiveness */
 	@media (max-width: 768px) {
 		.keyboard {
 			min-height: 100px;
 			max-height: 150px;
 			aspect-ratio: 5 / 1;
 		}
-
 		.debug-info {
 			font-size: 0.8rem;
 			padding: 0.4rem;
 			margin-top: 0.75rem;
 		}
 	}
-
 	@media (max-width: 480px) {
 		.keyboard {
 			min-height: 80px;
 			max-height: 120px;
 			aspect-ratio: 4 / 1;
 		}
-
 		.debug-info {
 			font-size: 0.75rem;
 			padding: 0.3rem;
 			margin-top: 0.5rem;
 		}
 	}
-
 	@media (max-width: 360px) {
 		.keyboard {
 			min-height: 70px;
 			max-height: 100px;
 			aspect-ratio: 3.5 / 1;
 		}
-
 		.debug-info {
 			font-size: 0.7rem;
 			padding: 0.25rem;

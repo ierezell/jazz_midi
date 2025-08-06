@@ -1,209 +1,203 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
+	import type { MidiNote, Note, NoteEvent, NoteFullName } from '$lib/types/types';
 	import BaseExercise from '../../components/BaseExercise.svelte';
-	import { audioManager } from '../../lib/managers/AudioManager';
-	import { midiManager } from '../../lib/managers/MIDIManager';
-	import type { BaseExerciseState, MidiNote, Note, NoteEvent, NoteFullName } from '../../lib/types';
-	import { majorScales, midiNoteToNoteName, NoteToMidi } from '../../midi/midi';
 
-	// ===== STATE =====
-	let selectedNote: Note = $state('C');
+	// Random mode props
+	interface Props {
+		randomMode?: boolean;
+		randomNote?: Note;
+		onRandomComplete?: () => void;
+	}
+
+	let { randomMode = false, randomNote, onRandomComplete }: Props = $props();
+
+	// Scale-specific configuration
 	let sequentialMode: boolean = $state(true);
-	let noteEvents: NoteEvent[] = $state([]);
-	let mistakes = $state(0);
-	let completed = $state(false);
-	let debugMode = $state(false);
-	let feedbackMessage = $state('');
 
-	// Auto-enable helpers based on mistakes
-	let showNoteNames = $derived(mistakes >= 3);
-	let showKeyboard = $derived(mistakes >= 6);
+	// Generate expected notes for a given root note
+	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
+		// Get the scale starting from the selected note in octave 4
+		const rootMidi = NoteToMidi[(selectedNote + '4') as NoteFullName];
 
-	// ===== COMPUTED PROPERTIES =====
-	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
+		// Major scale intervals: [2, 2, 1, 2, 2, 2, 1] (whole-whole-half-whole-whole-whole-half)
+		const majorScaleIntervals = [0, 2, 4, 5, 7, 9, 11]; // Semitones from root
 
-	let selectedNoteMiddleKey = $derived(selectedNote + '4') as NoteFullName;
-	let entireKeyboardMajorScale = $derived(majorScales[selectedNote]);
-	let majorScaleOneOctaveNotes = $derived(
-		Array.from(new Set(entireKeyboardMajorScale.map((note) => note.slice(0, -1) as Note)))
-	);
-	let majorScaleMiddleKeyboard = $derived(
-		majorScaleOneOctaveNotes.map((note) => (note + '4') as NoteFullName)
-	);
-	let expectedNotes = $derived(majorScaleMiddleKeyboard.map((note) => NoteToMidi[note]));
+		const scaleNotes = majorScaleIntervals.map((interval) => (rootMidi + interval) as MidiNote);
 
-	// Exercise state for BaseExercise
-	let exerciseState = $derived.by((): BaseExerciseState => {
-		return {
-			selectedNote,
-			midiNotes: currentNotes,
-			noteEvents,
-			debugMode,
-			showNoteNames,
-			showKeyboard,
-			feedbackMessage,
-			errorCount: mistakes,
-			completed
-		};
-	});
+		console.log(
+			`Scale for ${selectedNote}4:`,
+			scaleNotes.map((note) => MidiToNote[note])
+		);
 
-	// Score properties
-	let scoreProps = $derived({
-		notes: majorScaleMiddleKeyboard,
-		highlightedNotes: currentNotes.map((note) => midiNoteToNoteName(note as MidiNote)),
-		title: `${selectedNote} Major Scale`
-	});
-
-	// ===== FUNCTIONS =====
-
-	function handleNoteSelect(note: Note) {
-		selectedNote = note;
-		resetExercise();
+		return scaleNotes;
 	}
 
-	function toggleDebug() {
-		debugMode = !debugMode;
-		if (debugMode) {
-			midiManager.enableDebugMode();
+	// Scale-specific validation logic
+	function validateScaleNote(
+		event: NoteEvent,
+		expectedNotes: MidiNote[],
+		currentNotes: MidiNote[]
+	): { isCorrect: boolean; message: string } {
+		if (sequentialMode) {
+			return validateSequential(event, expectedNotes, currentNotes);
 		} else {
-			midiManager.disableDebugMode();
+			return validateAnyOrder(event, expectedNotes, currentNotes);
 		}
 	}
 
-	function resetExercise() {
-		mistakes = 0;
-		noteEvents = [];
-		completed = false;
-		feedbackMessage = '';
-		midiManager.resetExercise();
-	}
-
-	function onMidiEvent(event: NoteEvent) {
-		noteEvents = [event, ...noteEvents.slice(0, 9)];
-
-		if (event.type === 'on') {
-			if (sequentialMode) {
-				handleSequentialMode(event);
-			} else {
-				handleAnyOrderMode(event);
-			}
-		}
-	}
-
-	function handleSequentialMode(event: NoteEvent) {
-		const currentIndex =
-			noteEvents.filter((e) => e.type === 'on' && expectedNotes.includes(e.noteNumber)).length - 1;
-		const expectedNote = expectedNotes[currentIndex];
+	function validateSequential(
+		event: NoteEvent,
+		expectedNotes: MidiNote[],
+		currentNotes: MidiNote[]
+	): { isCorrect: boolean; message: string } {
+		// In sequential mode, we want to check if the current note is the next expected note
+		const nextExpectedIndex = currentNotes.length;
+		const expectedNote = expectedNotes[nextExpectedIndex];
 
 		if (event.noteNumber === expectedNote) {
-			if (currentIndex === expectedNotes.length - 1) {
-				completed = true;
-				feedbackMessage = 'Perfect scale! 🎵✨';
-				audioManager.playSuccess();
+			if (nextExpectedIndex === expectedNotes.length - 1) {
+				return { isCorrect: true, message: 'Perfect scale! 🎵✨' };
 			} else {
-				feedbackMessage = `Good! Note ${currentIndex + 1}/${expectedNotes.length}`;
+				return {
+					isCorrect: true,
+					message: `Good! Note ${nextExpectedIndex + 1}/${expectedNotes.length}`
+				};
 			}
 		} else {
-			mistakes++;
-			feedbackMessage = `Wrong note! Expected note ${currentIndex + 1}`;
-			audioManager.playError();
+			const expectedNoteName = MidiToNote[expectedNote]?.slice(0, -1) || expectedNote.toString();
+			return {
+				isCorrect: false,
+				message: `Wrong note! Expected ${expectedNoteName} (note ${nextExpectedIndex + 1})`
+			};
 		}
 	}
 
-	function handleAnyOrderMode(event: NoteEvent) {
-		const activeNotes = noteEvents.filter((e) => e.type === 'on').map((e) => e.noteNumber);
-		const correctNotes = activeNotes.filter((note) => expectedNotes.includes(note));
-
+	function validateAnyOrder(
+		event: NoteEvent,
+		expectedNotes: MidiNote[],
+		currentNotes: MidiNote[]
+	): { isCorrect: boolean; message: string } {
 		if (expectedNotes.includes(event.noteNumber)) {
+			const correctNotes = currentNotes.filter((note) => expectedNotes.includes(note));
 			if (correctNotes.length === expectedNotes.length) {
-				completed = true;
-				feedbackMessage = 'Perfect scale! 🎵';
-				audioManager.playSuccess();
+				return { isCorrect: true, message: 'Perfect scale! 🎵' };
 			} else {
-				feedbackMessage = `Good! ${correctNotes.length}/${expectedNotes.length} notes`;
+				return {
+					isCorrect: true,
+					message: `Good! ${correctNotes.length}/${expectedNotes.length} notes`
+				};
 			}
 		} else {
-			mistakes++;
-			feedbackMessage = 'Wrong note!';
-			audioManager.playError();
+			return { isCorrect: false, message: 'Wrong note!' };
 		}
 	}
 
-	// ===== LIFECYCLE =====
-	onMount(() => {
-		midiManager.connect(onMidiEvent);
-		audioManager.initialize();
+	// Custom completion logic for scales
+	function isScaleCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+		if (sequentialMode) {
+			// For sequential mode, check if we have the correct number of notes
+			// and they are in the correct sequence
+			return (
+				currentNotes.length === expectedNotes.length &&
+				currentNotes.every((note, index) => note === expectedNotes[index])
+			);
+		} else {
+			// For any order mode, check if all expected notes are present
+			const uniqueCurrentNotes = [...new Set(currentNotes)];
+			const uniqueExpectedNotes = [...new Set(expectedNotes)];
 
-		return () => {
-			midiManager.disconnect();
-		};
-	});
+			return (
+				uniqueCurrentNotes.length === uniqueExpectedNotes.length &&
+				uniqueCurrentNotes.every((note) => uniqueExpectedNotes.includes(note))
+			);
+		}
+	}
+
+	// Handle sequential mode toggle
+	function handleSequentialToggle(event: Event): void {
+		const target = event.target as HTMLInputElement;
+		sequentialMode = target.checked;
+	}
+	// Custom completion handler for random mode
+	function onExerciseComplete() {
+		if (randomMode && onRandomComplete) {
+			// Small delay to show completion before moving to next exercise
+			setTimeout(() => {
+				onRandomComplete();
+			}, 1500);
+		}
+	}
 </script>
 
-<div class="scale-exercise">
-	<BaseExercise
-		{exerciseState}
-		exerciseTitle={`${selectedNote} Major Scale`}
-		exerciseDescription={sequentialMode
+<BaseExercise
+	exerciseTitle={randomMode ? 'Random Scale' : 'Scale Practice'}
+	exerciseDescription={randomMode
+		? `Play the ${randomNote} major scale`
+		: sequentialMode
 			? 'Play the scale notes in order'
 			: 'Play all scale notes in any order'}
-		{expectedNotes}
-		{scoreProps}
-		onNoteSelect={handleNoteSelect}
-		onDebugToggle={toggleDebug}
-		onReset={resetExercise}
-		customControls={true}
-	>
-		<!-- Custom controls for scale exercise -->
+	exerciseType="scale"
+	initialSelectedNote={randomMode ? randomNote : undefined}
+	{randomMode}
+	{generateExpectedNotes}
+	validateNoteEvent={validateScaleNote}
+	isCompleted={isScaleCompleted}
+	customControls={true}
+	{onExerciseComplete}
+>
+	{#snippet children(api: any)}
 		<div class="scale-controls">
-			<div class="control-group">
-				<button onclick={toggleDebug} class="debug-btn">
-					{debugMode ? 'Disable' : 'Enable'} Debug Mode
-				</button>
-				<button onclick={resetExercise} class="reset-btn">Reset</button>
-			</div>
+			{#if !randomMode}
+				<div class="control-group">
+					<button onclick={api.toggleDebug} class="debug-btn">
+						{api.debugMode ? 'Disable' : 'Enable'} Debug Mode
+					</button>
+					<button onclick={api.resetExercise} class="reset-btn">Reset</button>
+				</div>
 
-			<div class="control-group">
-				<label>
-					<input type="checkbox" bind:checked={sequentialMode} />
-					Sequential Mode (play in order)
-				</label>
-			</div>
+				<div class="control-group">
+					<label>
+						<input
+							type="checkbox"
+							bind:checked={sequentialMode}
+							onchange={handleSequentialToggle}
+						/>
+						Sequential Mode (play in order)
+					</label>
+				</div>
+			{:else}
+				<div class="control-group">
+					<button onclick={api.resetExercise} class="reset-btn">Reset</button>
+				</div>
+			{/if}
 		</div>
 
-		<!-- Custom status display -->
 		<div class="exercise-status">
 			<div class="progress">
 				Progress: {Math.round(
-					(currentNotes.filter((n) => expectedNotes.includes(n)).length / expectedNotes.length) *
+					(api.currentNotes.filter((n: MidiNote) => api.expectedNotes.includes(n)).length /
+						api.expectedNotes.length) *
 						100
 				)}%
 			</div>
-			<div class="mistakes">
-				Mistakes: {mistakes}
-			</div>
-			{#if completed}
+			<div class="mistakes">Mistakes: {api.mistakes}</div>
+			{#if api.completed}
 				<div class="completion">🎉 Scale Completed!</div>
 			{/if}
 		</div>
-	</BaseExercise>
-</div>
+	{/snippet}
+</BaseExercise>
 
 <style>
-	.scale-exercise {
-		max-width: 1200px;
-		margin: 0 auto;
-		padding: 2rem;
-		font-family: system-ui, sans-serif;
-	}
-
 	.scale-controls {
 		display: flex;
 		gap: 2rem;
 		margin-bottom: 1rem;
 		align-items: center;
+		justify-content: center;
 	}
 
 	.control-group {
@@ -240,6 +234,7 @@
 		background: #f8f9fa;
 		border-radius: 8px;
 		margin-top: 1rem;
+		justify-content: center;
 	}
 
 	.progress,
@@ -270,13 +265,15 @@
 	}
 
 	@media (max-width: 768px) {
-		.scale-exercise {
-			padding: 1rem;
-		}
-
 		.scale-controls {
 			flex-direction: column;
 			gap: 1rem;
+		}
+
+		.exercise-status {
+			flex-direction: column;
+			text-align: center;
+			gap: 0.5rem;
 		}
 	}
 </style>

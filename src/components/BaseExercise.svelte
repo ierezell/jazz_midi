@@ -1,131 +1,233 @@
-<!-- 
-    Base Exercise Component
-    Provides common UI elements and functionality for all exercises
--->
 <script lang="ts">
-	import { onDestroy } from 'svelte';
-	import { DEFAULT_KEYBOARD_CONFIG } from '../lib/config';
+	import { audioManager } from '$lib/AudioManager';
+	import { midiManager } from '$lib/MIDIManager';
+	import { calculateOptimalRange } from '$lib/MusicTheoryUtils';
+	import { AllNotes } from '$lib/types/notes.constants';
 	import type {
-		BaseExerciseState,
 		BaseKeyboardProps,
 		BaseScoreProps,
 		MidiNote,
-		Note
-	} from '../lib/types';
-	import { AllNotes } from '../midi/midi';
+		Note,
+		NoteEvent
+	} from '$lib/types/types';
+	import { onDestroy, onMount } from 'svelte';
 	import DebugPanel from './DebugPanel.svelte';
 	import InteractiveKeyboard from './keyboard/InteractiveKeyboard.svelte';
 	import Score from './Score.svelte';
 
-	// Props interface for the base component
 	interface BaseExerciseProps {
-		exerciseState: BaseExerciseState;
 		exerciseTitle: string;
 		exerciseDescription?: string;
-		expectedNotes: MidiNote[];
+		initialSelectedNote?: Note;
+		exerciseType: 'chord' | 'scale' | 'progression';
+		randomMode?: boolean;
+		generateExpectedNotes: (selectedNote: Note, ...args: any[]) => MidiNote[];
+		validateNoteEvent?: (
+			event: NoteEvent,
+			expectedNotes: MidiNote[],
+			currentNotes: MidiNote[],
+			sequentialMode?: boolean
+		) => { isCorrect: boolean; message: string };
+		isCompleted?: (currentNotes: MidiNote[], expectedNotes: MidiNote[]) => boolean;
 		scoreProps?: Partial<BaseScoreProps>;
 		keyboardProps?: Partial<BaseKeyboardProps>;
-		onNoteSelect?: (note: Note) => void;
-		onDebugToggle?: () => void;
-		onReset?: () => void;
 		showProgressInfo?: boolean;
 		customControls?: boolean;
+		onExerciseComplete?: () => void;
+		onExerciseReset?: () => void;
 	}
 
 	let {
-		exerciseState,
 		exerciseTitle,
 		exerciseDescription = '',
-		expectedNotes,
+		initialSelectedNote = 'C',
+		exerciseType,
+		randomMode = false,
+		generateExpectedNotes,
+		validateNoteEvent,
+		isCompleted,
 		scoreProps = {},
 		keyboardProps = {},
-		onNoteSelect,
-		onDebugToggle,
-		onReset,
 		showProgressInfo = true,
 		customControls = false,
+		onExerciseComplete,
+		onExerciseReset,
 		children
 	}: BaseExerciseProps & { children?: any } = $props();
 
-	// Derived keyboard configuration
+	// State management - all common logic centralized here
+	let selectedNote: Note = $state(initialSelectedNote);
+	let noteEvents: NoteEvent[] = $state([]);
+	let mistakes = $state(0);
+	let startTime = $state(0);
+	let completed = $state(false);
+	let debugMode = $state(false);
+	let feedbackMessage = $state('');
+	let showChordTones = $state(false);
+
+	// Derived values
+	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
+	let expectedNotes = $derived(generateExpectedNotes(selectedNote));
+	let showNoteNames = $derived(mistakes >= 3);
+	let showKeyboard = $derived(debugMode);
+
+	// Default validation logic
+	function defaultValidateNoteEvent(
+		event: NoteEvent,
+		expectedNotes: MidiNote[],
+		currentNotes: MidiNote[]
+	): { isCorrect: boolean; message: string } {
+		if (expectedNotes.includes(event.noteNumber)) {
+			return { isCorrect: true, message: 'Correct!' };
+		}
+		return { isCorrect: false, message: 'Try again!' };
+	}
+
+	// Default completion check
+	function defaultIsCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+		const sorted1 = [...currentNotes].sort();
+		const sorted2 = [...expectedNotes].sort();
+		return sorted1.length === sorted2.length && sorted1.every((note, i) => note === sorted2[i]);
+	}
+
+	// MIDI event handlers - centralized logic
+	function handleNoteOn(note: NoteEvent): void {
+		noteEvents = [...noteEvents, note];
+
+		const validator = validateNoteEvent || defaultValidateNoteEvent;
+		const result = validator(note, expectedNotes, currentNotes);
+
+		if (result.isCorrect) {
+			showFeedback(result.message, 'success');
+			audioManager.playSuccess();
+		} else {
+			mistakes++;
+			showFeedback(result.message, 'error');
+			audioManager.playError();
+		}
+
+		const completionChecker = isCompleted || defaultIsCompleted;
+		if (completionChecker(currentNotes, expectedNotes)) {
+			completeExercise();
+		}
+	}
+
+	function handleNoteOff(note: NoteEvent): void {
+		noteEvents = noteEvents.filter((e) => e.noteNumber !== note.noteNumber);
+	}
+
+	// Feedback and completion logic
+	function showFeedback(message: string, type: 'success' | 'error' | 'info'): void {
+		feedbackMessage = message;
+		setTimeout(() => {
+			feedbackMessage = '';
+		}, 2000);
+	}
+
+	function completeExercise(): void {
+		completed = true;
+		const timeElapsed = Date.now() - startTime;
+		const accuracy = Math.round(((expectedNotes.length - mistakes) / expectedNotes.length) * 100);
+		showFeedback('Exercise completed!', 'success');
+		audioManager.playSound?.('success');
+		onExerciseComplete?.();
+	}
+
+	// Control handlers
+	function handleNoteSelect(note: Note): void {
+		selectedNote = note;
+		resetExercise();
+	}
+
+	function resetExercise(): void {
+		noteEvents = [];
+		mistakes = 0;
+		completed = false;
+		feedbackMessage = '';
+		startTime = Date.now();
+		onExerciseReset?.();
+	}
+
+	function toggleDebug(): void {
+		debugMode = !debugMode;
+	}
+
+	// Initialize MIDI
+	onMount(async () => {
+		await midiManager.initialize();
+		midiManager.setEventHandlers({
+			onNoteOn: handleNoteOn,
+			onNoteOff: handleNoteOff
+		});
+		startTime = Date.now();
+	});
+
+	onDestroy(() => {
+		midiManager.cleanup();
+	});
+
 	let keyboardConfig = $derived.by(() => {
 		if (expectedNotes.length === 0) {
 			return {
-				middleC: DEFAULT_KEYBOARD_CONFIG.defaultMiddleC,
-				octaves: DEFAULT_KEYBOARD_CONFIG.defaultOctaves
+				middleC: 60 as MidiNote,
+				octaves: 2
 			};
 		}
-
-		const minNote = Math.min(...expectedNotes);
-		const maxNote = Math.max(...expectedNotes);
-		const noteRange = maxNote - minNote;
-
-		// Ensure we show at least from one C to the next C that encompasses all notes
-		const minC = Math.floor((minNote - 12) / 12) * 12 + 12;
-		const maxC = Math.ceil((maxNote + 12) / 12) * 12;
-
-		const totalRange = maxC - minC;
-		const octaves = Math.max(2, Math.ceil(totalRange / 12));
-		const middleC = Math.max(24, minC + Math.floor((octaves * 12) / 2) - 6);
-
-		return {
-			middleC: Math.max(24, middleC),
-			octaves: Math.min(7, octaves)
-		};
+		return calculateOptimalRange(expectedNotes);
 	});
 
-	// Merge keyboard props with computed config
 	let finalKeyboardProps = $derived({
-		midiNotes: exerciseState.midiNotes,
+		midiNotes: currentNotes,
 		middleC: keyboardConfig.middleC,
 		octaves: keyboardConfig.octaves,
-		interactive: exerciseState.debugMode,
-		showLabels: exerciseState.showNoteNames,
+		interactive: debugMode,
+		showLabels: showNoteNames,
 		chordToneInfo: keyboardProps.chordToneInfo || [],
-		showChordTones: keyboardProps.showChordTones || false,
+		showChordTones: keyboardProps.showChordTones || showChordTones,
 		expectedNotes: expectedNotes,
 		...keyboardProps
 	});
 
-	// Default score props
 	let finalScoreProps = $derived({
 		leftHand: scoreProps.leftHandNotes || [],
 		rightHand: scoreProps.rightHandNotes || [],
-		selectedNote: exerciseState.selectedNote,
+		selectedNote: selectedNote,
 		...scoreProps
 	});
 
-	function handleNoteSelect(event: Event) {
+	function handleNoteSelectEvent(event: Event) {
 		const target = event.target as HTMLSelectElement;
 		const note = target.value as Note;
-		onNoteSelect?.(note);
+		handleNoteSelect(note);
 	}
 
-	function handleDebugToggle() {
-		onDebugToggle?.();
-	}
-
-	function handleReset() {
-		onReset?.();
-	}
-
-	// Progress calculation
-	let progressPercentage = $derived(() => {
+	let progressPercentage = $derived.by(() => {
 		if (expectedNotes.length === 0) return 0;
-		const correctNotes = exerciseState.midiNotes.filter((note: MidiNote) =>
-			expectedNotes.includes(note)
-		);
+		const correctNotes = currentNotes.filter((note: MidiNote) => expectedNotes.includes(note));
 		return Math.round((correctNotes.length / expectedNotes.length) * 100);
 	});
 
-	// Cleanup on component destroy
-	onDestroy(() => {
-		// Any cleanup logic here
+	// Expose functions for child components
+	let exposedAPI = $derived({
+		selectedNote,
+		currentNotes,
+		expectedNotes,
+		mistakes,
+		completed,
+		debugMode,
+		feedbackMessage,
+		showChordTones,
+		handleNoteSelect,
+		resetExercise,
+		toggleDebug,
+		showFeedback,
+		setShowChordTones: (show: boolean) => {
+			showChordTones = show;
+		}
 	});
 </script>
 
 <div class="exercise-container">
-	<!-- Exercise Header -->
 	<header class="exercise-header">
 		<h1>{exerciseTitle}</h1>
 		{#if exerciseDescription}
@@ -133,33 +235,33 @@
 		{/if}
 	</header>
 
-	<!-- Exercise Controls -->
-	<div class="exercise-controls">
-		<div class="control-group">
-			<label for="note-select">Key:</label>
-			<select id="note-select" value={exerciseState.selectedNote} onchange={handleNoteSelect}>
-				{#each AllNotes as note}
-					<option value={note}>{note}</option>
-				{/each}
-			</select>
+	{#if feedbackMessage}
+		<div class="feedback" role="alert">
+			{feedbackMessage}
 		</div>
+	{/if}
 
-		{#if !customControls}
+	<div class="exercise-controls">
+		{#if !randomMode}
 			<div class="control-group">
-				<button onclick={handleDebugToggle} class="debug-btn">
-					{exerciseState.debugMode ? 'Disable' : 'Enable'} Debug Mode
-				</button>
-				<button onclick={handleReset} class="reset-btn"> Reset Exercise </button>
+				<label for="note-select">Key:</label>
+				<select id="note-select" value={selectedNote} onchange={handleNoteSelectEvent}>
+					{#each AllNotes as note}
+						<option value={note}>{note}</option>
+					{/each}
+				</select>
 			</div>
 		{/if}
-
-		<!-- Custom controls slot -->
-		{#if customControls}
-			{@render children?.()}
+		{#if !customControls}
+			<div class="control-group">
+				<button onclick={toggleDebug} class="debug-btn">
+					{debugMode ? 'Disable' : 'Enable'} Debug Mode
+				</button>
+				<button onclick={resetExercise} class="reset-btn"> Reset Exercise </button>
+			</div>
 		{/if}
 	</div>
 
-	<!-- Progress Information -->
 	{#if showProgressInfo}
 		<div class="progress-info">
 			<div class="progress-bar">
@@ -167,42 +269,30 @@
 			</div>
 			<div class="progress-stats">
 				<span>Progress: {progressPercentage}%</span>
-				<span>Errors: {exerciseState.errorCount}</span>
-				{#if exerciseState.feedbackMessage}
-					<span class="feedback-message">{exerciseState.feedbackMessage}</span>
-				{/if}
+				<span>Errors: {mistakes}</span>
 			</div>
 		</div>
 	{/if}
 
-	<!-- Score Display -->
 	<div class="score-section">
 		<Score {...finalScoreProps} />
 	</div>
 
-	<!-- Keyboard Display -->
-	<div
-		class="keyboard-section"
-		class:hidden={!exerciseState.showKeyboard && !exerciseState.debugMode}
-	>
+	<div class="keyboard-section" class:hidden={!showKeyboard}>
 		<InteractiveKeyboard {...finalKeyboardProps} />
 	</div>
 
-	<!-- Debug Panel -->
-	{#if exerciseState.debugMode}
+	{#if debugMode}
 		<div class="debug-section">
-			<DebugPanel
-				noteEvents={exerciseState.noteEvents}
-				{expectedNotes}
-				currentNotes={exerciseState.midiNotes}
-			/>
+			<DebugPanel {noteEvents} {expectedNotes} {currentNotes} />
 		</div>
 	{/if}
 
-	<!-- Exercise-specific content -->
-	<div class="exercise-content">
-		{@render children?.()}
-	</div>
+	{#if customControls}
+		<div class="exercise-content">
+			{@render children?.(exposedAPI)}
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -231,6 +321,17 @@
 		font-size: 1.1rem;
 		color: var(--color-text-secondary, #666);
 		margin: 0;
+	}
+
+	.feedback {
+		padding: 1rem;
+		margin: 1rem 0;
+		border-radius: 0.5rem;
+		text-align: center;
+		font-weight: 500;
+		background-color: #e8f5e8;
+		color: #2d5d2d;
+		border: 1px solid #a8d8a8;
 	}
 
 	.exercise-controls {
@@ -322,11 +423,6 @@
 		color: var(--color-text-secondary, #666);
 	}
 
-	.feedback-message {
-		font-weight: 500;
-		color: var(--color-accent, #2196f3);
-	}
-
 	.score-section {
 		min-height: 200px;
 		display: flex;
@@ -358,7 +454,6 @@
 		flex: 1;
 	}
 
-	/* Responsive design */
 	@media (max-width: 768px) {
 		.exercise-container {
 			padding: 0.5rem;
@@ -407,66 +502,6 @@
 		.score-section {
 			min-height: 160px;
 			padding: 0.5rem;
-		}
-	}
-
-	@media (max-width: 480px) {
-		.exercise-container {
-			padding: 0.25rem;
-			gap: 0.75rem;
-		}
-
-		.exercise-header h1 {
-			font-size: 1.4rem;
-		}
-
-		.exercise-description {
-			font-size: 0.9rem;
-		}
-
-		.exercise-controls {
-			padding: 0.5rem;
-			gap: 0.5rem;
-		}
-
-		.control-group {
-			flex-direction: column;
-			align-items: center;
-		}
-
-		.control-group label {
-			margin-bottom: 0.25rem;
-		}
-
-		select,
-		button {
-			width: 100%;
-			max-width: 200px;
-		}
-
-		.score-section {
-			min-height: 120px;
-			padding: 0.25rem;
-		}
-
-		.debug-section {
-			padding: 0.5rem;
-		}
-	}
-
-	@media (max-width: 360px) {
-		.exercise-header h1 {
-			font-size: 1.2rem;
-		}
-
-		.exercise-description {
-			font-size: 0.85rem;
-		}
-
-		select,
-		button {
-			max-width: 180px;
-			font-size: 0.9rem;
 		}
 	}
 </style>

@@ -1,5 +1,9 @@
 # GitHub Copilot Instructions for Jazz MIDI
 
+Keep the code as concise as possible, avoid duplicates, create common logic.
+Try as much as possible to modify existing code instead of creating new one.
+DO NOT CREATE +page-new.svelte or +page-old.svelte, directly modify files.
+
 ## Project Overview
 
 This is a jazz education web application built with Svelte 5 that helps musicians practice jazz theory through interactive MIDI keyboard exercises. The app focuses on chord recognition, scale practice, and jazz harmony concepts like two-five-one progressions.
@@ -16,43 +20,15 @@ It's a STATIC WEBSITE. It does not require a server, server-side rendering or da
 
 ## Core Features
 
-1. **Chord Practice**: Interactive chord recognition with visual keyboard and score display
-2. **Scale Practice**: Major/minor scale exercises with MIDI input validation
-3. **Two-Five-One Progressions**: Jazz harmonic sequence practice
-4. **Virtual Keyboard**: Visual representation of piano keys with note highlighting
-5. **Musical Score Display**: Staff notation using VexFlow
-6. **Real-time MIDI Input**: Connect physical MIDI keyboards for practice
-
-## Code Architecture
-
-### MIDI System (`src/midi/midi.ts`)
-
-- Comprehensive MIDI note type definitions (24-128)
-- Note name mappings (C0-G#8) with enharmonic equivalents
-- Chord generation functions for jazz chord types (maj7, min7, dom7, etc.)
-- Scale generation for major/minor scales
-- MIDI event handling and note parsing
-
-### Component Structure
-
-- `Keyboard.svelte`: Virtual piano keyboard with note highlighting
-- `Key.svelte`: Individual piano key component with visual state
-- `Score.svelte`: Musical staff notation display using VexFlow
-- `MidiDisplay.svelte`: MIDI device connection status
-
-### Routes
-
-- `/`: Home page with MIDI setup
-- `/chords`: Chord recognition practice
-- `/scales`: Scale practice exercises
-- `/two_five_ones`: Jazz progression practice
+1. **Practice**: Interactive exercises with visual keyboard and score display
+2. **Musical Score Display**: Staff notation using VexFlow
+3. **Real-time MIDI Input**: Connect physical MIDI keyboards for practice
 
 ## Coding Guidelines
 
 ### TypeScript Usage
 
-- Use strict typing for all MIDI-related data (`MidiNote`, `NoteFullName`, `ChordType`)
-- Leverage union types for musical concepts (notes, chord types, scale types)
+- Use strict typing
 - Type all component props and state properly
 
 ### Svelte 5 Patterns
@@ -61,13 +37,6 @@ It's a STATIC WEBSITE. It does not require a server, server-side rendering or da
 - Use `$derived()` for computed values
 - Use `$props()` for component props with destructuring
 - Enable runes with `<svelte:options runes={true} />`
-
-### MIDI Integration
-
-- Always check for Web MIDI API support
-- Handle MIDI access permissions gracefully
-- Process both note-on and note-off events
-- Maintain note state for polyphonic input
 
 ### Musical Logic
 
@@ -99,7 +68,6 @@ It's a STATIC WEBSITE. It does not require a server, server-side rendering or da
 
 ## Future Development Areas
 
-- Mobile touch keyboard support
 - Advanced chord voicings and inversions
 - Metronome and timing exercises
 - MIDI file import/export
@@ -108,8 +76,8 @@ It's a STATIC WEBSITE. It does not require a server, server-side rendering or da
 
 When suggesting code changes or new features, prioritize:
 
-1. Musical accuracy and proper jazz theory implementation
-2. Responsive, real-time MIDI interaction
+1. Simplicity and clarity
+2. Reusability of components and functions
 3. Clean, typed code following Svelte 5 patterns
 4. Accessible, intuitive user interface design
 5. Performance optimization for smooth audio/visual feedback

@@ -1,54 +1,59 @@
-<!--
-    Improved Chord Exercise
-    Clean, consolidated implementation using modern patterns
--->
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { calculateOptimalRange, chords } from '$lib/MusicTheoryUtils';
+	import { AllChordTypes, NoteToMidi } from '$lib/types/notes.constants';
+	import type {
+		ChordToneColors,
+		ChordToneInfo,
+		ChordToneRole,
+		ChordType,
+		MidiNote,
+		Note,
+		NoteEvent,
+		NoteFullName
+	} from '$lib/types/types';
+	import { DEFAULT_CHORD_TONE_COLORS } from '$lib/types/types';
+	import { onMount } from 'svelte';
 	import BaseExercise from '../../components/BaseExercise.svelte';
 	import ChordToneToggle from '../../components/ChordToneToggle.svelte';
-	import { audioManager } from '../../lib/managers/AudioManager';
-	import { midiManager } from '../../lib/managers/MIDIManager';
-	import type { ChordType, MidiNote, Note, NoteEvent, NoteFullName } from '../../lib/types';
-	import { createChordToneMapping } from '../../lib/types';
-	import { AllChordTypes, AllNotes, chords, NoteToMidi, type Chord } from '../../midi/midi';
 
-	// ===== STATE =====
+	// Random mode props
+	interface Props {
+		randomMode?: boolean;
+		randomNote?: Note;
+		randomChordType?: ChordType;
+		randomInversion?: 0 | 1 | 2 | 3;
+		onRandomComplete?: () => void;
+	}
 
-	let selectedNote: Note = $state('C');
+	let {
+		randomMode = false,
+		randomNote,
+		randomChordType,
+		randomInversion,
+		onRandomComplete
+	}: Props = $props();
+
+	// Chord-specific configuration
 	let chordType: ChordType = $state('maj7');
 	let inversion: 0 | 1 | 2 | 3 = $state(0);
 	let voicing: 'full' | 'left-hand' | 'right-hand' | 'split' = $state('full');
 
-	let noteEvents: NoteEvent[] = $state([]);
-	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
-	let mistakes = $state(0);
-	let startTime = $state(0);
-	let completed = $state(false);
-	let debugMode = $state(false);
-	let feedbackMessage = $state('');
-	let showChordTones = $state(false);
-
-	// Auto-enable helpers based on mistakes
-	let showNoteNames = $derived(mistakes >= 3);
-	let showKeyboard = $derived(mistakes >= 6);
-
-	// ===== COMPUTED PROPERTIES =====
-
-	/**
-	 * Get the current chord
-	 */
-	let currentChord = $derived.by((): Chord => {
-		const rootNote = (selectedNote + '4') as NoteFullName;
-		const rootMidi = NoteToMidi[rootNote];
-		return chords(rootMidi, chordType, inversion);
+	// Initialize random values if in random mode
+	onMount(() => {
+		if (randomMode) {
+			if (randomChordType) chordType = randomChordType;
+			if (randomInversion !== undefined) inversion = randomInversion;
+		}
 	});
 
-	/**
-	 * Get expected notes based on voicing
-	 */
-	let expectedNotes = $derived.by((): MidiNote[] => {
+	// Generate expected notes for a given root note
+	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
+		const rootNote = (selectedNote + '4') as NoteFullName;
+		const rootMidi = NoteToMidi[rootNote];
+		const currentChord = chords(rootMidi, chordType, inversion);
+
 		const allChordNotes = [
 			currentChord.root,
 			currentChord.third,
@@ -75,46 +80,41 @@
 			default:
 				return allChordNotes;
 		}
-	});
+	}
 
-	/**
-	 * Calculate optimal keyboard range
-	 */
-	let keyboardRange = $derived.by(() => {
-		if (expectedNotes.length === 0) return { middleC: 60, octaves: 2 };
+	// Chord-specific validation (optional - uses default if not provided)
+	function validateChordNote(
+		event: NoteEvent,
+		expectedNotes: MidiNote[]
+	): { isCorrect: boolean; message: string } {
+		if (expectedNotes.includes(event.noteNumber)) {
+			return { isCorrect: true, message: 'Correct chord tone!' };
+		}
+		return { isCorrect: false, message: 'Not a chord tone. Try again!' };
+	}
 
-		const minNote = Math.min(...expectedNotes);
-		const maxNote = Math.max(...expectedNotes);
-		const minC = Math.floor((minNote - 12) / 12) * 12 + 12;
-		const maxC = Math.ceil((maxNote + 12) / 12) * 12;
-		const totalRange = maxC - minC;
-		const octaves = Math.max(2, Math.ceil(totalRange / 12));
-		const middleC = minC + Math.floor((octaves * 12) / 2) - 6;
+	// Handle chord parameter changes
+	function handleChordTypeChange(event: Event): void {
+		const target = event.target as HTMLSelectElement;
+		chordType = target.value as ChordType;
+	}
 
-		return {
-			middleC: Math.max(24, middleC),
-			octaves: Math.min(7, octaves)
-		};
-	});
+	function handleInversionChange(event: Event): void {
+		const target = event.target as HTMLSelectElement;
+		inversion = parseInt(target.value) as 0 | 1 | 2 | 3;
+	}
 
-	/**
-	 * Check if exercise is completed
-	 */
-	let isCompleted = $derived.by(() => {
-		if (expectedNotes.length === 0) return false;
-		const sorted1 = [...currentNotes].sort();
-		const sorted2 = [...expectedNotes].sort();
-		return sorted1.length === sorted2.length && sorted1.every((note, i) => note === sorted2[i]);
-	});
+	function handleVoicingChange(event: Event): void {
+		const target = event.target as HTMLSelectElement;
+		voicing = target.value as typeof voicing;
+	}
 
-	/**
-	 * Get chord display info
-	 */
+	// Derived values for display
 	let chordInfo = $derived.by(() => {
 		const symbols: Record<ChordType, string> = {
-			major: '',
+			major: 'M',
 			minor: 'm',
-			maj7: 'maj7',
+			maj7: 'Maj7',
 			min7: 'm7',
 			'7': '7',
 			dom7: '7',
@@ -125,304 +125,189 @@
 			sus2: 'sus2',
 			sus4: 'sus4'
 		};
-
 		return {
-			name: `${selectedNote} ${chordType}`,
-			symbol: selectedNote + symbols[chordType],
+			name: `${chordType}`,
 			voicing: voicing,
 			inversion: inversion
 		};
 	});
 
-	/**
-	 * Create chord tone mapping for the keyboard
-	 */
-	let chordToneMapping = $derived.by(() => {
-		const { middleC, octaves } = keyboardRange;
-		const startNote = middleC - Math.floor(octaves / 2) * 12;
-		const endNote = startNote + octaves * 12;
+	function analyzeChordTone(
+		noteNumber: MidiNote,
+		chordNotes: { root: MidiNote; third: MidiNote; fifth: MidiNote; seventh?: MidiNote }
+	): ChordToneRole {
+		const normalizedNote = noteNumber % 12;
+		const rootNormalized = chordNotes.root % 12;
+		const thirdNormalized = chordNotes.third % 12;
+		const fifthNormalized = chordNotes.fifth % 12;
+		const seventhNormalized = chordNotes.seventh ? chordNotes.seventh % 12 : null;
+		if (normalizedNote === rootNormalized) return 'root';
+		if (normalizedNote === thirdNormalized) return 'third';
+		if (normalizedNote === fifthNormalized) return 'fifth';
+		if (seventhNormalized !== null && normalizedNote === seventhNormalized) return 'seventh';
+		return 'none';
+	}
 
-		return createChordToneMapping(startNote as MidiNote, endNote as MidiNote, {
+	function getChordToneColor(
+		role: ChordToneRole,
+		colors: ChordToneColors = DEFAULT_CHORD_TONE_COLORS
+	): string {
+		return colors[role];
+	}
+	export function createChordToneMapping(
+		startNote: MidiNote,
+		endNote: MidiNote,
+		chordNotes: { root: MidiNote; third: MidiNote; fifth: MidiNote; seventh?: MidiNote },
+		colors: ChordToneColors = DEFAULT_CHORD_TONE_COLORS
+	): ChordToneInfo[] {
+		const mapping: ChordToneInfo[] = [];
+		for (let noteNumber = startNote; noteNumber <= endNote; noteNumber++) {
+			const role = analyzeChordTone(noteNumber as MidiNote, chordNotes);
+			const color = getChordToneColor(role, colors);
+			mapping.push({
+				midiNote: noteNumber as MidiNote,
+				noteNumber: noteNumber as MidiNote,
+				role,
+				color
+			});
+		}
+		return mapping;
+	}
+
+	// Create chord tone info for keyboard highlighting
+	function createChordToneInfo(selectedNote: Note) {
+		const rootNote = (selectedNote + '4') as NoteFullName;
+		const rootMidi = NoteToMidi[rootNote];
+		const currentChord = chords(rootMidi, chordType, inversion);
+
+		const expectedNotes = generateExpectedNotes(selectedNote);
+		const keyboardRange = calculateOptimalRange(expectedNotes);
+		const startNote = keyboardRange.middleC - Math.floor(keyboardRange.octaves / 2) * 12;
+		const endNote = startNote + keyboardRange.octaves * 12;
+
+		// Create a list of chord notes for the mapping
+		const chordObject = {
 			root: currentChord.root,
 			third: currentChord.third,
 			fifth: currentChord.fifth,
 			seventh: currentChord.seventh
-		});
-	});
+		};
 
-	// ===== EVENT HANDLERS =====
-
-	function handleNoteOn(note: NoteEvent): void {
-		noteEvents = [...noteEvents, note];
-
-		if (expectedNotes.includes(note.noteNumber)) {
-			showFeedback('Correct!', 'success');
-			audioManager.playSound?.('success');
-		} else {
-			mistakes++;
-			showFeedback('Try again!', 'error');
-			audioManager.playSound?.('error');
-		}
-
-		if (isCompleted) {
-			completeExercise();
+		return createChordToneMapping(startNote as MidiNote, endNote as MidiNote, chordObject);
+	}
+	// Custom completion handler for random mode
+	function onExerciseComplete() {
+		if (randomMode && onRandomComplete) {
+			// Small delay to show completion before moving to next exercise
+			setTimeout(() => {
+				onRandomComplete();
+			}, 1500);
 		}
 	}
-
-	function handleNoteOff(note: NoteEvent): void {
-		noteEvents = noteEvents.filter((e) => e.noteNumber !== note.noteNumber);
-	}
-
-	function showFeedback(message: string, type: 'success' | 'error' | 'info'): void {
-		feedbackMessage = message;
-		setTimeout(() => {
-			feedbackMessage = '';
-		}, 2000);
-	}
-
-	function completeExercise(): void {
-		completed = true;
-		const timeElapsed = Date.now() - startTime;
-		const accuracy = Math.round(((expectedNotes.length - mistakes) / expectedNotes.length) * 100);
-
-		showFeedback('Exercise completed!', 'success');
-		audioManager.playSound?.('success');
-	}
-
-	function resetExercise(): void {
-		noteEvents = [];
-		mistakes = 0;
-		completed = false;
-		feedbackMessage = '';
-		startTime = Date.now();
-	}
-
-	function handleNoteSelect(note: Note): void {
-		selectedNote = note;
-		resetExercise();
-	}
-
-	function handleChordTypeChange(event: Event): void {
-		const target = event.target as HTMLSelectElement;
-		chordType = target.value as ChordType;
-		resetExercise();
-	}
-
-	function handleInversionChange(event: Event): void {
-		const target = event.target as HTMLSelectElement;
-		inversion = parseInt(target.value) as 0 | 1 | 2 | 3;
-		resetExercise();
-	}
-
-	function handleVoicingChange(event: Event): void {
-		const target = event.target as HTMLSelectElement;
-		voicing = target.value as typeof voicing;
-		resetExercise();
-	}
-
-	function handleChordToneToggle(show: boolean): void {
-		showChordTones = show;
-	}
-
-	function toggleDebug(): void {
-		debugMode = !debugMode;
-	}
-
-	// ===== LIFECYCLE =====
-
-	onMount(async () => {
-		await midiManager.initialize();
-		midiManager.setEventHandlers({
-			onNoteOn: handleNoteOn,
-			onNoteOff: handleNoteOff
-		});
-
-		startTime = Date.now();
-	});
-
-	onDestroy(() => {
-		midiManager.cleanup();
-	});
-
-	// Create exercise state for BaseExercise component
-	let exerciseState = $derived({
-		noteEvents,
-		midiNotes: currentNotes,
-		selectedNote,
-		debugMode,
-		errorCount: mistakes,
-		showNoteNames,
-		showKeyboard,
-		feedbackMessage,
-		completed: false
-	});
-
-	let scoreProps = $derived({
-		title: chordInfo.symbol,
-		showClefs: true
-	});
 </script>
 
-<!-- ===== TEMPLATE ===== -->
-
-<div class="chord-exercise">
-	<!-- Header -->
-	<header class="exercise-header">
-		<h1>Jazz Chord Practice</h1>
-		<p class="description">Practice playing jazz chords with different voicings and inversions</p>
-	</header>
-
-	<!-- Feedback -->
-	{#if feedbackMessage}
-		<div class="feedback" role="alert">
-			{feedbackMessage}
-		</div>
-	{/if}
-
-	<!-- Exercise Info -->
-	<div class="chord-info">
-		<h2 class="chord-display">{chordInfo.symbol}</h2>
-		<div class="chord-details">
-			<span>Voicing: {chordInfo.voicing}</span>
-			<span
-				>Inversion: {chordInfo.inversion === 0
-					? 'Root'
-					: chordInfo.inversion === 1
-						? '1st'
-						: chordInfo.inversion === 2
-							? '2nd'
-							: '3rd'}</span
-			>
-		</div>
-	</div>
-
-	<!-- Controls -->
-	<div class="controls">
-		<div class="control-group">
-			<label for="note-select">Key:</label>
-			<select
-				id="note-select"
-				value={selectedNote}
-				onchange={(e) => handleNoteSelect((e.target as HTMLSelectElement).value as Note)}
-			>
-				{#each AllNotes as note}
-					<option value={note}>{note}</option>
-				{/each}
-			</select>
+<BaseExercise
+	exerciseTitle={randomMode ? 'Random Chord' : 'Jazz Chord Practice'}
+	exerciseDescription={randomMode
+		? `Play the ${randomNote}${chordType} chord`
+		: 'Practice playing jazz chords with different voicings and inversions'}
+	exerciseType="chord"
+	initialSelectedNote={randomMode ? randomNote : undefined}
+	{randomMode}
+	{generateExpectedNotes}
+	validateNoteEvent={validateChordNote}
+	keyboardProps={{
+		chordToneInfo: [],
+		showChordTones: true
+	}}
+	scoreProps={{
+		title: chordInfo.name
+	}}
+	customControls={true}
+	{onExerciseComplete}
+>
+	{#snippet children(api: any)}
+		<div class="chord-info">
+			<h2 class="chord-display">{api.selectedNote} {chordInfo.name}</h2>
+			<div class="chord-details">
+				<span>Voicing: {chordInfo.voicing}</span>
+				<span
+					>Inversion: {chordInfo.inversion === 0
+						? 'Root'
+						: chordInfo.inversion === 1
+							? '1st'
+							: chordInfo.inversion === 2
+								? '2nd'
+								: '3rd'}</span
+				>
+			</div>
 		</div>
 
-		<div class="control-group">
-			<label for="chord-type">Chord Type:</label>
-			<select id="chord-type" value={chordType} onchange={handleChordTypeChange}>
-				{#each AllChordTypes as type}
-					<option value={type}>{type}</option>
-				{/each}
-			</select>
+		<div class="controls">
+			{#if !randomMode}
+				<div class="control-group">
+					<label for="chord-type">Chord Type:</label>
+					<select id="chord-type" value={chordType} onchange={handleChordTypeChange}>
+						{#each AllChordTypes as type}
+							<option value={type}>{type}</option>
+						{/each}
+					</select>
+				</div>
+
+				<div class="control-group">
+					<label for="inversion">Inversion:</label>
+					<select id="inversion" value={inversion} onchange={handleInversionChange}>
+						<option value={0}>Root</option>
+						<option value={1}>1st</option>
+						<option value={2}>2nd</option>
+						<option value={3}>3rd</option>
+					</select>
+				</div>
+
+				<div class="control-group">
+					<label for="voicing">Voicing:</label>
+					<select id="voicing" value={voicing} onchange={handleVoicingChange}>
+						<option value="full">Full</option>
+						<option value="left-hand">Left Hand</option>
+						<option value="right-hand">Right Hand</option>
+						<option value="split">Split</option>
+					</select>
+				</div>
+			{/if}
+
+			<div class="control-group">
+				<button onclick={api.resetExercise}>Reset</button>
+				{#if !randomMode}
+					<button onclick={api.toggleDebug}>
+						{api.debugMode ? 'Hide' : 'Show'} Debug
+					</button>
+				{/if}
+			</div>
+
+			{#if !randomMode}
+				<div class="control-group chord-tone-controls">
+					<ChordToneToggle showChordTones={api.showChordTones} onToggle={api.setShowChordTones} />
+				</div>
+			{/if}
 		</div>
 
-		<div class="control-group">
-			<label for="inversion">Inversion:</label>
-			<select id="inversion" value={inversion} onchange={handleInversionChange}>
-				<option value={0}>Root</option>
-				<option value={1}>1st</option>
-				<option value={2}>2nd</option>
-				<option value={3}>3rd</option>
-			</select>
-		</div>
-
-		<div class="control-group">
-			<label for="voicing">Voicing:</label>
-			<select id="voicing" value={voicing} onchange={handleVoicingChange}>
-				<option value="full">Full</option>
-				<option value="left-hand">Left Hand</option>
-				<option value="right-hand">Right Hand</option>
-				<option value="split">Split</option>
-			</select>
-		</div>
-
-		<div class="control-group">
-			<button onclick={resetExercise}>Reset</button>
-			<button onclick={toggleDebug}>
-				{debugMode ? 'Hide' : 'Show'} Debug
-			</button>
-		</div>
-
-		<div class="control-group chord-tone-controls">
-			<ChordToneToggle {showChordTones} onToggle={handleChordToneToggle} />
-		</div>
-	</div>
-
-	<!-- Main Exercise using BaseExercise component -->
-	<BaseExercise
-		{exerciseState}
-		exerciseTitle="Current Chord"
-		{expectedNotes}
-		{scoreProps}
-		keyboardProps={{
-			midiNotes: currentNotes,
-			middleC: keyboardRange.middleC,
-			octaves: keyboardRange.octaves,
-			interactive: debugMode,
-			showLabels: showNoteNames,
-			chordToneInfo: chordToneMapping,
-			showChordTones: showChordTones
-		}}
-		onDebugToggle={toggleDebug}
-		onReset={resetExercise}
-		customControls={true}
-	>
-		<!-- Custom status display -->
 		<div class="exercise-status">
 			<div class="progress">
 				Progress: {Math.round(
-					(currentNotes.filter((n) => expectedNotes.includes(n)).length / expectedNotes.length) *
+					(api.currentNotes.filter((n: MidiNote) => api.expectedNotes.includes(n)).length /
+						api.expectedNotes.length) *
 						100
 				)}%
 			</div>
-			<div class="mistakes">
-				Mistakes: {mistakes}
-			</div>
-			{#if completed}
-				<div class="completion">🎉 Exercise Completed!</div>
+			<div class="mistakes">Mistakes: {api.mistakes}</div>
+			{#if api.completed}
+				<div class="completion">🎉 Chord Completed!</div>
 			{/if}
 		</div>
-	</BaseExercise>
-</div>
+	{/snippet}
+</BaseExercise>
 
 <style>
-	.chord-exercise {
-		max-width: 1200px;
-		margin: 0 auto;
-		padding: 2rem;
-		font-family: system-ui, sans-serif;
-	}
-
-	.exercise-header {
-		text-align: center;
-		margin-bottom: 2rem;
-	}
-
-	.exercise-header h1 {
-		color: #2c3e50;
-		margin-bottom: 0.5rem;
-	}
-
-	.description {
-		color: #7f8c8d;
-		font-size: 1.1rem;
-	}
-
-	.feedback {
-		padding: 1rem;
-		margin: 1rem 0;
-		border-radius: 0.5rem;
-		text-align: center;
-		font-weight: 500;
-		background-color: #e8f5e8;
-		color: #2d5d2d;
-		border: 1px solid #a8d8a8;
-	}
-
 	.chord-info {
 		text-align: center;
 		margin: 2rem 0;
@@ -487,7 +372,7 @@
 	}
 
 	.chord-tone-controls {
-		grid-column: 1 / -1; /* Span across all columns */
+		grid-column: 1 / -1;
 		justify-self: center;
 	}
 
@@ -508,10 +393,6 @@
 	}
 
 	@media (max-width: 768px) {
-		.chord-exercise {
-			padding: 1rem;
-		}
-
 		.chord-details {
 			flex-direction: column;
 			gap: 0.5rem;

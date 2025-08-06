@@ -1,191 +1,58 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import {
-		AllChordTypes,
-		AllNotes,
-		chords,
-		majorScales,
-		midiNoteToNoteName,
-		minorScales,
-		MusicTheoryUtils,
-		NoteToMidi,
-		type ChordToneInfo
-	} from '$lib/core';
-	import type {
-		BaseExerciseState,
-		ChordType,
-		MidiNote,
-		Note,
-		NoteEvent,
-		NoteFullName
-	} from '$lib/types';
+	import type { ChordType, Note } from '$lib/types/notes';
+	import { AllChordTypes, AllNotes } from '$lib/types/notes.constants';
 	import { onMount } from 'svelte';
-	import BaseExercise from '../../components/BaseExercise.svelte';
-	import { audioManager } from '../../lib/managers/AudioManager';
-	import { midiManager } from '../../lib/managers/MIDIManager';
-	import { userStatsService } from '../../lib/services/UserStatsService';
+	import ChordsPage from '../chords/+page.svelte';
+	import ScalesPage from '../scales/+page.svelte';
+	import TwoFiveOnesPage from '../two_five_ones/+page.svelte';
 
-	// Exercise types
-	type ExerciseType = 'chord' | 'scale-major' | 'scale-minor' | 'ii-v-i';
+	type ExerciseType = 'chord' | 'scale' | 'ii-v-i';
 
-	interface Exercise {
+	interface RandomExerciseConfig {
 		type: ExerciseType;
 		key: Note;
 		chordType?: ChordType;
 		inversion?: 0 | 1 | 2 | 3;
 		description: string;
-		expectedNotes: MidiNote[];
-		scoreNotes: NoteFullName[];
 	}
 
-	// ===== STATE =====
-	let noteEvents: NoteEvent[] = $state([]);
-	let currentExercise: Exercise | null = $state(null);
-	let mistakes = $state(0);
-	let completed = $state(false);
-	let debugMode = $state(false);
-	let feedbackMessage = $state('');
-	let startTime = $state(Date.now());
+	let currentConfig: RandomExerciseConfig | null = $state(null);
+	let exerciseKey = $state(0); // Force re-render of child components
 
-	// Auto-enable helpers based on mistakes
-	let showNoteNames = $derived(mistakes >= 3);
-	let showKeyboard = $derived(mistakes >= 6);
-
-	// ===== COMPUTED PROPERTIES =====
-	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
-	let expectedNotes = $derived((currentExercise as Exercise | null)?.expectedNotes || []);
-
-	let chordToneMapping = $derived.by((): ChordToneInfo[] => {
-		if (!currentExercise || currentExercise.type !== 'chord') return [];
-		const rootNote = (currentExercise.key + '4') as NoteFullName;
-		const rootMidi = NoteToMidi[rootNote];
-		const chord = chords(
-			rootMidi,
-			currentExercise.chordType || 'maj7',
-			currentExercise.inversion || 0
-		);
-		return MusicTheoryUtils.Chord.createChordToneMapping(
-			chord,
-			rootMidi,
-			currentExercise.chordType || 'maj7',
-			currentExercise.inversion || 0
-		);
-	});
-
-	// Exercise state for BaseExercise
-	let exerciseState = $derived.by((): BaseExerciseState => {
-		return {
-			selectedNote: currentExercise?.key || 'C',
-			midiNotes: currentNotes,
-			noteEvents,
-			debugMode,
-			showNoteNames,
-			showKeyboard,
-			feedbackMessage,
-			errorCount: mistakes,
-			completed
-		};
-	});
-
-	// Score properties
-	let scoreProps = $derived({
-		notes: (currentExercise as Exercise | null)?.scoreNotes || [],
-		highlightedNotes: currentNotes.map((note) => midiNoteToNoteName(note as MidiNote)),
-		title: (currentExercise as Exercise | null)?.description || 'Random Exercise'
-	});
-
-	// ===== FUNCTIONS =====
-
-	function generateRandomExercise(): Exercise {
-		const types: ExerciseType[] = ['chord', 'scale-major', 'scale-minor', 'ii-v-i'];
+	function generateRandomExercise(): RandomExerciseConfig {
+		const types: ExerciseType[] = ['chord', 'scale', 'ii-v-i'];
 		const type = types[Math.floor(Math.random() * types.length)];
 		const key = AllNotes[Math.floor(Math.random() * AllNotes.length)];
-
-		return createExercise(type, key);
+		return createExerciseConfig(type, key);
 	}
 
-	function createExercise(type: ExerciseType, key: Note): Exercise {
+	function createExerciseConfig(type: ExerciseType, key: Note): RandomExerciseConfig {
 		switch (type) {
 			case 'chord': {
 				const chordType = AllChordTypes[Math.floor(Math.random() * AllChordTypes.length)];
 				const inversion = Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3;
-
-				const rootNote = (key + '4') as NoteFullName;
-				const rootMidi = NoteToMidi[rootNote];
-				const chord = chords(rootMidi, chordType, inversion);
-
-				const expectedNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
-					(n) => n != null
-				) as MidiNote[];
-				const scoreNotes = expectedNotes.map((note) =>
-					midiNoteToNoteName(note as MidiNote)
-				) as NoteFullName[];
-
 				return {
 					type,
 					key,
 					chordType,
 					inversion,
-					description: `${key}${chordType}${inversion > 0 ? ` (${inversion}st inversion)` : ''}`,
-					expectedNotes,
-					scoreNotes
+					description: `${key}${chordType}${inversion > 0 ? ` (${inversion}st inversion)` : ''}`
 				};
 			}
-			case 'scale-major': {
-				const scaleNotes = majorScales[key];
-				const middleOctaveNotes = Array.from(
-					new Set(scaleNotes.map((note: NoteFullName) => note.slice(0, -1) as Note))
-				);
-				const middleKeyboard = middleOctaveNotes.map((note: Note) => (note + '4') as NoteFullName);
-				const expectedNotes = middleKeyboard.map((note: NoteFullName) => NoteToMidi[note]);
-
+			case 'scale': {
 				return {
 					type,
 					key,
-					description: `${key} Major Scale`,
-					expectedNotes,
-					scoreNotes: middleKeyboard
-				};
-			}
-			case 'scale-minor': {
-				const scaleNotes = minorScales[key];
-				const middleOctaveNotes = Array.from(
-					new Set(scaleNotes.map((note: NoteFullName) => note.slice(0, -1) as Note))
-				);
-				const middleKeyboard = middleOctaveNotes.map((note: Note) => (note + '4') as NoteFullName);
-				const expectedNotes = middleKeyboard.map((note: NoteFullName) => NoteToMidi[note]);
-
-				return {
-					type,
-					key,
-					description: `${key} Minor Scale`,
-					expectedNotes,
-					scoreNotes: middleKeyboard
+					description: `${key} Major Scale`
 				};
 			}
 			case 'ii-v-i': {
-				const rootMidi = NoteToMidi[(key + '4') as NoteFullName];
-				const twoChord = chords((rootMidi + 2) as MidiNote, 'min7');
-				const fiveChord = chords((rootMidi + 7) as MidiNote, '7');
-				const oneChord = chords(rootMidi, 'maj7');
-
-				const allNotes = [
-					...[twoChord.root, twoChord.third, twoChord.fifth, twoChord.seventh],
-					...[fiveChord.root, fiveChord.third, fiveChord.fifth, fiveChord.seventh],
-					...[oneChord.root, oneChord.third, oneChord.fifth, oneChord.seventh]
-				].filter((n) => n != null) as MidiNote[];
-
-				const scoreNotes = allNotes.map((note) =>
-					midiNoteToNoteName(note as MidiNote)
-				) as NoteFullName[];
-
 				return {
 					type,
 					key,
-					description: `${key} ii-V-I Progression`,
-					expectedNotes: allNotes,
-					scoreNotes
+					description: `${key} ii-V-I Progression`
 				};
 			}
 			default:
@@ -193,156 +60,56 @@
 		}
 	}
 
-	function handleNoteSelect(note: Note) {
-		// Note selection not applicable in random mode
-		console.log('Note selection not supported in random exercise mode');
-	}
-
-	function toggleDebug() {
-		debugMode = !debugMode;
-		if (debugMode) {
-			midiManager.enableDebugMode();
-		} else {
-			midiManager.disableDebugMode();
-		}
-	}
-
-	function resetExercise() {
-		mistakes = 0;
-		noteEvents = [];
-		completed = false;
-		feedbackMessage = '';
-		startTime = Date.now();
-		midiManager.resetExercise();
-	}
-
 	function generateNewExercise() {
-		currentExercise = generateRandomExercise();
-		resetExercise();
+		currentConfig = generateRandomExercise();
+		exerciseKey = Date.now(); // Force component re-render with new props
 	}
 
-	function onMidiEvent(event: NoteEvent) {
-		if (!currentExercise) return;
-
-		noteEvents = [event, ...noteEvents.slice(0, 9)];
-
-		if (event.type === 'on') {
-			if (expectedNotes.includes(event.noteNumber)) {
-				const activeCorrect = noteEvents
-					.filter((e) => e.type === 'on')
-					.filter((e) => expectedNotes.includes(e.noteNumber));
-
-				if (activeCorrect.length === expectedNotes.length) {
-					completed = true;
-					feedbackMessage = getSuccessMessage();
-					audioManager.playSuccess();
-
-					// Track progress
-					const timeSpent = (Date.now() - startTime) / 1000;
-					const accuracy = Math.round(
-						(expectedNotes.length / (expectedNotes.length + mistakes)) * 100
-					);
-					userStatsService.updateNoteProgress(
-						currentExercise.key,
-						currentExercise.type.startsWith('scale')
-							? 'scale'
-							: currentExercise.type === 'ii-v-i'
-								? 'progression'
-								: 'chord',
-						currentExercise.chordType,
-						true,
-						timeSpent,
-						accuracy
-					);
-				} else {
-					feedbackMessage = `Good! ${activeCorrect.length}/${expectedNotes.length}`;
-				}
-			} else {
-				mistakes++;
-				feedbackMessage = 'Wrong note!';
-				audioManager.playError();
-			}
-		}
-	}
-
-	function getSuccessMessage(): string {
-		if (!currentExercise) return 'Excellent! 🎵';
-
-		switch (currentExercise.type) {
-			case 'chord':
-				return `Perfect ${currentExercise.description} chord! 🎹`;
-			case 'scale-major':
-			case 'scale-minor':
-				return `Excellent ${currentExercise.description}! 🎵`;
-			case 'ii-v-i':
-				return `Great ${currentExercise.description}! 🎵✨`;
-			default:
-				return 'Excellent! 🎵';
-		}
-	}
-
-	// ===== LIFECYCLE =====
 	onMount(() => {
-		currentExercise = generateRandomExercise();
-		midiManager.connect(onMidiEvent);
-		audioManager.initialize();
-
-		return () => {
-			midiManager.disconnect();
-		};
+		currentConfig = generateRandomExercise();
 	});
 </script>
 
 <div class="random-exercise">
-	{#if currentExercise}
-		<BaseExercise
-			{exerciseState}
-			exerciseTitle="Random Exercise"
-			exerciseDescription={currentExercise.description}
-			{expectedNotes}
-			{scoreProps}
-			keyboardProps={{
-				chordToneInfo: chordToneMapping,
-				showChordTones: currentExercise.type === 'chord'
-			}}
-			onNoteSelect={handleNoteSelect}
-			onDebugToggle={toggleDebug}
-			onReset={resetExercise}
-			customControls={true}
-		>
-			<!-- Custom controls for random exercise -->
-			<div class="random-controls">
-				<div class="control-group">
-					<button onclick={toggleDebug} class="debug-btn">
-						{debugMode ? 'Disable' : 'Enable'} Debug Mode
-					</button>
-					<button onclick={resetExercise} class="reset-btn">Reset</button>
-					<button onclick={generateNewExercise} class="new-exercise-btn">New Exercise</button>
-				</div>
+	<div class="random-header">
+		<h1>Random Exercise</h1>
+		<div class="random-controls">
+			<button onclick={generateNewExercise} class="new-exercise-btn">
+				🎲 New Random Exercise
+			</button>
+		</div>
+		{#if currentConfig}
+			<div class="exercise-info">
+				<span class="exercise-type">{currentConfig.type}</span>
+				<span class="exercise-description">{currentConfig.description}</span>
 			</div>
+		{/if}
+	</div>
 
-			<!-- Custom status display -->
-			<div class="exercise-status">
-				<div class="exercise-type">
-					Type: {currentExercise.type}
-				</div>
-				<div class="exercise-key">
-					Key: {currentExercise.key}
-				</div>
-				<div class="progress">
-					Progress: {Math.round(
-						(currentNotes.filter((n) => expectedNotes.includes(n)).length / expectedNotes.length) *
-							100
-					)}%
-				</div>
-				<div class="mistakes">
-					Mistakes: {mistakes}
-				</div>
-				{#if completed}
-					<div class="completion">🎉 Exercise Completed!</div>
-				{/if}
-			</div>
-		</BaseExercise>
+	{#if currentConfig}
+		{#key exerciseKey}
+			{#if currentConfig.type === 'chord'}
+				<ChordsPage
+					randomMode={true}
+					randomNote={currentConfig.key}
+					randomChordType={currentConfig.chordType}
+					randomInversion={currentConfig.inversion}
+					onRandomComplete={generateNewExercise}
+				/>
+			{:else if currentConfig.type === 'scale'}
+				<ScalesPage
+					randomMode={true}
+					randomNote={currentConfig.key}
+					onRandomComplete={generateNewExercise}
+				/>
+			{:else if currentConfig.type === 'ii-v-i'}
+				<TwoFiveOnesPage
+					randomMode={true}
+					randomNote={currentConfig.key}
+					onRandomComplete={generateNewExercise}
+				/>
+			{/if}
+		{/key}
 	{:else}
 		<div class="loading">Generating random exercise...</div>
 	{/if}
@@ -356,82 +123,68 @@
 		font-family: system-ui, sans-serif;
 	}
 
-	.random-controls {
-		display: flex;
-		gap: 2rem;
+	.random-header {
+		text-align: center;
+		margin-bottom: 2rem;
+	}
+
+	.random-header h1 {
+		color: #333;
 		margin-bottom: 1rem;
-		align-items: center;
 	}
 
-	.control-group {
-		display: flex;
-		gap: 1rem;
-		align-items: center;
-	}
-
-	.debug-btn,
-	.reset-btn,
-	.new-exercise-btn {
-		padding: 0.5rem 1rem;
-		border: 1px solid #ccc;
-		border-radius: 4px;
-		background: white;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.debug-btn {
-		background: var(--color-debug, #e3f2fd);
-		border-color: var(--color-debug-border, #2196f3);
+	.random-controls {
+		margin-bottom: 1rem;
 	}
 
 	.new-exercise-btn {
+		padding: 0.75rem 1.5rem;
+		border: 2px solid #4caf50;
+		border-radius: 8px;
 		background: #e8f5e8;
-		border-color: #4caf50;
-		font-weight: 500;
-	}
-
-	.debug-btn:hover,
-	.reset-btn:hover,
-	.new-exercise-btn:hover {
-		background: #f5f5f5;
-		transform: translateY(-1px);
+		color: #2e7d32;
+		font-weight: 600;
+		font-size: 1rem;
+		cursor: pointer;
+		transition: all 0.3s;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 
 	.new-exercise-btn:hover {
 		background: #d4f4d4;
+		transform: translateY(-2px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 	}
 
-	.exercise-status {
+	.new-exercise-btn:active {
+		transform: translateY(0);
+	}
+
+	.exercise-info {
 		display: flex;
-		gap: 2rem;
+		gap: 1rem;
+		justify-content: center;
+		align-items: center;
+		flex-wrap: wrap;
 		padding: 1rem;
 		background: #f8f9fa;
 		border-radius: 8px;
-		margin-top: 1rem;
-		flex-wrap: wrap;
-	}
-
-	.exercise-type,
-	.exercise-key,
-	.progress,
-	.mistakes {
-		font-weight: 500;
+		margin-bottom: 1rem;
 	}
 
 	.exercise-type {
-		color: #6c757d;
+		padding: 0.25rem 0.75rem;
+		background: #e3f2fd;
+		color: #1976d2;
+		border-radius: 20px;
+		font-size: 0.875rem;
+		font-weight: 500;
 		text-transform: capitalize;
 	}
 
-	.exercise-key {
-		color: #495057;
-	}
-
-	.completion {
-		color: #28a745;
-		font-weight: bold;
-		animation: bounce 0.5s ease-in-out;
+	.exercise-description {
+		font-weight: 600;
+		color: #333;
 	}
 
 	.loading {
@@ -441,33 +194,12 @@
 		font-size: 1.2rem;
 	}
 
-	@keyframes bounce {
-		0%,
-		20%,
-		50%,
-		80%,
-		100% {
-			transform: translateY(0);
-		}
-		40% {
-			transform: translateY(-10px);
-		}
-		60% {
-			transform: translateY(-5px);
-		}
-	}
-
 	@media (max-width: 768px) {
 		.random-exercise {
 			padding: 1rem;
 		}
 
-		.random-controls {
-			flex-direction: column;
-			gap: 1rem;
-		}
-
-		.exercise-status {
+		.exercise-info {
 			flex-direction: column;
 			gap: 0.5rem;
 		}

@@ -1,17 +1,11 @@
 <svelte:options runes={true} />
 
-<!--
-    Stats Widget Component
-    Shows progress and statistics for the current user
--->
-
 <script lang="ts">
+	import type { Note } from '$lib/types/notes';
+	import { AllNotes } from '$lib/types/notes.constants';
+	import type { NoteProgress } from '$lib/UserStatsService';
+	import { userStatsService } from '$lib/UserStatsService';
 	import { onMount } from 'svelte';
-	import type { NoteProgress } from '../lib/services/UserStatsService';
-	import { userStatsService } from '../lib/services/UserStatsService';
-	import { AllNotes, type Note } from '../midi/midi';
-
-	// Props
 	let {
 		showDetailed = false,
 		exerciseType = 'all' as 'all' | 'scale' | 'chord' | 'progression'
@@ -19,19 +13,14 @@
 		showDetailed?: boolean;
 		exerciseType?: 'all' | 'scale' | 'chord' | 'progression';
 	} = $props();
-
-	// State
 	let userStats = $state(userStatsService.getStatistics());
 	let progressData: NoteProgress[] = $state([]);
-
-	// Computed
 	let filteredProgress = $derived.by(() => {
 		if (exerciseType === 'all') {
 			return progressData;
 		}
 		return progressData.filter((p) => p.exerciseType === exerciseType);
 	});
-
 	let progressByNote = $derived.by(() => {
 		const grouped = new Map<Note, NoteProgress[]>();
 		filteredProgress.forEach((progress) => {
@@ -42,7 +31,6 @@
 		});
 		return grouped;
 	});
-
 	let overallProgress = $derived.by(() => {
 		if (filteredProgress.length === 0) return 0;
 		const totalMastery = filteredProgress.reduce((sum, p) => {
@@ -56,7 +44,6 @@
 		}, 0);
 		return Math.round(totalMastery / filteredProgress.length);
 	});
-
 	function getMasteryColor(level: string): string {
 		switch (level) {
 			case 'mastered':
@@ -71,7 +58,6 @@
 				return '#9e9e9e';
 		}
 	}
-
 	function getMasteryIcon(level: string): string {
 		switch (level) {
 			case 'mastered':
@@ -86,7 +72,6 @@
 				return '❓';
 		}
 	}
-
 	function formatTime(seconds: number): string {
 		if (seconds === Infinity) return 'N/A';
 		if (seconds < 60) return `${seconds.toFixed(1)}s`;
@@ -94,18 +79,13 @@
 		const remainingSeconds = Math.floor(seconds % 60);
 		return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 	}
-
 	function updateStats() {
 		userStats = userStatsService.getStatistics();
 		progressData = Array.from(userStats.noteProgress.values());
 	}
-
 	onMount(() => {
 		updateStats();
-
-		// Listen for stats updates
 		const unsubscribe = userStatsService.subscribe(updateStats);
-
 		return unsubscribe;
 	});
 </script>
@@ -119,7 +99,6 @@
 			</div>
 		</div>
 	</div>
-
 	<div class="stats-summary">
 		<div class="stat-item">
 			<div class="stat-value">{userStats.totalExercises}</div>
@@ -134,7 +113,6 @@
 			<div class="stat-label">Current Streak</div>
 		</div>
 	</div>
-
 	{#if showDetailed && filteredProgress.length > 0}
 		<div class="detailed-progress">
 			<h4>Progress by Note</h4>
@@ -203,23 +181,19 @@
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 		margin: 1rem 0;
 	}
-
 	.stats-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 1rem;
 	}
-
 	.stats-header h3 {
 		margin: 0;
 		color: #2c3e50;
 	}
-
 	.overall-progress {
 		position: relative;
 	}
-
 	.progress-circle {
 		width: 60px;
 		height: 60px;
@@ -235,7 +209,6 @@
 		justify-content: center;
 		position: relative;
 	}
-
 	.progress-circle::before {
 		content: '';
 		position: absolute;
@@ -243,7 +216,6 @@
 		border-radius: 50%;
 		background: white;
 	}
-
 	.progress-text {
 		position: relative;
 		z-index: 1;
@@ -251,54 +223,45 @@
 		font-size: 0.85rem;
 		color: #2c3e50;
 	}
-
 	.stats-summary {
 		display: flex;
 		gap: 2rem;
 		margin-bottom: 1.5rem;
 		flex-wrap: wrap;
 	}
-
 	.stat-item {
 		text-align: center;
 		flex: 1;
 		min-width: 100px;
 	}
-
 	.stat-value {
 		font-size: 1.5rem;
 		font-weight: bold;
 		color: #2c3e50;
 	}
-
 	.stat-label {
 		color: #7f8c8d;
 		font-size: 0.85rem;
 		margin-top: 0.25rem;
 	}
-
 	.detailed-progress h4 {
 		color: #2c3e50;
 		margin-bottom: 1rem;
 	}
-
 	.progress-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 		gap: 1rem;
 	}
-
 	.note-progress-card {
 		border: 1px solid #e0e0e0;
 		border-radius: 8px;
 		padding: 1rem;
 		background: #fafafa;
 	}
-
 	.note-header {
 		margin-bottom: 0.75rem;
 	}
-
 	.note-name {
 		font-size: 1.1rem;
 		font-weight: bold;
@@ -308,82 +271,68 @@
 		padding: 0.25rem 0.75rem;
 		border-radius: 20px;
 	}
-
 	.note-exercises {
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
 	}
-
 	.exercise-progress {
 		background: white;
 		padding: 0.75rem;
 		border-radius: 6px;
 		border-left: 4px solid #3498db;
 	}
-
 	.exercise-info {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 0.5rem;
 	}
-
 	.exercise-type {
 		font-weight: 500;
 		color: #2c3e50;
 		text-transform: capitalize;
 	}
-
 	.mastery-badge {
 		font-size: 0.85rem;
 		font-weight: 500;
 		text-transform: capitalize;
 	}
-
 	.progress-stats {
 		display: flex;
 		gap: 1rem;
 		flex-wrap: wrap;
 	}
-
 	.stat-small {
 		display: flex;
 		flex-direction: column;
 		gap: 0.125rem;
 	}
-
 	.stat-small .label {
 		font-size: 0.75rem;
 		color: #7f8c8d;
 	}
-
 	.stat-small .value {
 		font-size: 0.85rem;
 		font-weight: 500;
 		color: #2c3e50;
 	}
-
 	.no-data {
 		text-align: center;
 		padding: 2rem;
 		color: #7f8c8d;
 		font-style: italic;
 	}
-
 	@media (max-width: 768px) {
 		.stats-widget {
 			padding: 1rem;
 		}
-
 		.stats-summary {
 			gap: 1rem;
 		}
-
 		.progress-grid {
 			grid-template-columns: 1fr;
 		}
-
 		.progress-stats {
 			flex-direction: column;
 			gap: 0.5rem;

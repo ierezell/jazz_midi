@@ -1,155 +1,134 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import {
-		chords,
-		midiNoteToNoteName,
-		MidiToNote,
-		MusicTheoryUtils,
-		NoteToMidi,
-		type ChordToneInfo
-	} from '$lib/core';
-	import type { BaseExerciseState, MidiNote, Note, NoteEvent, NoteFullName } from '$lib/types';
+	import { chords } from '$lib/MusicTheoryUtils';
+	import type { MidiNote, Note, NoteFullName } from '$lib/types/notes';
+	import { MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
+	import type { NoteEvent } from '$lib/types/types';
+	import { userStatsService } from '$lib/UserStatsService';
 	import { onMount } from 'svelte';
 	import BaseExercise from '../../components/BaseExercise.svelte';
-	import { audioManager } from '../../lib/managers/AudioManager';
-	import { midiManager } from '../../lib/managers/MIDIManager';
-	import { userStatsService } from '../../lib/services/UserStatsService';
 
-	// ===== STATE =====
-	let selectedNote: Note = $state('C');
-	let currentChordIndex = $state(0); // 0 = ii, 1 = V, 2 = I
-	let noteEvents: NoteEvent[] = $state([]);
-	let mistakes = $state(0);
-	let completed = $state(false);
-	let debugMode = $state(false);
-	let feedbackMessage = $state('');
-	let startTime = $state(Date.now());
+	// Random mode props
+	interface Props {
+		randomMode?: boolean;
+		randomNote?: Note;
+		onRandomComplete?: () => void;
+	}
 
-	// Auto-enable helpers based on mistakes
-	let showNoteNames = $derived(mistakes >= 3);
-	let showKeyboard = $derived(mistakes >= 6);
+	let { randomMode = false, randomNote, onRandomComplete }: Props = $props();
 
-	// ===== COMPUTED PROPERTIES =====
-	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
+	let currentChordIndex = $state(0);
 
-	// Calculate ii-V-I progression
-	let twoChordRoot = $derived(NoteToMidi[(selectedNote + '4') as NoteFullName] + 2);
-	let fiveChordRoot = $derived(NoteToMidi[(selectedNote + '4') as NoteFullName] + 7);
-	let oneChordRoot = $derived(NoteToMidi[(selectedNote + '4') as NoteFullName]);
+	// Generate expected notes function - returns current chord notes
+	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
+		const twoChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName] + 2;
+		const fiveChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName] + 7;
+		const oneChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName];
 
-	let twoChord = $derived(chords(twoChordRoot as MidiNote, 'min7'));
-	let fiveChord = $derived(chords(fiveChordRoot as MidiNote, '7'));
-	let oneChord = $derived(chords(oneChordRoot as MidiNote, 'maj7'));
+		const twoChord = chords(twoChordRoot as MidiNote, 'min7');
+		const fiveChord = chords(fiveChordRoot as MidiNote, '7');
+		const oneChord = chords(oneChordRoot as MidiNote, 'maj7');
 
-	let progressionChords = $derived([twoChord, fiveChord, oneChord]);
-	let chordNames = $derived([
-		`${MidiToNote[twoChordRoot as MidiNote].slice(0, -1)}m7`,
-		`${MidiToNote[fiveChordRoot as MidiNote].slice(0, -1)}7`,
-		`${MidiToNote[oneChordRoot as MidiNote].slice(0, -1)}maj7`
-	]);
+		const progressionChords = [twoChord, fiveChord, oneChord];
+		const currentChord = progressionChords[currentChordIndex];
 
-	let currentChord = $derived(progressionChords[currentChordIndex]);
-	let currentExpectedNotes = $derived(
-		[currentChord.root, currentChord.third, currentChord.fifth, currentChord.seventh].filter(
+		return [currentChord.root, currentChord.third, currentChord.fifth, currentChord.seventh].filter(
 			(n) => n != null
-		) as MidiNote[]
-	);
-
-	// For the full progression
-	let allExpectedNotes = $derived.by(() => {
-		const allNotes: MidiNote[] = [];
-		progressionChords.forEach((chord) => {
-			const notes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
-				(n) => n != null
-			) as MidiNote[];
-			allNotes.push(...notes);
-		});
-		return allNotes;
-	});
-
-	let expectedNotes = $derived(currentExpectedNotes);
-
-	let chordToneMapping = $derived.by((): ChordToneInfo[] => {
-		const chordType = currentChordIndex === 0 ? 'min7' : currentChordIndex === 1 ? '7' : 'maj7';
-		const rootNote =
-			currentChordIndex === 0
-				? twoChordRoot
-				: currentChordIndex === 1
-					? fiveChordRoot
-					: oneChordRoot;
-		return MusicTheoryUtils.Chord.createChordToneMapping(
-			currentChord,
-			rootNote as MidiNote,
-			chordType,
-			0
-		);
-	});
-
-	// Exercise state for BaseExercise
-	let exerciseState = $derived.by((): BaseExerciseState => {
-		return {
-			selectedNote,
-			midiNotes: currentNotes,
-			noteEvents,
-			debugMode,
-			showNoteNames,
-			showKeyboard,
-			feedbackMessage,
-			errorCount: mistakes,
-			completed
-		};
-	});
-
-	// Score properties - show current chord
-	let scoreProps = $derived({
-		notes: currentExpectedNotes.map((note) =>
-			midiNoteToNoteName(note as MidiNote)
-		) as NoteFullName[],
-		highlightedNotes: currentNotes.map((note) => midiNoteToNoteName(note as MidiNote)),
-		title: `${selectedNote} ii-V-I: ${chordNames[currentChordIndex]} (${currentChordIndex + 1}/3)`
-	});
-
-	// ===== FUNCTIONS =====
-
-	function handleNoteSelect(note: Note) {
-		selectedNote = note;
-		resetExercise();
+		) as MidiNote[];
 	}
 
-	function toggleDebug() {
-		debugMode = !debugMode;
-		if (debugMode) {
-			midiManager.enableDebugMode();
-		} else {
-			midiManager.disableDebugMode();
+	// Custom validation for progression
+	function validateNoteEvent(
+		event: NoteEvent,
+		expectedNotes: MidiNote[],
+		currentNotes: MidiNote[]
+	): { isCorrect: boolean; message: string } {
+		if (expectedNotes.includes(event.noteNumber)) {
+			const correctCount = currentNotes.filter((note) => expectedNotes.includes(note)).length;
+			const totalExpected = expectedNotes.length;
+
+			if (correctCount === totalExpected) {
+				// Current chord is complete
+				if (currentChordIndex < 2) {
+					// Move to next chord after a short delay
+					setTimeout(() => {
+						currentChordIndex++;
+					}, 1000);
+					return { isCorrect: true, message: getChordCompletedMessage() };
+				} else {
+					// All chords completed
+					return { isCorrect: true, message: getChordCompletedMessage() };
+				}
+			} else {
+				return {
+					isCorrect: true,
+					message: `Good! ${correctCount}/${totalExpected} notes for ${getChordNames('C')[currentChordIndex]}`
+				};
+			}
 		}
+
+		return {
+			isCorrect: false,
+			message: `Wrong note! Expected: ${getChordNames()[currentChordIndex]}`
+		};
 	}
 
-	function resetExercise() {
-		mistakes = 0;
-		noteEvents = [];
-		completed = false;
-		currentChordIndex = 0;
-		feedbackMessage = '';
-		startTime = Date.now();
-		midiManager.resetExercise();
+	// Custom completion check - only complete when all 3 chords are done
+	function isCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+		if (expectedNotes.length === 0) return false;
+
+		const correctNotes = currentNotes.filter((note) => expectedNotes.includes(note));
+		const currentChordComplete = correctNotes.length === expectedNotes.length;
+
+		// Only consider the entire exercise complete when we're on the last chord (index 2)
+		// AND that chord is complete
+		return currentChordComplete && currentChordIndex === 2;
+	}
+
+	function getChordNames(selectedNote: Note = 'C'): string[] {
+		const twoChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName] + 2;
+		const fiveChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName] + 7;
+		const oneChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName];
+
+		return [
+			`${MidiToNote[twoChordRoot as MidiNote].slice(0, -1)}m7`,
+			`${MidiToNote[fiveChordRoot as MidiNote].slice(0, -1)}7`,
+			`${MidiToNote[oneChordRoot as MidiNote].slice(0, -1)}maj7`
+		];
+	}
+
+	function getChordCompletedMessage(): string {
+		if (currentChordIndex < 2) {
+			return `Great! Now play ${getChordNames()[currentChordIndex + 1]}`;
+		} else {
+			return `Perfect! Complete ii-V-I progression! 🎵✨`;
+		}
 	}
 
 	function nextChord() {
 		if (currentChordIndex < 2) {
 			currentChordIndex++;
-			feedbackMessage = `Great! Now play ${chordNames[currentChordIndex]}`;
 		} else {
-			completed = true;
-			feedbackMessage = `Perfect! Complete ${selectedNote} ii-V-I progression! 🎵✨`;
-			audioManager.playSuccess();
+			// Progression completed
+			return true;
+		}
+		return false;
+	}
 
-			// Track progress
-			const timeSpent = (Date.now() - startTime) / 1000;
-			const accuracy = Math.round((12 / (12 + mistakes)) * 100); // 12 total notes in progression
+	function onExerciseComplete() {
+		// This is only called when the entire exercise is complete (all 3 chords)
+		if (randomMode && onRandomComplete) {
+			// Small delay to show completion before moving to next exercise
+			setTimeout(() => {
+				onRandomComplete();
+			}, 1500);
+		} else {
+			const timeSpent = 10; // placeholder
+			const accuracy = 100; // placeholder
+
 			userStatsService.updateNoteProgress(
-				selectedNote,
+				'C', // selectedNote will be available from BaseExercise
 				'progression',
 				undefined,
 				true,
@@ -159,95 +138,92 @@
 		}
 	}
 
-	function onMidiEvent(event: NoteEvent) {
-		noteEvents = [event, ...noteEvents.slice(0, 9)];
-
-		if (event.type === 'on') {
-			if (expectedNotes.includes(event.noteNumber)) {
-				const activeCorrect = noteEvents
-					.filter((e) => e.type === 'on')
-					.filter((e) => expectedNotes.includes(e.noteNumber));
-
-				if (activeCorrect.length === expectedNotes.length) {
-					nextChord();
-				} else {
-					feedbackMessage = `Good! ${activeCorrect.length}/${expectedNotes.length} notes for ${chordNames[currentChordIndex]}`;
-				}
-			} else {
-				mistakes++;
-				feedbackMessage = `Wrong note! Expected: ${chordNames[currentChordIndex]}`;
-				audioManager.playError();
-			}
-		}
+	function onExerciseReset() {
+		currentChordIndex = 0;
 	}
 
-	// ===== LIFECYCLE =====
-	onMount(() => {
-		midiManager.connect(onMidiEvent);
-		audioManager.initialize();
-
-		return () => {
-			midiManager.disconnect();
+	let scoreProps = $derived.by(() => {
+		const selectedNote = randomMode ? randomNote : 'C';
+		return {
+			notes: generateExpectedNotes(selectedNote || 'C').map(
+				(note) => MidiToNote[note as MidiNote]
+			) as NoteFullName[],
+			highlightedNotes: [],
+			title: `${selectedNote || 'C'} ii-V-I: ${getChordNames(selectedNote || 'C')[currentChordIndex]} (${currentChordIndex + 1}/3)`
 		};
+	});
+
+	onMount(() => {
+		// Remove audioManager.initialize() as it doesn't exist
 	});
 </script>
 
 <div class="progression-exercise">
 	<BaseExercise
-		{exerciseState}
-		exerciseTitle={`${selectedNote} ii-V-I Progression`}
-		exerciseDescription="Play each chord in sequence: ii7 - V7 - Imaj7"
-		{expectedNotes}
+		exerciseTitle={randomMode ? 'Random ii-V-I Progression' : 'ii-V-I Progression'}
+		exerciseDescription={randomMode
+			? `Play ${randomNote} ii-V-I progression`
+			: 'Play each chord in sequence: ii7 - V7 - Imaj7'}
+		initialSelectedNote={randomMode ? randomNote : 'C'}
+		exerciseType="progression"
+		{randomMode}
+		{generateExpectedNotes}
+		{validateNoteEvent}
+		{isCompleted}
 		{scoreProps}
 		keyboardProps={{
-			chordToneInfo: chordToneMapping,
+			chordToneInfo: [],
 			showChordTones: true
 		}}
-		onNoteSelect={handleNoteSelect}
-		onDebugToggle={toggleDebug}
-		onReset={resetExercise}
 		customControls={true}
+		{onExerciseComplete}
+		{onExerciseReset}
 	>
-		<!-- Custom controls for progression exercise -->
-		<div class="progression-controls">
-			<div class="control-group">
-				<button onclick={toggleDebug} class="debug-btn">
-					{debugMode ? 'Disable' : 'Enable'} Debug Mode
-				</button>
-				<button onclick={resetExercise} class="reset-btn">Reset</button>
-			</div>
-
-			<div class="chord-progress">
-				{#each chordNames as chordName, index}
-					<div
-						class="chord-indicator"
-						class:active={index === currentChordIndex}
-						class:completed={index < currentChordIndex}
-					>
-						{chordName}
+		{#snippet children(api: any)}
+			<div class="progression-controls">
+				{#if !randomMode}
+					<div class="control-group">
+						<button onclick={api.toggleDebug} class="debug-btn">
+							{api.debugMode ? 'Disable' : 'Enable'} Debug Mode
+						</button>
+						<button onclick={api.resetExercise} class="reset-btn">Reset</button>
 					</div>
-				{/each}
+				{:else}
+					<div class="control-group">
+						<button onclick={api.resetExercise} class="reset-btn">Reset</button>
+					</div>
+				{/if}
+				<div class="chord-progress">
+					{#each getChordNames(api.selectedNote) as chordName, index}
+						<div
+							class="chord-indicator"
+							class:active={index === currentChordIndex}
+							class:completed={index < currentChordIndex}
+						>
+							{chordName}
+						</div>
+					{/each}
+				</div>
 			</div>
-		</div>
-
-		<!-- Custom status display -->
-		<div class="exercise-status">
-			<div class="current-chord">
-				Current: {chordNames[currentChordIndex]} ({currentChordIndex + 1}/3)
+			<div class="exercise-status">
+				<div class="current-chord">
+					Current: {getChordNames(api.selectedNote)[currentChordIndex]} ({currentChordIndex + 1}/3)
+				</div>
+				<div class="progress">
+					Progress: {Math.round(
+						(api.currentNotes.filter((n: any) => api.expectedNotes.includes(n)).length /
+							api.expectedNotes.length) *
+							100
+					)}%
+				</div>
+				<div class="mistakes">
+					Mistakes: {api.mistakes}
+				</div>
+				{#if api.completed}
+					<div class="completion">🎉 ii-V-I Completed!</div>
+				{/if}
 			</div>
-			<div class="progress">
-				Progress: {Math.round(
-					(currentNotes.filter((n) => expectedNotes.includes(n)).length / expectedNotes.length) *
-						100
-				)}%
-			</div>
-			<div class="mistakes">
-				Mistakes: {mistakes}
-			</div>
-			{#if completed}
-				<div class="completion">🎉 ii-V-I Completed!</div>
-			{/if}
-		</div>
+		{/snippet}
 	</BaseExercise>
 </div>
 

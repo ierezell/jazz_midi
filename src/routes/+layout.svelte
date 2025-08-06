@@ -3,16 +3,13 @@
 	import { page } from '$app/state';
 	import github from '$lib/images/github.svg';
 	import logo from '$lib/images/svelte-logo.svg';
-	import { userStatsService } from '$lib/services/UserStatsService';
+	import { userStatsService } from '$lib/UserStatsService';
 	import { onDestroy, onMount } from 'svelte';
 	import '../styles/app.css';
 	let { children } = $props();
-
-	// Track practice sessions
 	onMount(() => {
 		userStatsService.startSession();
 	});
-
 	onDestroy(() => {
 		userStatsService.endSession();
 	});
@@ -25,7 +22,6 @@
 				<img src={logo} alt="SvelteKit" />
 			</a>
 		</div>
-
 		<nav>
 			<svg viewBox="0 0 2 3" aria-hidden="true">
 				<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
@@ -57,18 +53,15 @@
 				<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
 			</svg>
 		</nav>
-
 		<div class="corner">
 			<a href="https://github.com/sveltejs/kit">
 				<img src={github} alt="GitHub" />
 			</a>
 		</div>
 	</header>
-
 	<main>
 		{@render children()}
 	</main>
-
 	<footer>
 		<p>
 			Go to <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to learn about SvelteKit
@@ -81,12 +74,10 @@
 		display: flex;
 		justify-content: space-between;
 	}
-
 	.corner {
 		width: 3em;
 		height: 3em;
 	}
-
 	.corner a {
 		display: flex;
 		align-items: center;
@@ -94,29 +85,24 @@
 		width: 100%;
 		height: 100%;
 	}
-
 	.corner img {
 		width: 2em;
 		height: 2em;
 		object-fit: contain;
 	}
-
 	nav {
 		display: flex;
 		justify-content: center;
 		--background: rgba(255, 255, 255, 0.7);
 	}
-
 	svg {
 		width: 2em;
 		height: 3em;
 		display: block;
 	}
-
 	path {
 		fill: var(--background);
 	}
-
 	ul {
 		position: relative;
 		padding: 0;
@@ -129,12 +115,10 @@
 		background: var(--background);
 		background-size: contain;
 	}
-
 	li {
 		position: relative;
 		height: 100%;
 	}
-
 	li[aria-current='page']::before {
 		--size: 6px;
 		content: '';
@@ -146,7 +130,6 @@
 		border: var(--size) solid transparent;
 		border-top: var(--size) solid var(--color-theme-1);
 	}
-
 	nav a {
 		display: flex;
 		height: 100%;
@@ -160,7 +143,6 @@
 		text-decoration: none;
 		transition: color 0.2s linear;
 	}
-
 	a:hover {
 		color: var(--color-theme-1);
 	}
@@ -169,7 +151,6 @@
 		flex-direction: column;
 		min-height: 100vh;
 	}
-
 	main {
 		flex: 1;
 		display: flex;
@@ -180,7 +161,6 @@
 		margin: 0 auto;
 		box-sizing: border-box;
 	}
-
 	footer {
 		display: flex;
 		flex-direction: column;
@@ -188,103 +168,83 @@
 		align-items: center;
 		padding: 12px;
 	}
-
 	footer a {
 		font-weight: bold;
 	}
-
 	@media (min-width: 480px) {
 		footer {
 			padding: 12px 0;
 		}
 	}
-
-	/* Mobile responsiveness */
 	@media (max-width: 768px) {
 		header {
 			padding: 0.5rem;
 			flex-wrap: nowrap;
 		}
-
 		.corner {
 			width: 2.5em;
 			height: 2.5em;
 			flex-shrink: 0;
 		}
-
 		.corner img {
 			width: 1.5em;
 			height: 1.5em;
 		}
-
 		nav {
 			flex: 1;
 			margin: 0 0.5rem;
 			min-width: 0;
 		}
-
 		ul {
 			overflow-x: auto;
 			scrollbar-width: none;
 			-ms-overflow-style: none;
 		}
-
 		ul::-webkit-scrollbar {
 			display: none;
 		}
-
 		nav a {
 			padding: 0 0.4rem;
 			font-size: 0.7rem;
 			white-space: nowrap;
 		}
-
 		main {
 			padding: 0.75rem;
 			max-width: 100%;
 		}
-
 		svg {
 			width: 1.5em;
 			height: 2.5em;
 		}
 	}
-
 	@media (max-width: 480px) {
 		header {
 			padding: 0.25rem;
 		}
-
 		nav a {
 			padding: 0 0.3rem;
 			font-size: 0.65rem;
 		}
-
 		.corner {
 			width: 2em;
 			height: 2em;
 		}
-
 		.corner img {
 			width: 1.2em;
 			height: 1.2em;
 		}
-
 		ul {
 			height: 2.5em;
 		}
-
 		main {
 			padding: 0.5rem;
 		}
 	}
-
 	@media (max-width: 360px) {
 		nav a {
 			padding: 0 0.2rem;
 			font-size: 0.6rem;
 		}
-
 		ul {
 			gap: 0.1rem;
 		}
