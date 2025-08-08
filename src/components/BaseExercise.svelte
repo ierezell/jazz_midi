@@ -164,13 +164,6 @@
 </script>
 
 <div class="exercise-container">
-	<header class="exercise-header">
-		<h1>{exerciseTitle}</h1>
-		{#if exerciseDescription}
-			<p class="exercise-description">{exerciseDescription}</p>
-		{/if}
-	</header>
-
 	{#if feedbackMessage}
 		<div class="feedback" role="alert">
 			{feedbackMessage}
@@ -252,24 +245,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
-	}
-
-	.exercise-header {
-		text-align: center;
-		margin-bottom: 1rem;
-	}
-
-	.exercise-header h1 {
-		font-size: 2rem;
-		font-weight: 600;
-		margin-bottom: 0.5rem;
-		color: var(--color-text, #333);
-	}
-
-	.exercise-description {
-		font-size: 1.1rem;
-		color: var(--color-text-secondary, #666);
-		margin: 0;
 	}
 
 	.feedback {
@@ -407,15 +382,6 @@
 		.exercise-container {
 			padding: 0.5rem;
 			gap: 1rem;
-		}
-
-		.exercise-header h1 {
-			font-size: 1.6rem;
-			margin-bottom: 0.25rem;
-		}
-
-		.exercise-description {
-			font-size: 1rem;
 		}
 
 		.exercise-controls {

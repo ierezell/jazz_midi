@@ -14,13 +14,23 @@
 	interface Props {
 		randomMode: boolean;
 		onComplete?: () => void;
+		scaleMode?: ScaleMode;
+		sequentialMode?: boolean;
 	}
 
-	let { randomMode, onComplete }: Props = $props();
+	let {
+		randomMode,
+		onComplete,
+		scaleMode: propScaleMode,
+		sequentialMode: propSequentialMode
+	}: Props = $props();
 
-	let sequentialMode: boolean = $state(randomMode ? Math.random() > 0.5 : true);
+	let sequentialMode: boolean = $state(
+		propSequentialMode ?? (randomMode ? Math.random() > 0.5 : true)
+	);
 	let scaleMode: ScaleMode = $state(
-		randomMode ? AllScaleModes[Math.floor(Math.random() * AllScaleModes.length)] : 'Maj'
+		propScaleMode ??
+			(randomMode ? AllScaleModes[Math.floor(Math.random() * AllScaleModes.length)] : 'Maj')
 	);
 	let exerciseCompleted = $state(false);
 

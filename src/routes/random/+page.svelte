@@ -1,19 +1,27 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import type { ChordType, Inversion, Note } from '$lib/types/notes';
-	import { AllChordTypes, AllNotes } from '$lib/types/notes.constants';
+	import type { ChordType, ChordVoicing, Inversion, Note, ScaleMode } from '$lib/types/notes';
+
 	import { onDestroy, onMount } from 'svelte';
 	import ChordsPage from '../chords/+page.svelte';
 	import ScalesPage from '../scales/+page.svelte';
 	import TwoFiveOnesPage from '../two_five_ones/+page.svelte';
-
-	type ExerciseType = 'chord' | 'scale' | 'ii-v-i';
+	import ConfigPopup from '../../components/ConfigPopup.svelte';
+	import {
+		AllChordTypes,
+		AllNotes,
+		AllChordVoicings,
+		AllScaleModes,
+		AllThreeNotesChords
+	} from '$lib/types/notes.constants';
+	import { allExerciseType, type ExerciseType } from '$lib/types/types';
 
 	interface RandomExerciseConfig {
 		type: ExerciseType;
 		key: Note;
 		chordType?: ChordType;
+		voicing?: ChordVoicing;
 		inversion?: Inversion;
 		description: string;
 	}
@@ -22,6 +30,7 @@
 		type: 'chord',
 		key: 'C',
 		chordType: 'maj7',
+		voicing: 'full',
 		inversion: 0,
 		description: 'Cmaj - Random Voicing'
 	});
@@ -31,6 +40,13 @@
 	let completionTimeout: ReturnType<typeof setTimeout> | null = null;
 	let countdown = $state(0);
 	let countdownInterval: ReturnType<typeof setInterval> | null = null;
+	let allowedNotes = $state<Note[]>(AllNotes); // Start with all notes allowed
+	let allowedChordTypes: ChordType[] = $state<ChordType[]>(AllChordTypes); // All possible chord types
+	let allowedInversions: Inversion[] = $state<Inversion[]>([0, 1, 2, 3]); // All possible inversions
+	let allowedScaleModes: ScaleMode[] = $state<ScaleMode[]>(AllScaleModes); // Available scale modes
+	let allowedVoicings: ChordVoicing[] = $state<ChordVoicing[]>(AllChordVoicings); // Available voicing types
+	let allowedExerciseTypes: ExerciseType[] = $state<ExerciseType[]>(allExerciseType); // Available exercise types
+	let showConfigPopup = $state(false); // Control visibility of the config popup
 
 	$effect(() => {
 		if (isCompleted && currentConfig) {
@@ -56,42 +72,49 @@
 	});
 
 	function generateRandomExercise(): RandomExerciseConfig {
-		const types: ExerciseType[] = ['chord', 'scale', 'ii-v-i'];
-		const type = types[Math.floor(Math.random() * types.length)];
-		const key = AllNotes[Math.floor(Math.random() * AllNotes.length)];
+		const type = allowedExerciseTypes[Math.floor(Math.random() * allowedExerciseTypes.length)];
+		const key = allowedNotes[Math.floor(Math.random() * allowedNotes.length)];
 		return createExerciseConfig(type, key);
 	}
 
 	function createExerciseConfig(type: ExerciseType, key: Note): RandomExerciseConfig {
 		switch (type) {
 			case 'chord': {
-				const chordType = AllChordTypes[Math.floor(Math.random() * AllChordTypes.length)];
-				const inversion = Math.floor(Math.random() * 4) as Inversion;
+				const chordType = allowedChordTypes[Math.floor(Math.random() * allowedChordTypes.length)];
+				let inversion = allowedInversions[Math.floor(Math.random() * allowedInversions.length)];
+				let voicing = allowedVoicings[Math.floor(Math.random() * allowedVoicings.length)];
+				if (AllThreeNotesChords.includes(chordType) && inversion > 2) {
+					inversion = allowedInversions[Math.floor(Math.random() * (allowedInversions.length - 1))];
+				}
+
 				return {
 					type,
 					key,
 					chordType,
+					voicing,
 					inversion,
-					description: `${key}${chordType}${inversion > 0 ? ` (${inversion}st inversion)` : ''} - Random Voicing`
+					description: `${key}${chordType}${inversion > 0 ? ` (${inversion}st inversion)` : ''} - `
 				};
 			}
 			case 'scale': {
-				const scaleModes = ['Major', 'Minor'];
-				const randomScaleMode = scaleModes[Math.floor(Math.random() * scaleModes.length)];
-				const randomSequential = Math.random() > 0.5 ? 'Sequential' : 'Any Order';
+				const randomScaleMode =
+					allowedScaleModes[Math.floor(Math.random() * allowedScaleModes.length)];
 				return {
 					type,
 					key,
-					description: `${key} ${randomScaleMode} Scale (${randomSequential})`
+					description: `${key} ${randomScaleMode}`
 				};
 			}
-			case 'ii-v-i': {
-				const inversion = Math.floor(Math.random() * 4) as Inversion;
+			case 'II-V-I': {
+				const inversion = allowedInversions[Math.floor(Math.random() * allowedInversions.length)];
+				let voicing = allowedVoicings[Math.floor(Math.random() * allowedVoicings.length)];
+
 				return {
 					type,
 					key,
+					voicing,
 					inversion,
-					description: `${key} ii-V-I Progression${inversion > 0 ? ` (${inversion}st inversion)` : ''} - Random Voicing`
+					description: `${key} II-V-I Progression${inversion > 0 ? ` (${inversion}st inversion)` : ''}`
 				};
 			}
 			default:
@@ -126,11 +149,14 @@
 
 <div class="random-exercise">
 	<div class="random-header">
-		<h1>Random Exercise</h1>
-		<div class="random-controls">
-			<button onclick={generateNewExercise} class="new-exercise-btn">
-				🎲 New Random Exercise
-			</button>
+		<div class="header-content">
+			<h1>Random Exercise</h1>
+			<div class="header-buttons">
+				<button onclick={() => (showConfigPopup = true)} class="config-btn" type="button">
+					⚙️ Config
+				</button>
+				<button onclick={generateNewExercise} class="new-exercise-btn"> 🎲 New </button>
+			</div>
 		</div>
 		{#if currentConfig}
 			<div class="exercise-info">
@@ -139,6 +165,35 @@
 			</div>
 		{/if}
 	</div>
+
+	<ConfigPopup
+		showPopup={showConfigPopup}
+		{allowedNotes}
+		{allowedChordTypes}
+		{allowedInversions}
+		{allowedScaleModes}
+		{allowedExerciseTypes}
+		onClose={() => (showConfigPopup = false)}
+		onUpdate={(type, value) => {
+			switch (type) {
+				case 'allowedNotes':
+					allowedNotes = value as Note[];
+					break;
+				case 'allowedChordTypes':
+					allowedChordTypes = value as ChordType[];
+					break;
+				case 'allowedInversions':
+					allowedInversions = value.map(Number) as Inversion[];
+					break;
+				case 'allowedScaleModes':
+					allowedScaleModes = value as ScaleMode[];
+					break;
+				case 'allowedExerciseTypes':
+					allowedExerciseTypes = value as ExerciseType[];
+					break;
+			}
+		}}
+	/>
 
 	{#if isCompleted}
 		<div class="completion-overlay">
@@ -153,11 +208,27 @@
 	{#if currentConfig}
 		{#key exerciseKey}
 			{#if currentConfig.type === 'chord'}
-				<ChordsPage randomMode={true} onComplete={handleExerciseComplete} />
+				<ChordsPage
+					randomMode={true}
+					onComplete={handleExerciseComplete}
+					chordType={currentConfig.chordType}
+					inversion={currentConfig.inversion}
+					voicing={currentConfig.voicing}
+				/>
 			{:else if currentConfig.type === 'scale'}
-				<ScalesPage randomMode={true} onComplete={handleExerciseComplete} />
-			{:else if currentConfig.type === 'ii-v-i'}
-				<TwoFiveOnesPage randomMode={true} onComplete={handleExerciseComplete} />
+				<ScalesPage
+					randomMode={true}
+					onComplete={handleExerciseComplete}
+					scaleMode={allowedScaleModes[Math.floor(Math.random() * allowedScaleModes.length)]}
+					sequentialMode={Math.random() > 0.5}
+				/>
+			{:else if currentConfig.type === 'II-V-I'}
+				<TwoFiveOnesPage
+					randomMode={true}
+					onComplete={handleExerciseComplete}
+					inversion={currentConfig.inversion}
+					voicing={currentConfig.voicing}
+				/>
 			{/if}
 		{/key}
 	{:else}
@@ -183,31 +254,78 @@
 		margin-bottom: 1rem;
 	}
 
-	.random-controls {
-		margin-bottom: 1rem;
+	.header-content {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 0.5rem;
+	}
+
+	.header-buttons {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.config-btn {
+		padding: 0.5rem 1rem;
+		border: 2px solid #6c757d;
+		border-radius: 8px;
+		background: #e9ecef;
+		color: #495057;
+		font-weight: 600;
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: all 0.3s;
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.config-btn:hover {
+		background: #dee2e6;
+		transform: translateY(-1px);
 	}
 
 	.new-exercise-btn {
-		padding: 0.75rem 1.5rem;
+		padding: 0.5rem 1rem;
 		border: 2px solid #4caf50;
 		border-radius: 8px;
 		background: #e8f5e8;
 		color: #2e7d32;
 		font-weight: 600;
-		font-size: 1rem;
+		font-size: 0.875rem;
 		cursor: pointer;
 		transition: all 0.3s;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
 	}
 
 	.new-exercise-btn:hover {
 		background: #d4f4d4;
-		transform: translateY(-2px);
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+		transform: translateY(-1px);
 	}
 
-	.new-exercise-btn:active {
-		transform: translateY(0);
+	@media (orientation: landscape) and (max-height: 600px) {
+		.random-header {
+			padding: 0.5rem;
+		}
+
+		h1 {
+			font-size: 1.25rem;
+			margin: 0;
+		}
+
+		.exercise-info {
+			padding: 0.5rem;
+			gap: 0.5rem;
+		}
+
+		.config-btn,
+		.new-exercise-btn {
+			padding: 0.35rem 0.75rem;
+			font-size: 0.75rem;
+		}
 	}
 
 	.exercise-info {

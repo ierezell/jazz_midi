@@ -10,21 +10,31 @@
 		Note,
 		NoteFullName
 	} from '$lib/types/notes';
-	import { AllVoicings, MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
+	import { AllChordVoicings, MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
 	import type { NoteEvent, ScoreProps } from '$lib/types/types';
 	import BaseExercise from '../../components/BaseExercise.svelte';
 
 	interface Props {
 		randomMode: boolean;
 		onComplete?: () => void;
+		inversion?: Inversion;
+		voicing?: ChordVoicing;
 	}
 
-	let { randomMode = false, onComplete }: Props = $props();
+	let {
+		randomMode = false,
+		onComplete,
+		inversion: propInversion,
+		voicing: propVoicing
+	}: Props = $props();
 
 	let currentChordIndex = $state(0);
-	let inversion: Inversion = $state(randomMode ? (Math.floor(Math.random() * 4) as Inversion) : 0);
+	let inversion: Inversion = $state(
+		propInversion ?? (randomMode ? (Math.floor(Math.random() * 4) as Inversion) : 0)
+	);
 	let voicing: ChordVoicing = $state(
-		randomMode ? AllVoicings[Math.floor(Math.random() * AllVoicings.length)] : 'full'
+		propVoicing ??
+			(randomMode ? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)] : 'full')
 	);
 	let exerciseCompleted = $state(false);
 

@@ -4,6 +4,11 @@ Keep the code as concise as possible, avoid duplicates, create common logic.
 Try as much as possible to modify existing code instead of creating new one.
 DO NOT CREATE +page-new.svelte or +page-old.svelte, directly modify files.
 
+## User
+
+The website is made to be rendered on a mobile, landscape format.
+The UI has to be compact.
+
 ## Project Overview
 
 This is a jazz education web application built with Svelte 5 that helps musicians practice jazz theory through interactive MIDI keyboard exercises. The app focuses on chord recognition, scale practice, and jazz harmony concepts like two-five-one progressions.
