@@ -142,7 +142,7 @@ export const chords = (
 	}
 	if (chord.length === 3) {
 		if (inversion === 3) {
-			throw new Error('Triad chords do not have a 3rd inversion');
+			throw new Error(`Triad ${chordType} chords do not have a 3rd inversion`);
 		}
 		return inverseTriadChord(chord, inversion, chordType);
 	} else {
@@ -237,10 +237,11 @@ export function calculateOptimalRange(
 	};
 }
 
-export function getNoteRole(noteNumber: MidiNote, rootNumber: MidiNote): NoteRole {
+export function getNoteRole(noteNumber: MidiNote, rootNumber: MidiNote): NoteRole | 'unknown' {
 	// Yeah... I should do noteNumber: Note, rootNumber: Note and convert here....
 	const normalizedNote = noteNumber % 12;
-	switch (normalizedNote - (rootNumber % 12)) {
+	const difference = normalizedNote - (rootNumber % 12);
+	switch (difference) {
 		case 0:
 			return 'root';
 		case 4:
@@ -256,6 +257,6 @@ export function getNoteRole(noteNumber: MidiNote, rootNumber: MidiNote): NoteRol
 		case 9:
 			return 'thirteenth';
 		default:
-			throw new Error('Unknown note role');
+			return 'unknown';
 	}
 }

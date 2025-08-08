@@ -3,7 +3,7 @@
 <script lang="ts">
 	import type { ChordType, Inversion, Note } from '$lib/types/notes';
 	import { AllChordTypes, AllNotes } from '$lib/types/notes.constants';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import ChordsPage from '../chords/+page.svelte';
 	import ScalesPage from '../scales/+page.svelte';
 	import TwoFiveOnesPage from '../two_five_ones/+page.svelte';
@@ -18,8 +18,42 @@
 		description: string;
 	}
 
-	let currentConfig: RandomExerciseConfig | null = $state(null);
+	let currentConfig: RandomExerciseConfig = $state({
+		type: 'chord',
+		key: 'C',
+		chordType: 'maj7',
+		inversion: 0,
+		description: 'Cmaj - Random Voicing'
+	});
+
 	let exerciseKey = $state(0); // Force re-render of child components
+	let isCompleted = $state(false);
+	let completionTimeout: ReturnType<typeof setTimeout> | null = null;
+	let countdown = $state(0);
+	let countdownInterval: ReturnType<typeof setInterval> | null = null;
+
+	$effect(() => {
+		if (isCompleted && currentConfig) {
+			if (completionTimeout) {
+				clearTimeout(completionTimeout);
+			}
+			if (countdownInterval) {
+				clearInterval(countdownInterval);
+			}
+
+			countdown = 3;
+			countdownInterval = setInterval(() => {
+				countdown--;
+				if (countdown <= 0) {
+					if (countdownInterval) {
+						clearInterval(countdownInterval);
+					}
+					generateNewExercise();
+					isCompleted = false;
+				}
+			}, 1000);
+		}
+	});
 
 	function generateRandomExercise(): RandomExerciseConfig {
 		const types: ExerciseType[] = ['chord', 'scale', 'ii-v-i'];
@@ -38,21 +72,26 @@
 					key,
 					chordType,
 					inversion,
-					description: `${key}${chordType}${inversion > 0 ? ` (${inversion}st inversion)` : ''}`
+					description: `${key}${chordType}${inversion > 0 ? ` (${inversion}st inversion)` : ''} - Random Voicing`
 				};
 			}
 			case 'scale': {
+				const scaleModes = ['Major', 'Minor'];
+				const randomScaleMode = scaleModes[Math.floor(Math.random() * scaleModes.length)];
+				const randomSequential = Math.random() > 0.5 ? 'Sequential' : 'Any Order';
 				return {
 					type,
 					key,
-					description: `${key} Major Scale`
+					description: `${key} ${randomScaleMode} Scale (${randomSequential})`
 				};
 			}
 			case 'ii-v-i': {
+				const inversion = Math.floor(Math.random() * 4) as Inversion;
 				return {
 					type,
 					key,
-					description: `${key} ii-V-I Progression`
+					inversion,
+					description: `${key} ii-V-I Progression${inversion > 0 ? ` (${inversion}st inversion)` : ''} - Random Voicing`
 				};
 			}
 			default:
@@ -63,10 +102,25 @@
 	function generateNewExercise() {
 		currentConfig = generateRandomExercise();
 		exerciseKey = Date.now(); // Force component re-render with new props
+		isCompleted = false; // Reset completion state
+	}
+
+	function handleExerciseComplete() {
+		isCompleted = true;
 	}
 
 	onMount(() => {
 		currentConfig = generateRandomExercise();
+	});
+
+	onDestroy(() => {
+		// Clean up any running timers
+		if (completionTimeout) {
+			clearTimeout(completionTimeout);
+		}
+		if (countdownInterval) {
+			clearInterval(countdownInterval);
+		}
 	});
 </script>
 
@@ -86,14 +140,24 @@
 		{/if}
 	</div>
 
+	{#if isCompleted}
+		<div class="completion-overlay">
+			<div class="completion-message">
+				<h2>🎉 Exercise Completed!</h2>
+				<p>Great job! Next random exercise in <strong>{countdown}</strong> seconds...</p>
+				<button onclick={generateNewExercise} class="skip-btn"> Skip Wait </button>
+			</div>
+		</div>
+	{/if}
+
 	{#if currentConfig}
 		{#key exerciseKey}
 			{#if currentConfig.type === 'chord'}
-				<ChordsPage randomMode={true} />
+				<ChordsPage randomMode={true} onComplete={handleExerciseComplete} />
 			{:else if currentConfig.type === 'scale'}
-				<ScalesPage randomMode={true} />
+				<ScalesPage randomMode={true} onComplete={handleExerciseComplete} />
 			{:else if currentConfig.type === 'ii-v-i'}
-				<TwoFiveOnesPage randomMode={true} />
+				<TwoFiveOnesPage randomMode={true} onComplete={handleExerciseComplete} />
 			{/if}
 		{/key}
 	{:else}
@@ -178,6 +242,56 @@
 		padding: 4rem;
 		color: #6c757d;
 		font-size: 1.2rem;
+	}
+
+	.completion-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: rgba(0, 0, 0, 0.7);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+	}
+
+	.completion-message {
+		background: white;
+		padding: 2rem;
+		border-radius: 12px;
+		text-align: center;
+		max-width: 400px;
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+	}
+
+	.completion-message h2 {
+		color: #2e7d32;
+		margin-bottom: 1rem;
+		font-size: 1.5rem;
+	}
+
+	.completion-message p {
+		color: #666;
+		margin-bottom: 1.5rem;
+		font-size: 1.1rem;
+	}
+
+	.skip-btn {
+		padding: 0.5rem 1rem;
+		border: 2px solid #1976d2;
+		border-radius: 6px;
+		background: #e3f2fd;
+		color: #1976d2;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.3s;
+	}
+
+	.skip-btn:hover {
+		background: #1976d2;
+		color: white;
 	}
 
 	@media (max-width: 768px) {

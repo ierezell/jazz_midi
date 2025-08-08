@@ -3,7 +3,7 @@
 <script lang="ts">
 	import { chords, generateChordNotesData } from '$lib/MusicTheoryUtils';
 	import type { ChordVoicing, Inversion } from '$lib/types/notes';
-	import { AllChordTypes, NoteToMidi } from '$lib/types/notes.constants';
+	import { AllChordTypes, AllVoicings, NoteToMidi } from '$lib/types/notes.constants';
 	import type {
 		ChordType,
 		MidiNote,
@@ -16,13 +16,27 @@
 
 	interface Props {
 		randomMode: boolean;
+		onComplete?: () => void;
 	}
 
-	let { randomMode }: Props = $props();
+	let { randomMode, onComplete }: Props = $props();
+	let possibleChordTypes = ['maj7', 'min7', '7', 'dom7', 'half-dim7', 'dim7'] as ChordType[];
+	let ct = randomMode
+		? possibleChordTypes[Math.floor(Math.random() * possibleChordTypes.length)]
+		: 'maj7';
 
-	let chordType: ChordType = $state('maj7');
-	let inversion: Inversion = $state(0);
-	let voicing: ChordVoicing = $state('full');
+	let chordType: ChordType = $state(ct);
+	let inversion: Inversion = $state(randomMode ? (Math.floor(Math.random() * 4) as Inversion) : 0);
+	let voicing: ChordVoicing = $state(
+		randomMode ? AllVoicings[Math.floor(Math.random() * AllVoicings.length)] : 'full'
+	);
+	let exerciseCompleted = $state(false);
+
+	$effect(() => {
+		if (exerciseCompleted && onComplete) {
+			onComplete();
+		}
+	});
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
 		const rootNote = (selectedNote + '4') as NoteFullName;
@@ -136,6 +150,9 @@
 	{isCompleted}
 >
 	{#snippet children(api: any)}
+		{#if api.completed !== exerciseCompleted}
+			{(exerciseCompleted = api.completed)}
+		{/if}
 		<div class="controls">
 			{#if !randomMode}
 				<div class="control-group">

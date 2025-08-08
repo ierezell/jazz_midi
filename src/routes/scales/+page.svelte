@@ -2,19 +2,33 @@
 
 <script lang="ts">
 	import type { ScaleMode } from '$lib/types/notes';
-	import { MidiToNote, NoteToMidi, SCALE_INTERVALS } from '$lib/types/notes.constants';
+	import {
+		AllScaleModes,
+		MidiToNote,
+		NoteToMidi,
+		SCALE_INTERVALS
+	} from '$lib/types/notes.constants';
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import BaseExercise from '../../components/BaseExercise.svelte';
 
-	// Random mode props
 	interface Props {
 		randomMode: boolean;
+		onComplete?: () => void;
 	}
 
-	let { randomMode }: Props = $props();
+	let { randomMode, onComplete }: Props = $props();
 
-	let sequentialMode: boolean = $state(true);
-	let scaleMode: ScaleMode = $state('Maj');
+	let sequentialMode: boolean = $state(randomMode ? Math.random() > 0.5 : true);
+	let scaleMode: ScaleMode = $state(
+		randomMode ? AllScaleModes[Math.floor(Math.random() * AllScaleModes.length)] : 'Maj'
+	);
+	let exerciseCompleted = $state(false);
+
+	$effect(() => {
+		if (exerciseCompleted && onComplete) {
+			onComplete();
+		}
+	});
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
 		const rootMidi = NoteToMidi[(selectedNote + '4') as NoteFullName];
@@ -142,6 +156,10 @@
 	isCompleted={isScaleCompleted}
 >
 	{#snippet children(api: any)}
+		{#if api.completed !== exerciseCompleted}
+			{(exerciseCompleted = api.completed)}
+		{/if}
+
 		<div class="scale-controls">
 			{#if !randomMode}
 				<div class="control-group">

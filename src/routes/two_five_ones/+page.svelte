@@ -10,19 +10,30 @@
 		Note,
 		NoteFullName
 	} from '$lib/types/notes';
-	import { MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
+	import { AllVoicings, MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
 	import type { NoteEvent, ScoreProps } from '$lib/types/types';
 	import BaseExercise from '../../components/BaseExercise.svelte';
 
 	interface Props {
 		randomMode: boolean;
+		onComplete?: () => void;
 	}
 
-	let { randomMode = false }: Props = $props();
+	let { randomMode = false, onComplete }: Props = $props();
 
 	let currentChordIndex = $state(0);
-	let inversion: Inversion = $state(0);
-	let voicing: ChordVoicing = $state('full');
+	let inversion: Inversion = $state(randomMode ? (Math.floor(Math.random() * 4) as Inversion) : 0);
+	let voicing: ChordVoicing = $state(
+		randomMode ? AllVoicings[Math.floor(Math.random() * AllVoicings.length)] : 'full'
+	);
+	let exerciseCompleted = $state(false);
+
+	// Track completion state and call onComplete callback
+	$effect(() => {
+		if (exerciseCompleted && onComplete) {
+			onComplete();
+		}
+	});
 
 	// Function to reset progression state
 	function resetProgression(): void {
@@ -150,6 +161,10 @@
 		{isCompleted}
 	>
 		{#snippet children(api: any)}
+			{#if api.completed !== exerciseCompleted}
+				{(exerciseCompleted = api.completed)}
+			{/if}
+
 			<div class="progression-controls">
 				{#if !randomMode}
 					<div class="control-group">
