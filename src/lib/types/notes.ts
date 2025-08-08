@@ -285,11 +285,15 @@ export type ChordType =
 	| 'half-dim7'
 	| 'dim7';
 
+export type Inversion = 0 | 1 | 2 | 3;
 export type Chord = {
 	root: MidiNote;
 	third: MidiNote;
 	fifth: MidiNote;
 	seventh?: MidiNote;
-	inversion: 0 | 1 | 2 | 3;
+	inversion: Inversion;
 	chordType: ChordType;
 };
+
+export type ScaleMode = 'Maj' | 'Min' | 'Blues';
+export type ChordVoicing = 'full' | 'left-hand' | 'right-hand' | 'split';

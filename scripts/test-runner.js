@@ -12,7 +12,7 @@ const colors = {
 	cyan: '\x1b[36m'
 };
 function log(color, message) {
-	console.log(`${color}${message}${colors.reset}`);
+	console.debug(`${color}${message}${colors.reset}`);
 }
 function runCommand(command, description) {
 	log(colors.blue, `\n🏃 Running: ${description}`);

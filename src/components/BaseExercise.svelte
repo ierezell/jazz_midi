@@ -1,105 +1,75 @@
 <script lang="ts">
 	import { audioManager } from '$lib/AudioManager';
 	import { midiManager } from '$lib/MIDIManager';
-	import { calculateOptimalRange } from '$lib/MusicTheoryUtils';
-	import { AllNotes } from '$lib/types/notes.constants';
-	import type {
-		BaseKeyboardProps,
-		BaseScoreProps,
-		MidiNote,
-		Note,
-		NoteEvent
+	import { calculateOptimalRange, getNoteRole } from '$lib/MusicTheoryUtils';
+	import { AllNotes, DEFAULT_NOTE_ROLE_COLORS, NoteToMidi } from '$lib/types/notes.constants';
+	import {
+		type KeyboardProps,
+		type MidiNote,
+		type Note,
+		type NoteEvent,
+		type ScoreProps
 	} from '$lib/types/types';
 	import { onDestroy, onMount } from 'svelte';
 	import DebugPanel from './DebugPanel.svelte';
-	import InteractiveKeyboard from './keyboard/InteractiveKeyboard.svelte';
+	import Keyboard from './Keyboard.svelte';
 	import Score from './Score.svelte';
 
 	interface BaseExerciseProps {
 		exerciseTitle: string;
-		exerciseDescription?: string;
-		initialSelectedNote?: Note;
-
-		randomMode?: boolean;
+		exerciseDescription: string;
+		randomMode: boolean;
 		generateExpectedNotes: (selectedNote: Note, ...args: any[]) => MidiNote[];
-		generateScoreProps?: (selectedNote: Note) => Partial<BaseScoreProps>;
-		generateKeyboardProps?: (selectedNote: Note) => Partial<BaseKeyboardProps>;
-		validateNoteEvent?: (
+		generateScoreProps: (selectedNote: Note) => ScoreProps;
+		validateNoteEvent: (
+			selectedNote: Note,
 			event: NoteEvent,
 			expectedNotes: MidiNote[],
-			currentNotes: MidiNote[],
-			sequentialMode?: boolean
+			currentNotes: MidiNote[]
 		) => { isCorrect: boolean; message: string };
-		isCompleted?: (currentNotes: MidiNote[], expectedNotes: MidiNote[]) => boolean;
-		scoreProps?: Partial<BaseScoreProps>;
-		keyboardProps?: Partial<BaseKeyboardProps>;
-		showProgressInfo?: boolean;
-		customControls?: boolean;
-		onExerciseComplete?: () => void;
-		onExerciseReset?: () => void;
+		isCompleted: (currentNotes: MidiNote[], expectedNotes: MidiNote[]) => boolean;
 	}
 
 	let {
 		exerciseTitle,
-		exerciseDescription = '',
-		initialSelectedNote = 'C',
-
+		exerciseDescription = 'Exercise Description',
 		randomMode = false,
 		generateExpectedNotes,
 		generateScoreProps,
-		generateKeyboardProps,
 		validateNoteEvent,
 		isCompleted,
-		scoreProps = {},
-		keyboardProps = {},
-		showProgressInfo = true,
-		customControls = false,
-		onExerciseComplete,
-		onExerciseReset,
 		children
 	}: BaseExerciseProps & { children?: any } = $props();
 
-	// State management - all common logic centralized here
-	let selectedNote: Note = $state(initialSelectedNote);
+	let selectedNote: Note = $state('C');
 	let noteEvents: NoteEvent[] = $state([]);
 	let mistakes = $state(0);
 	let startTime = $state(0);
 	let completed = $state(false);
 	let debugMode = $state(false);
 	let feedbackMessage = $state('');
-	let showChordTones = $state(false);
+	let showNotesRoles = $state(false);
 
-	// Derived values
 	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
 	let expectedNotes = $derived(generateExpectedNotes(selectedNote));
-	let showNoteNames = $derived(mistakes >= 3);
+	let scoreProps = $derived(generateScoreProps(selectedNote));
 	let showKeyboard = $derived(debugMode);
+	let keyboardProps = $derived({
+		...calculateOptimalRange(expectedNotes),
+		midiNotes: currentNotes,
+		debugMode: debugMode,
+		noteRoles: Object.fromEntries(
+			expectedNotes.map((note) => [
+				note,
+				getNoteRole(note, NoteToMidi[`${selectedNote}4` as keyof typeof NoteToMidi])
+			])
+		),
+		expectedNotes: expectedNotes
+	} as KeyboardProps);
 
-	// Default validation logic
-	function defaultValidateNoteEvent(
-		event: NoteEvent,
-		expectedNotes: MidiNote[],
-		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string } {
-		if (expectedNotes.includes(event.noteNumber)) {
-			return { isCorrect: true, message: 'Correct!' };
-		}
-		return { isCorrect: false, message: 'Try again!' };
-	}
-
-	// Default completion check
-	function defaultIsCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
-		const sorted1 = [...currentNotes].sort();
-		const sorted2 = [...expectedNotes].sort();
-		return sorted1.length === sorted2.length && sorted1.every((note, i) => note === sorted2[i]);
-	}
-
-	// MIDI event handlers - centralized logic
 	function handleNoteOn(note: NoteEvent): void {
 		noteEvents = [...noteEvents, note];
-
-		const validator = validateNoteEvent || defaultValidateNoteEvent;
-		const result = validator(note, expectedNotes, currentNotes);
+		const result = validateNoteEvent(selectedNote, note, expectedNotes, currentNotes);
 
 		if (result.isCorrect) {
 			showFeedback(result.message, 'success');
@@ -110,9 +80,9 @@
 			audioManager.playError();
 		}
 
-		const completionChecker = isCompleted || defaultIsCompleted;
+		const completionChecker = isCompleted;
 		if (completionChecker(currentNotes, expectedNotes)) {
-			completeExercise();
+			onCompleteExercise();
 		}
 	}
 
@@ -120,7 +90,19 @@
 		noteEvents = noteEvents.filter((e) => e.noteNumber !== note.noteNumber);
 	}
 
-	// Feedback and completion logic
+	onDestroy(() => {
+		midiManager.cleanup();
+	});
+
+	onMount(async () => {
+		await midiManager.initialize();
+		midiManager.setEventHandlers({
+			onNoteOn: handleNoteOn,
+			onNoteOff: handleNoteOff
+		});
+		startTime = Date.now();
+	});
+
 	function showFeedback(message: string, type: 'success' | 'error' | 'info'): void {
 		feedbackMessage = message;
 		setTimeout(() => {
@@ -128,16 +110,14 @@
 		}, 2000);
 	}
 
-	function completeExercise(): void {
+	function onCompleteExercise(): void {
 		completed = true;
 		const timeElapsed = Date.now() - startTime;
 		const accuracy = Math.round(((expectedNotes.length - mistakes) / expectedNotes.length) * 100);
-		showFeedback('Exercise completed!', 'success');
+		showFeedback(`Exercise completed! Time: ${timeElapsed}ms, Accuracy: ${accuracy}%`, 'success');
 		audioManager.playSound?.('success');
-		onExerciseComplete?.();
 	}
 
-	// Control handlers
 	function handleNoteSelect(note: Note): void {
 		selectedNote = note;
 		resetExercise();
@@ -149,85 +129,11 @@
 		completed = false;
 		feedbackMessage = '';
 		startTime = Date.now();
-		onExerciseReset?.();
 	}
 
 	function toggleDebug(): void {
 		debugMode = !debugMode;
 	}
-
-	// Initialize MIDI
-	onMount(async () => {
-		await midiManager.initialize();
-		midiManager.setEventHandlers({
-			onNoteOn: handleNoteOn,
-			onNoteOff: handleNoteOff
-		});
-		startTime = Date.now();
-	});
-
-	onDestroy(() => {
-		midiManager.cleanup();
-	});
-
-	let keyboardConfig = $derived.by(() => {
-		if (expectedNotes.length === 0) {
-			return {
-				middleC: 60 as MidiNote,
-				octaves: 2
-			};
-		}
-		return calculateOptimalRange(expectedNotes);
-	});
-
-	let finalKeyboardProps = $derived({
-		midiNotes: currentNotes,
-		middleC: keyboardConfig.middleC,
-		octaves: keyboardConfig.octaves,
-		interactive: debugMode,
-		showLabels: showNoteNames,
-		chordToneInfo: keyboardProps.chordToneInfo || [],
-		showChordTones: keyboardProps.showChordTones || showChordTones,
-		expectedNotes: expectedNotes,
-		...(generateKeyboardProps
-			? (() => {
-					console.log(
-						'BaseExercise: calling generateKeyboardProps for selectedNote:',
-						selectedNote
-					);
-					const generatedProps = generateKeyboardProps(selectedNote);
-					console.log('BaseExercise: generated keyboard props:', generatedProps);
-					return {
-						...generatedProps
-					};
-				})()
-			: {}),
-		...keyboardProps
-	});
-
-	let finalScoreProps = $derived({
-		leftHand: scoreProps.leftHandNotes || [],
-		rightHand: scoreProps.rightHandNotes || [],
-		selectedNote: selectedNote,
-		...(generateScoreProps
-			? (() => {
-					console.log('BaseExercise: calling generateScoreProps for selectedNote:', selectedNote);
-					const generatedProps = generateScoreProps(selectedNote);
-					console.log('BaseExercise: generated score props:', generatedProps);
-					return {
-						leftHand: generatedProps.leftHandNotes || [],
-						rightHand: generatedProps.rightHandNotes || [],
-						...generatedProps
-					};
-				})()
-			: {}),
-		...scoreProps
-	});
-
-	// Debug log to see final score props
-	$effect(() => {
-		console.log('BaseExercise finalScoreProps changed:', finalScoreProps);
-	});
 
 	function handleNoteSelectEvent(event: Event) {
 		const target = event.target as HTMLSelectElement;
@@ -241,7 +147,6 @@
 		return Math.round((correctNotes.length / expectedNotes.length) * 100);
 	});
 
-	// Expose functions for child components
 	let exposedAPI = $derived({
 		selectedNote,
 		currentNotes,
@@ -250,14 +155,11 @@
 		completed,
 		debugMode,
 		feedbackMessage,
-		showChordTones,
+		showNotesRoles,
 		handleNoteSelect,
 		resetExercise,
 		toggleDebug,
-		showFeedback,
-		setShowChordTones: (show: boolean) => {
-			showChordTones = show;
-		}
+		showFeedback
 	});
 </script>
 
@@ -286,34 +188,31 @@
 				</select>
 			</div>
 		{/if}
-		{#if !customControls}
-			<div class="control-group">
-				<button onclick={toggleDebug} class="debug-btn">
-					{debugMode ? 'Disable' : 'Enable'} Debug Mode
-				</button>
-				<button onclick={resetExercise} class="reset-btn"> Reset Exercise </button>
-			</div>
-		{/if}
+
+		<div class="control-group">
+			<button onclick={toggleDebug} class="debug-btn">
+				{debugMode ? 'Disable' : 'Enable'} Debug Mode
+			</button>
+			<button onclick={resetExercise} class="reset-btn"> Reset Exercise </button>
+		</div>
 	</div>
 
-	{#if showProgressInfo}
-		<div class="progress-info">
-			<div class="progress-bar">
-				<div class="progress-fill" style="width: {progressPercentage}%"></div>
-			</div>
-			<div class="progress-stats">
-				<span>Progress: {progressPercentage}%</span>
-				<span>Errors: {mistakes}</span>
-			</div>
+	<div class="progress-info">
+		<div class="progress-bar">
+			<div class="progress-fill" style="width: {progressPercentage}%"></div>
 		</div>
-	{/if}
+		<div class="progress-stats">
+			<span>Progress: {progressPercentage}%</span>
+			<span>Errors: {mistakes}</span>
+		</div>
+	</div>
 
 	<div class="score-section">
-		<Score {...finalScoreProps} />
+		<Score {...scoreProps} />
 	</div>
 
 	<div class="keyboard-section" class:hidden={!showKeyboard}>
-		<InteractiveKeyboard {...finalKeyboardProps} />
+		<Keyboard {...keyboardProps} />
 	</div>
 
 	{#if debugMode}
@@ -322,9 +221,25 @@
 		</div>
 	{/if}
 
-	{#if customControls}
-		<div class="exercise-content">
-			{@render children?.(exposedAPI)}
+	<div class="exercise-content">
+		{@render children?.(exposedAPI)}
+	</div>
+
+	{#if showNotesRoles}
+		<div class="color-legend">
+			{#each Object.entries(DEFAULT_NOTE_ROLE_COLORS) as [role, color]}
+				<div class="legend-item">
+					<div class="color-dot" style="background-color: {color}"></div>
+					<span>{role.charAt(0).toUpperCase() + role.slice(1)}</span>
+				</div>
+			{/each}
+		</div>
+	{/if}
+	{#if debugMode}
+		<div class="debug-info">
+			<p><strong>Debug Mode Active</strong></p>
+			<p>Use computer keyboard to simulate MIDI input</p>
+			<p>Active notes: {currentNotes.length > 0 ? currentNotes.join(', ') : 'None'}</p>
 		</div>
 	{/if}
 </div>

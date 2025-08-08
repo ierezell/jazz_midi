@@ -38,13 +38,6 @@ export class VirtualMidiInput {
 		const message = this.createMidiMessage(0x80, note, 0);
 		this.dispatchMidiEvent(message);
 	}
-	toggleKey(note: MidiNote, velocity: number = this.options.velocity || 100) {
-		if (this.activeNotes.has(note)) {
-			this.releaseKey(note);
-		} else {
-			this.pressKey(note, velocity);
-		}
-	}
 	releaseAllKeys() {
 		for (const note of this.activeNotes) {
 			this.releaseKey(note);
@@ -56,9 +49,7 @@ export class VirtualMidiInput {
 	playChord(notes: MidiNote[], velocity: number = this.options.velocity || 100) {
 		notes.forEach((note) => this.pressKey(note, velocity));
 	}
-	stopChord(notes: MidiNote[]) {
-		notes.forEach((note) => this.releaseKey(note));
-	}
+
 	private createMidiMessage(status: number, note: MidiNote, velocity: number): Uint8Array {
 		return new Uint8Array([status | (this.options.channel || 0), note, velocity]);
 	}
@@ -169,11 +160,11 @@ export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard
 	function handleKeyDown(event: KeyboardEvent) {
 		if (!enableKeyboard) return;
 		const key = event.key.toLowerCase();
-		console.log('Key pressed:', key);
+		console.debug('Key pressed:', key);
 		if (keyboardToMidi[key] && !pressedKeys.has(key)) {
 			pressedKeys.add(key);
 			const midiNote = keyboardToMidi[key] as MidiNote;
-			console.log(`Pressing MIDI note ${midiNote} for key '${key}'`);
+			console.debug(`Pressing MIDI note ${midiNote} for key '${key}'`);
 			virtualMidi.pressKey(midiNote);
 			event.preventDefault();
 		}
@@ -184,25 +175,25 @@ export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard
 		if (keyboardToMidi[key] && pressedKeys.has(key)) {
 			pressedKeys.delete(key);
 			const midiNote = keyboardToMidi[key] as MidiNote;
-			console.log(`Releasing MIDI note ${midiNote} for key '${key}'`);
+			console.debug(`Releasing MIDI note ${midiNote} for key '${key}'`);
 			virtualMidi.releaseKey(midiNote);
 			event.preventDefault();
 		}
 	}
 
 	if (enableKeyboard) {
-		console.log(
+		console.debug(
 			'Virtual keyboard input setup complete. Available keys:',
 			Object.keys(keyboardToMidi)
 		);
 	} else {
-		console.log('Virtual keyboard input setup (keyboard disabled)');
+		console.debug('Virtual keyboard input setup (keyboard disabled)');
 	}
 
 	document.addEventListener('keydown', handleKeyDown);
 	document.addEventListener('keyup', handleKeyUp);
 	return () => {
-		console.log('Virtual keyboard input cleanup');
+		console.debug('Virtual keyboard input cleanup');
 		document.removeEventListener('keydown', handleKeyDown);
 		document.removeEventListener('keyup', handleKeyUp);
 	};

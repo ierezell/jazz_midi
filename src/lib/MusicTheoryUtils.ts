@@ -1,8 +1,10 @@
-import type { Chord, ChordType, MidiNote } from './types/types';
+import type { ChordVoicing, Inversion } from './types/notes';
+import { MidiToNote, NoteToMidi } from './types/notes.constants';
+import type { Chord, ChordType, MidiNote, Note, NoteFullName, NoteRole } from './types/types';
 
 const inverseTriadChord = (
 	notes: MidiNote[],
-	inversion: 0 | 1 | 2,
+	inversion: Inversion,
 	chordType: ChordType
 ): Chord => {
 	switch (inversion) {
@@ -30,11 +32,19 @@ const inverseTriadChord = (
 				inversion: 2,
 				chordType: chordType
 			};
+		case 3:
+			return {
+				root: notes[0],
+				third: notes[1],
+				fifth: notes[2],
+				inversion: 0,
+				chordType: chordType
+			};
 	}
 };
 const inverseSeventhChord = (
 	notes: MidiNote[],
-	inversion: 0 | 1 | 2 | 3,
+	inversion: Inversion,
 	chordType: ChordType
 ): Chord => {
 	switch (inversion) {
@@ -79,7 +89,7 @@ const inverseSeventhChord = (
 export const chords = (
 	rootMidi: MidiNote,
 	chordType: ChordType,
-	inversion: 0 | 1 | 2 | 3 = 0
+	inversion: Inversion = 0
 ): Chord => {
 	const second = (rootMidi + 2) as MidiNote;
 	const minorThird = (rootMidi + 3) as MidiNote;
@@ -134,11 +144,77 @@ export const chords = (
 		if (inversion === 3) {
 			throw new Error('Triad chords do not have a 3rd inversion');
 		}
-		return inverseTriadChord(chord, inversion as 0 | 1 | 2, chordType);
+		return inverseTriadChord(chord, inversion, chordType);
 	} else {
 		return inverseSeventhChord(chord, inversion, chordType);
 	}
 };
+
+export function generateChordNotesDataFromChord(
+	chord: Chord,
+	voicing: ChordVoicing
+): {
+	leftHand: NoteFullName[][];
+	rightHand: NoteFullName[][];
+} {
+	const allChordNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
+		(note) => note !== undefined
+	) as MidiNote[];
+
+	switch (voicing) {
+		case 'full':
+			// All notes in right hand as a single chord
+			const fullResult = {
+				leftHand: [],
+				rightHand: [allChordNotes.map((midi) => MidiToNote[midi])]
+			};
+			return fullResult;
+		case 'left-hand':
+			const leftOnly = [chord.root, chord.seventh].filter(
+				(note) => note !== undefined
+			) as MidiNote[];
+			return {
+				leftHand: [leftOnly.map((midi) => MidiToNote[midi])],
+				rightHand: []
+			};
+		case 'right-hand':
+			const rightOnly = [chord.third, chord.fifth];
+			return {
+				leftHand: [],
+				rightHand: [rightOnly.map((midi) => MidiToNote[midi])]
+			};
+		case 'split':
+			const leftHand = [chord.root - 12, (chord.seventh || chord.root) - 12].filter(
+				(note) => note >= 24
+			) as MidiNote[];
+			const rightHand = [chord.third, chord.fifth];
+			return {
+				leftHand: [leftHand.map((midi) => MidiToNote[midi])],
+				rightHand: [rightHand.map((midi) => MidiToNote[midi])]
+			};
+		default:
+			return {
+				leftHand: [],
+				rightHand: [allChordNotes.map((midi) => MidiToNote[midi])]
+			};
+	}
+}
+
+export function generateChordNotesData(
+	selectedNote: Note,
+	chordType: ChordType,
+	inversion: Inversion,
+	voicing: ChordVoicing
+): {
+	leftHand: NoteFullName[][];
+	rightHand: NoteFullName[][];
+} {
+	const rootNote = (selectedNote + '4') as NoteFullName;
+	const rootMidi = NoteToMidi[rootNote];
+	const currentChord = chords(rootMidi, chordType, inversion);
+
+	return generateChordNotesDataFromChord(currentChord, voicing);
+}
 
 export function calculateOptimalRange(
 	notes: MidiNote[],
@@ -159,4 +235,27 @@ export function calculateOptimalRange(
 		middleC: Math.max(24, middleC),
 		octaves
 	};
+}
+
+export function getNoteRole(noteNumber: MidiNote, rootNumber: MidiNote): NoteRole {
+	// Yeah... I should do noteNumber: Note, rootNumber: Note and convert here....
+	const normalizedNote = noteNumber % 12;
+	switch (normalizedNote - (rootNumber % 12)) {
+		case 0:
+			return 'root';
+		case 4:
+			return 'third';
+		case 7:
+			return 'fifth';
+		case 11:
+			return 'seventh';
+		case 2:
+			return 'ninth';
+		case 5:
+			return 'eleventh';
+		case 9:
+			return 'thirteenth';
+		default:
+			throw new Error('Unknown note role');
+	}
 }

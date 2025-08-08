@@ -1,4 +1,4 @@
-import type { ChordType, MidiNote, Note, NoteFullName } from './notes';
+import type { ChordType, Inversion, MidiNote, Note, NoteFullName } from './notes';
 
 // Re-export types from notes module
 export type { ChordType, MidiNote, Note, NoteFullName } from './notes';
@@ -17,127 +17,88 @@ export type Chord = {
 	third: MidiNote;
 	fifth: MidiNote;
 	seventh?: MidiNote;
-	inversion: 0 | 1 | 2 | 3;
+	inversion: Inversion;
 	chordType: ChordType;
 };
-export type ChordToneColors = {
-	root: string;
-	third: string;
-	fifth: string;
-	seventh: string;
-	extension: string;
-	tension: string;
-	none: string;
-};
-export const DEFAULT_CHORD_TONE_COLORS: ChordToneColors = {
-	root: '#e74c3c',
-	third: '#f39c12',
-	fifth: '#3498db',
-	seventh: '#9b59b6',
-	extension: '#2ecc71',
-	tension: '#DDA0DD',
-	none: 'transparent'
-};
-export type ChordToneRole =
-	| 'root'
-	| 'third'
-	| 'fifth'
-	| 'seventh'
-	| 'extension'
-	| 'tension'
-	| 'none';
 
-export type ChordToneInfo = {
-	midiNote: MidiNote;
-	noteNumber: MidiNote;
-	role: ChordToneRole;
-	color: string;
-};
-export interface BaseKeyboardProps {
-	midiNotes: MidiNote[];
-	middleC: number;
-	octaves: number;
-	interactive?: boolean;
-	showLabels?: boolean;
-	chordToneInfo?: ChordToneInfo[];
-	showChordTones?: boolean;
+export type NoteRole = 'root' | 'third' | 'fifth' | 'seventh' | 'ninth' | 'eleventh' | 'thirteenth';
+
+export interface ScoreProps {
+	leftHand: NoteFullName[][];
+	rightHand: NoteFullName[][];
+	selectedNote: Note;
 }
-export interface BaseScoreProps {
-	leftHandNotes?: NoteFullName[][];
-	rightHandNotes?: NoteFullName[][];
-	title?: string;
-	showClefs?: boolean;
-}
-export interface MIDIConfig {
-	deviceId?: string;
-	channel: number;
-	velocity: {
-		min: number;
-		max: number;
-	};
-	sustainPedal: boolean;
-	sysex: boolean;
-	autoConnect: boolean;
-	virtualKeyboard: {
-		enabled: boolean;
-		layout: 'piano' | 'chromatic' | 'isomorphic';
-		size: 'compact' | 'normal' | 'large';
-	};
-	latency: {
-		compensation: number;
-		monitoring: boolean;
-	};
-	devices: {
-		preferredInput?: string;
-		preferredOutput?: string;
-	};
-}
-export interface AudioConfig {
-	enabled: boolean;
-	volume: {
-		master: number;
-		feedback: number;
-		metronome: number;
-	};
-	sounds: {
-		success: string;
-		error: string;
-		metronome: string;
-	};
-	effects: {
-		reverb: number;
-		delay: number;
-	};
-}
-export interface UIConfig {
-	theme: 'light' | 'dark' | 'auto';
-	showKeyboard: boolean;
-	showNoteNames: boolean;
-	keyboardLayout: 'piano' | 'chromatic';
-	animations: boolean;
-}
-export interface KeyboardConfiguration {
-	middleC: MidiNote;
-	octaves: number;
-	startNote?: MidiNote;
-	endNote?: MidiNote;
-	showLabels: boolean;
-	interactive: boolean;
-	chordTones: boolean;
-}
-export type MIDIConfiguration = MIDIConfig;
-export type ExerciseConfiguration = ExerciseConfig;
-export interface AudioFeedback {
-	success: HTMLAudioElement | null;
-	error: HTMLAudioElement | null;
-	enabled: boolean;
-}
-export interface AppState {
-	midiAccess: MIDIAccess | null;
-	configuration: MIDIConfig;
-	currentExercise: string | null;
-	audioFeedback: AudioFeedback;
-}
+
+// export interface MIDIConfig {
+// 	deviceId?: string;
+// 	channel: number;
+// 	velocity: {
+// 		min: number;
+// 		max: number;
+// 	};
+// 	sustainPedal: boolean;
+// 	sysex: boolean;
+// 	autoConnect: boolean;
+// 	virtualKeyboard: {
+// 		enabled: boolean;
+// 		layout: 'piano' | 'chromatic' | 'isomorphic';
+// 		size: 'compact' | 'normal' | 'large';
+// 	};
+// 	latency: {
+// 		compensation: number;
+// 		monitoring: boolean;
+// 	};
+// 	devices: {
+// 		preferredInput?: string;
+// 		preferredOutput?: string;
+// 	};
+// }
+// export interface AudioConfig {
+// 	enabled: boolean;
+// 	volume: {
+// 		master: number;
+// 		feedback: number;
+// 		metronome: number;
+// 	};
+// 	sounds: {
+// 		success: string;
+// 		error: string;
+// 		metronome: string;
+// 	};
+// 	effects: {
+// 		reverb: number;
+// 		delay: number;
+// 	};
+// }
+// export interface UIConfig {
+// 	theme: 'light' | 'dark' | 'auto';
+// 	showKeyboard: boolean;
+// 	showNoteNames: boolean;
+// 	keyboardLayout: 'piano' | 'chromatic';
+// 	animations: boolean;
+// }
+// export interface KeyboardConfiguration {
+// 	middleC: MidiNote;
+// 	octaves: number;
+// 	startNote?: MidiNote;
+// 	endNote?: MidiNote;
+// 	showLabels: boolean;
+// 	interactive: boolean;
+// 	chordTones: boolean;
+// }
+// export type MIDIConfiguration = MIDIConfig;
+// export type ExerciseConfiguration = ExerciseConfig;
+// export interface AudioFeedback {
+// 	success: HTMLAudioElement | null;
+// 	error: HTMLAudioElement | null;
+// 	enabled: boolean;
+// }
+// export interface AppState {
+// 	midiAccess: MIDIAccess | null;
+// 	configuration: MIDIConfig;
+// 	currentExercise: string | null;
+// 	audioFeedback: AudioFeedback;
+// }
 export interface ExerciseConfig {
 	id: string;
 	name: string;
@@ -199,7 +160,7 @@ export interface BaseExerciseState {
 export interface ChordExerciseState extends BaseExerciseState {
 	chord: {
 		type: ChordType;
-		inversion: 0 | 1 | 2 | 3;
+		inversion: Inversion;
 		voicing: 'close' | 'open' | 'drop2' | 'drop3' | 'shell';
 		position: 'root' | '1st' | '2nd' | '3rd';
 	};
@@ -272,25 +233,14 @@ export interface ExerciseEventHandlers {
 	onResume: () => void;
 }
 export interface KeyboardProps {
-	notes: MidiNote[];
-	highlightedNotes?: MidiNote[];
-	pressedNotes?: MidiNote[];
-	interactive: boolean;
-	showLabels: boolean;
+	midiNotes: MidiNote[];
+	middleC: number;
 	octaves: number;
-	startOctave: number;
-	onNotePress?: (note: MidiNote) => void;
-	onNoteRelease?: (note: MidiNote) => void;
+	debugMode: boolean;
+	noteRoles: { [key: number]: NoteRole };
+	expectedNotes: MidiNote[];
 }
-export interface ScoreProps {
-	clef: 'treble' | 'bass' | 'both';
-	notes: NoteFullName[][];
-	measures: number;
-	timeSignature: string;
-	keySignature: string;
-	title?: string;
-	tempo?: number;
-}
+
 export interface ExerciseControlsProps {
 	state: BaseExerciseState;
 	config: ExerciseConfig;
@@ -369,16 +319,4 @@ export interface ExerciseStatistics {
 	timeSpent: number;
 	favoriteExercises: string[];
 	improvementTrend: number;
-}
-export interface ExportableData {
-	exercises: ExerciseConfig[];
-	results: ExerciseResult[];
-	settings: {
-		midi: MIDIConfig;
-		audio: AudioConfig;
-		ui: UIConfig;
-	};
-	statistics: ExerciseStatistics;
-	version: string;
-	exportDate: Date;
 }

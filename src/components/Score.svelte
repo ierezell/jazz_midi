@@ -1,18 +1,10 @@
 <script lang="ts">
-	import type { Note, NoteFullName } from '$lib/types/notes';
+	import type { NoteFullName } from '$lib/types/notes';
+	import type { ScoreProps } from '$lib/types/types';
 	import { onMount } from 'svelte';
 	import { Factory, Renderer, Voice } from 'vexflow';
-	interface ScoreProps {
-		leftHand: NoteFullName[][];
-		rightHand: NoteFullName[][];
-		selectedNote: Note;
-	}
-	let { leftHand, rightHand, selectedNote }: ScoreProps = $props();
 
-	// Debug logging to see what props we receive
-	$effect(() => {
-		console.log('Score props updated:', { leftHand, rightHand, selectedNote });
-	});
+	let { leftHand, rightHand, selectedNote }: ScoreProps = $props();
 
 	const fmt = (group: NoteFullName[][]) =>
 		group?.map((chord) => (chord.length > 1 ? `(${chord.join(' ')})` : chord[0])).join(', ') || '';
@@ -67,7 +59,7 @@
 
 		// Only proceed if we have notes to render
 		if ((!rightHand || rightHand.length === 0) && (!leftHand || leftHand.length === 0)) {
-			console.log('No notes to render, rendering test chord');
+			console.debug('No notes to render, rendering test chord');
 			// Render a test C major chord for debugging
 			const testRightHand = 'C4, E4, G4';
 			try {
@@ -89,7 +81,7 @@
 			return;
 		}
 
-		console.log('Rendering score with notes:', { stringLeftHand, stringRightHand });
+		console.debug('Rendering score with notes:', { stringLeftHand, stringRightHand });
 
 		try {
 			if (rightHand && rightHand.length > 0 && stringRightHand) {
@@ -134,7 +126,7 @@
 	}
 	$effect(() => {
 		// This effect will re-run whenever leftHand, rightHand, or selectedNote changes
-		console.log('Score $effect triggered with props:', { leftHand, rightHand, selectedNote });
+		console.debug('Score $effect triggered with props:', { leftHand, rightHand, selectedNote });
 		// Add a small delay to ensure DOM is ready
 		setTimeout(() => {
 			const container = document.getElementById('score-container');
@@ -152,7 +144,7 @@
 			const container = document.getElementById('score-container');
 			if (container) {
 				const width = container.getBoundingClientRect().width;
-				console.log(`Container width: ${width}`);
+				console.debug(`Container width: ${width}`);
 				if (width > 0) {
 					renderScore(width);
 				}

@@ -3,15 +3,16 @@
 	import welcome from '$lib/images/svelte-welcome.webp';
 	import { midiManager } from '$lib/MIDIManager';
 	import { onMount } from 'svelte';
-	import MidiDisplay from '../components/MidiDisplay.svelte';
 	onMount(async () => {
 		try {
 			await midiManager.initialize();
-			console.log('MIDI Access obtained');
+			console.debug('MIDI Access obtained');
 		} catch (error) {
 			console.error('Failed to obtain MIDI Access:', error);
 		}
 	});
+
+	let midiDevices = midiManager.getMIDIDevices().inputs;
 </script>
 
 <svelte:head>
@@ -31,7 +32,18 @@
 	<main>
 		<h1>Jazz MIDI</h1>
 		{#if midiManager.midiAccess}
-			<MidiDisplay midiAccess={midiManager.midiAccess} />
+			<div>
+				<h2>MIDI Inputs</h2>
+				{#if midiDevices.length > 0}
+					<ul>
+						{#each midiDevices as device}
+							<li>{device.name}</li>
+						{/each}
+					</ul>
+				{:else}
+					<p>No MIDI inputs available.</p>
+				{/if}
+			</div>
 		{:else}
 			<p>Loading MIDI Access...</p>
 		{/if}

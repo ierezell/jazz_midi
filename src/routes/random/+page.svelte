@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import type { ChordType, Note } from '$lib/types/notes';
+	import type { ChordType, Inversion, Note } from '$lib/types/notes';
 	import { AllChordTypes, AllNotes } from '$lib/types/notes.constants';
 	import { onMount } from 'svelte';
 	import ChordsPage from '../chords/+page.svelte';
@@ -14,7 +14,7 @@
 		type: ExerciseType;
 		key: Note;
 		chordType?: ChordType;
-		inversion?: 0 | 1 | 2 | 3;
+		inversion?: Inversion;
 		description: string;
 	}
 
@@ -32,7 +32,7 @@
 		switch (type) {
 			case 'chord': {
 				const chordType = AllChordTypes[Math.floor(Math.random() * AllChordTypes.length)];
-				const inversion = Math.floor(Math.random() * 4) as 0 | 1 | 2 | 3;
+				const inversion = Math.floor(Math.random() * 4) as Inversion;
 				return {
 					type,
 					key,
@@ -89,25 +89,11 @@
 	{#if currentConfig}
 		{#key exerciseKey}
 			{#if currentConfig.type === 'chord'}
-				<ChordsPage
-					randomMode={true}
-					randomNote={currentConfig.key}
-					randomChordType={currentConfig.chordType}
-					randomInversion={currentConfig.inversion}
-					onRandomComplete={generateNewExercise}
-				/>
+				<ChordsPage randomMode={true} />
 			{:else if currentConfig.type === 'scale'}
-				<ScalesPage
-					randomMode={true}
-					randomNote={currentConfig.key}
-					onRandomComplete={generateNewExercise}
-				/>
+				<ScalesPage randomMode={true} />
 			{:else if currentConfig.type === 'ii-v-i'}
-				<TwoFiveOnesPage
-					randomMode={true}
-					randomNote={currentConfig.key}
-					onRandomComplete={generateNewExercise}
-				/>
+				<TwoFiveOnesPage randomMode={true} />
 			{/if}
 		{/key}
 	{:else}

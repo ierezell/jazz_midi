@@ -40,7 +40,7 @@ export class MIDIManager {
 				this.handleError.bind(this)
 			);
 
-			console.log('MIDI Manager: Connected to physical MIDI devices');
+			console.debug('MIDI Manager: Connected to physical MIDI devices');
 			return true;
 		} catch (error) {
 			this.handleError(error as Error);
@@ -55,13 +55,14 @@ export class MIDIManager {
 				return null;
 			}
 			const midiAccess = await navigator.requestMIDIAccess(options || { sysex: false });
-			console.log('MIDI Access obtained successfully');
+			console.debug('MIDI Access obtained successfully');
 			return midiAccess;
 		} catch (error) {
 			console.error('Failed to obtain MIDI access:', error);
 			return null;
 		}
 	}
+
 	private safeSetupMidiCallback(
 		midiAccess: MIDIAccess,
 		callback: (event: MIDIMessageEvent) => void,
@@ -70,7 +71,7 @@ export class MIDIManager {
 		try {
 			midiAccess.inputs.forEach((input) => {
 				const deviceInfo = `Input port [type:'${input.type}'] id:'${input.id}' manufacturer:'${input.manufacturer}' name:'${input.name}' version:'${input.version}'`;
-				console.log(`Setting up MIDI input: ${deviceInfo}`);
+				console.debug(`Setting up MIDI input: ${deviceInfo}`);
 				input.onmidimessage = (event) => {
 					try {
 						callback(event);
@@ -84,7 +85,7 @@ export class MIDIManager {
 			});
 			midiAccess.onstatechange = (event) => {
 				const port = event.port!;
-				console.log(`MIDI port state changed: ${port.name} is now ${port.state}`);
+				console.debug(`MIDI port state changed: ${port.name} is now ${port.state}`);
 			};
 		} catch (error) {
 			console.error('Error setting up MIDI callback:', error);
@@ -103,7 +104,7 @@ export class MIDIManager {
 			if (virtualInput) {
 				virtualInput.onmidimessage = this.handleMIDIMessage.bind(this);
 			}
-			console.log('MIDI Manager: Virtual keyboard enabled');
+			console.debug('MIDI Manager: Virtual keyboard enabled');
 		} catch (error) {
 			this.handleError(error as Error);
 		}
@@ -181,17 +182,6 @@ export class MIDIManager {
 		}
 	}
 
-	private cleanupVirtualKeyboard(): void {
-		if (this.keyboardCleanup) {
-			this.keyboardCleanup();
-			this.keyboardCleanup = null;
-		}
-		if (this.virtualMidi) {
-			this.virtualMidi.releaseAllKeys();
-			this.virtualMidi = null;
-		}
-	}
-
 	getMIDIDevices(): { inputs: MIDIInput[]; outputs: MIDIOutput[] } {
 		if (!this.midiAccess) {
 			return { inputs: [], outputs: [] };
@@ -203,7 +193,14 @@ export class MIDIManager {
 	}
 
 	cleanup(): void {
-		this.cleanupVirtualKeyboard();
+		if (this.keyboardCleanup) {
+			this.keyboardCleanup();
+			this.keyboardCleanup = null;
+		}
+		if (this.virtualMidi) {
+			this.virtualMidi.releaseAllKeys();
+			this.virtualMidi = null;
+		}
 		if (this.midiAccess) {
 			this.midiAccess.inputs.forEach((input) => {
 				input.onmidimessage = null;
@@ -213,36 +210,7 @@ export class MIDIManager {
 
 		this.eventHandlers = {};
 		this.errorCallbacks = [];
-		console.log('MIDI Manager: Cleaned up all connections');
-	}
-
-	enableDebugMode(): void {
-		this.debugMode = true;
-		if (!this.virtualMidi) {
-			this.setupVirtualKeyboard();
-		} else {
-			// Recreate keyboard input with debug mode enabled
-			if (this.keyboardCleanup) {
-				this.keyboardCleanup();
-			}
-			this.keyboardCleanup = setupKeyboardInput(this.virtualMidi, this.debugMode);
-		}
-	}
-
-	disableDebugMode(): void {
-		this.debugMode = false;
-		if (this.virtualMidi && this.keyboardCleanup) {
-			// Recreate keyboard input with debug mode disabled
-			this.keyboardCleanup();
-			this.keyboardCleanup = setupKeyboardInput(this.virtualMidi, this.debugMode);
-		}
-	}
-
-	resetExercise(): void {
-		this.eventHandlers = {};
-		if (this.virtualMidi) {
-			this.virtualMidi.releaseAllKeys();
-		}
+		console.debug('MIDI Manager: Cleaned up all connections');
 	}
 }
 
