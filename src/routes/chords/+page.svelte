@@ -154,8 +154,6 @@
 </script>
 
 <BaseExercise
-	exerciseTitle={randomMode ? 'Random Chord' : 'Jazz Chord Practice'}
-	exerciseDescription={'Practice playing jazz chords with different voicings and inversions'}
 	{randomMode}
 	{generateExpectedNotes}
 	{generateScoreProps}
@@ -163,8 +161,12 @@
 	{isCompleted}
 >
 	{#snippet children(api: any)}
-		{#if api.completed !== exerciseCompleted}
-			{(exerciseCompleted = api.completed)}
+		{@const wasCompleted = exerciseCompleted}
+		{@const isNowCompleted = api.completed}
+		{#if isNowCompleted && !wasCompleted}
+			{(exerciseCompleted = true)}
+		{:else if !isNowCompleted && wasCompleted}
+			{(exerciseCompleted = false)}
 		{/if}
 		<div class="controls">
 			{#if !randomMode}

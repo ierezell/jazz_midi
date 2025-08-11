@@ -8,8 +8,10 @@
 
 	const fmt = (group: NoteFullName[][]) =>
 		group?.map((chord) => (chord.length > 1 ? `(${chord.join(' ')})` : chord[0])).join(', ') || '';
+
 	let stringRightHand = $derived(fmt(rightHand));
 	let stringLeftHand = $derived(fmt(leftHand));
+
 	function renderScore(width: number) {
 		const isMobile = width < 768;
 		const isSmallMobile = width < 480;
@@ -25,7 +27,6 @@
 			height = 340;
 		}
 
-		// Clear the canvas element first
 		const canvas = document.getElementById('output') as HTMLCanvasElement;
 		if (!canvas) return;
 
@@ -39,13 +40,13 @@
 				elementId: 'output',
 				backend: Renderer.Backends.CANVAS,
 				width: Math.max(300, width),
-				height: height
+				height: Math.max(200, height)
 			}
 		});
 
 		const score = f.EasyScore({ throwOnError: false });
 
-		const spaceBetweenStaves = isMobile ? Math.max(20, width / 40) : width / 35;
+		const spaceBetweenStaves = isMobile ? 10 : 20;
 		const system = f.System({
 			width: Math.max(300, width),
 			spaceBetweenStaves: spaceBetweenStaves,
@@ -85,38 +86,37 @@
 
 		try {
 			if (rightHand && rightHand.length > 0 && stringRightHand) {
-				const stave = system.addStave({
+				const trebleStave = system.addStave({
 					voices: [
 						score
 							.voice(score.notes(stringRightHand, { clef: 'treble', stem: 'up' }))
 							.setMode(Voice.Mode.SOFT)
 					]
 				});
-				stave.addClef('treble');
+				trebleStave.addClef('treble');
 				if (selectedNote) {
-					stave.addKeySignature(selectedNote);
+					trebleStave.addKeySignature(selectedNote);
 				}
 			}
 
 			if (leftHand && leftHand.length > 0 && stringLeftHand) {
-				const stave = system.addStave({
+				const bassStave = system.addStave({
 					voices: [
 						score
 							.voice(score.notes(stringLeftHand, { clef: 'bass', stem: 'down' }))
 							.setMode(Voice.Mode.SOFT)
 					]
 				});
-				stave.addClef('bass');
+				bassStave.addClef('bass');
 				if (selectedNote) {
-					stave.addKeySignature(selectedNote);
+					bassStave.addKeySignature(selectedNote);
 				}
 			}
 
 			// Only add connectors if we have both hands
 			if (rightHand && rightHand.length > 0 && leftHand && leftHand.length > 0) {
 				system.addConnector('brace');
-				system.addConnector('singleRight');
-				system.addConnector('singleLeft');
+				system.addConnector('single');
 			}
 
 			f.draw();
@@ -167,7 +167,9 @@
 <style>
 	#score-container {
 		width: 100%;
-		height: 340px;
+		min-height: 240px;
+		max-height: 400px;
+		height: auto;
 		overflow-x: auto;
 		overflow-y: hidden;
 		display: flex;
@@ -185,7 +187,8 @@
 	}
 	@media (max-width: 768px) {
 		#score-container {
-			height: 280px;
+			min-height: 200px;
+			max-height: 340px;
 			border-radius: 6px;
 		}
 		#output {
@@ -195,7 +198,8 @@
 	}
 	@media (max-width: 480px) {
 		#score-container {
-			height: 240px;
+			min-height: 180px;
+			max-height: 300px;
 			border-radius: 4px;
 			overflow-x: scroll;
 			-webkit-overflow-scrolling: touch;
@@ -207,7 +211,8 @@
 	}
 	@media (max-width: 360px) {
 		#score-container {
-			height: 200px;
+			min-height: 160px;
+			max-height: 260px;
 		}
 		#output {
 			min-width: 260px;

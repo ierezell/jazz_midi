@@ -62,6 +62,7 @@ export class VirtualMidiInput {
 		this.listeners.forEach((listener) => listener(event));
 	}
 }
+
 export function createVirtualMidiAccess(
 	inputName: string = 'Virtual MIDI Keyboard'
 ): MIDIAccess & { getVirtualInput: () => VirtualMidiInput } {
@@ -108,13 +109,16 @@ export function createVirtualMidiAccess(
 	} as unknown as MIDIAccess & { getVirtualInput: () => VirtualMidiInput };
 	return midiAccess;
 }
+
 let globalVirtualMidi: VirtualMidiInput | null = null;
+
 export function getGlobalVirtualMidi(): VirtualMidiInput {
 	if (!globalVirtualMidi) {
 		globalVirtualMidi = new VirtualMidiInput();
 	}
 	return globalVirtualMidi;
 }
+
 export const keyboardToMidi: Record<string, MidiNote> = {
 	z: 72,
 	x: 74,
@@ -155,8 +159,10 @@ export const keyboardToMidi: Record<string, MidiNote> = {
 	'0': 87,
 	'=': 90
 };
+
 export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard: boolean = false) {
 	const pressedKeys = new Set<string>();
+
 	function handleKeyDown(event: KeyboardEvent) {
 		if (!enableKeyboard) return;
 		const key = event.key.toLowerCase();
@@ -169,6 +175,7 @@ export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard
 			event.preventDefault();
 		}
 	}
+
 	function handleKeyUp(event: KeyboardEvent) {
 		if (!enableKeyboard) return;
 		const key = event.key.toLowerCase();

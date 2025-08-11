@@ -16,22 +16,26 @@
 		onComplete?: () => void;
 		scaleMode?: ScaleMode;
 		sequentialMode?: boolean;
+		handMode?: boolean;
 	}
 
 	let {
 		randomMode,
 		onComplete,
 		scaleMode: propScaleMode,
-		sequentialMode: propSequentialMode
+		sequentialMode: propSequentialMode,
+		handMode: propHandMode
 	}: Props = $props();
 
 	let sequentialMode: boolean = $state(
 		propSequentialMode ?? (randomMode ? Math.random() > 0.5 : true)
 	);
+	let handMode: boolean = $state(propHandMode ?? (randomMode ? Math.random() > 0.5 : true));
 	let scaleMode: ScaleMode = $state(
 		propScaleMode ??
 			(randomMode ? AllScaleModes[Math.floor(Math.random() * AllScaleModes.length)] : 'Maj')
 	);
+	let playedNotes: Set<MidiNote> = $state(new Set());
 	let exerciseCompleted = $state(false);
 
 	$effect(() => {
@@ -41,7 +45,7 @@
 	});
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
-		const rootMidi = NoteToMidi[(selectedNote + '4') as NoteFullName];
+		const rootMidi = NoteToMidi[(selectedNote + (handMode ? '4' : '3')) as NoteFullName];
 
 		const scaleNotes = SCALE_INTERVALS[scaleMode].map(
 			(interval) => (rootMidi + interval) as MidiNote
@@ -58,8 +62,8 @@
 	function generateScoreProps(selectedNote: Note): ScoreProps {
 		const scaleNotes = generateExpectedNotes(selectedNote);
 		const noteNames = scaleNotes.map((midi) => MidiToNote[midi]);
-		const leftNotes = [] as NoteFullName[][];
-		const rightNotes = noteNames.map((note) => [note]);
+		const rightNotes = handMode ? noteNames.map((note) => [note]) : ([] as NoteFullName[][]);
+		const leftNotes = handMode ? ([] as NoteFullName[][]) : noteNames.map((note) => [note]);
 		return {
 			selectedNote: selectedNote,
 			leftHand: leftNotes,
@@ -85,23 +89,26 @@
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
 	): { isCorrect: boolean; message: string } {
-		const nextExpectedIndex = currentNotes.length;
+		const nextExpectedIndex = playedNotes.size;
 		const expectedNote = expectedNotes[nextExpectedIndex];
 
 		if (event.noteNumber === expectedNote) {
-			if (nextExpectedIndex === expectedNotes.length - 1) {
-				return { isCorrect: true, message: 'Perfect scale! 🎵✨' };
-			} else {
-				return {
-					isCorrect: true,
-					message: `Good! Note ${nextExpectedIndex + 1}/${expectedNotes.length}`
-				};
-			}
+			playedNotes = playedNotes.add(event.noteNumber);
 		} else {
 			const expectedNoteName = MidiToNote[expectedNote]?.slice(0, -1) || expectedNote.toString();
+			playedNotes = new Set();
 			return {
 				isCorrect: false,
 				message: `Wrong note! Expected ${expectedNoteName} (note ${nextExpectedIndex + 1})`
+			};
+		}
+
+		if (playedNotes.size === expectedNotes.length) {
+			return { isCorrect: true, message: 'Perfect scale! 🎵✨' };
+		} else {
+			return {
+				isCorrect: true,
+				message: `Good! Note ${nextExpectedIndex + 1}/${expectedNotes.length}`
 			};
 		}
 	}
@@ -112,17 +119,19 @@
 		currentNotes: MidiNote[]
 	): { isCorrect: boolean; message: string } {
 		if (expectedNotes.includes(event.noteNumber)) {
-			const correctNotes = currentNotes.filter((note) => expectedNotes.includes(note));
-			if (correctNotes.length === expectedNotes.length) {
-				return { isCorrect: true, message: 'Perfect scale! 🎵' };
-			} else {
-				return {
-					isCorrect: true,
-					message: `Good! ${correctNotes.length}/${expectedNotes.length} notes`
-				};
-			}
+			playedNotes = playedNotes.add(event.noteNumber);
 		} else {
+			playedNotes = new Set();
 			return { isCorrect: false, message: 'Wrong note!' };
+		}
+
+		if (playedNotes.size === expectedNotes.length) {
+			return { isCorrect: true, message: 'Perfect scale! 🎵' };
+		} else {
+			return {
+				isCorrect: true,
+				message: `Good! ${playedNotes.size}/${expectedNotes.length} notes`
+			};
 		}
 	}
 
@@ -146,19 +155,23 @@
 	function handleSequentialToggle(event: Event): void {
 		const target = event.target as HTMLInputElement;
 		sequentialMode = target.checked;
+		playedNotes = new Set();
+	}
+
+	function handleHandModeToggle(event: Event): void {
+		const target = event.target as HTMLInputElement;
+		handMode = target.checked;
+		playedNotes = new Set();
 	}
 
 	function handleScaleModeChange(event: Event): void {
 		const target = event.target as HTMLInputElement;
 		scaleMode = target.value as ScaleMode;
+		playedNotes = new Set();
 	}
 </script>
 
 <BaseExercise
-	exerciseTitle={randomMode ? 'Random Scale' : 'Scale Practice'}
-	exerciseDescription={sequentialMode
-		? 'Play the scale notes in order'
-		: 'Play all scale notes in any order'}
 	{randomMode}
 	{generateExpectedNotes}
 	{generateScoreProps}
@@ -166,8 +179,12 @@
 	isCompleted={isScaleCompleted}
 >
 	{#snippet children(api: any)}
-		{#if api.completed !== exerciseCompleted}
-			{(exerciseCompleted = api.completed)}
+		{@const wasCompleted = exerciseCompleted}
+		{@const isNowCompleted = api.completed}
+		{#if isNowCompleted && !wasCompleted}
+			{(exerciseCompleted = true)}
+		{:else if !isNowCompleted && wasCompleted}
+			{(exerciseCompleted = false)}
 		{/if}
 
 		<div class="scale-controls">
@@ -179,7 +196,13 @@
 							bind:checked={sequentialMode}
 							onchange={handleSequentialToggle}
 						/>
-						Sequential Mode (play in order)
+						In order
+					</label>
+				</div>
+				<div class="control-group">
+					<label>
+						<input type="checkbox" bind:checked={handMode} onchange={handleHandModeToggle} />
+						Right hand
 					</label>
 				</div>
 				<div class="control-group">

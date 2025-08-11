@@ -155,7 +155,7 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		padding: 1rem;
+		padding: 0.25rem 1rem 1rem 1rem;
 		width: 100%;
 		max-width: 64rem;
 		margin: 0 auto;
@@ -209,7 +209,7 @@
 			white-space: nowrap;
 		}
 		main {
-			padding: 0.75rem;
+			padding: 0.25rem 0.75rem 0.75rem 0.75rem;
 			max-width: 100%;
 		}
 		svg {
@@ -237,7 +237,7 @@
 			height: 2.5em;
 		}
 		main {
-			padding: 0.5rem;
+			padding: 0.125rem 0.5rem 0.5rem 0.5rem;
 		}
 	}
 	@media (max-width: 360px) {

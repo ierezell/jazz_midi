@@ -16,8 +16,6 @@
 	import Score from './Score.svelte';
 
 	interface BaseExerciseProps {
-		exerciseTitle: string;
-		exerciseDescription: string;
 		randomMode: boolean;
 		generateExpectedNotes: (selectedNote: Note, ...args: any[]) => MidiNote[];
 		generateScoreProps: (selectedNote: Note) => ScoreProps;
@@ -31,8 +29,6 @@
 	}
 
 	let {
-		exerciseTitle,
-		exerciseDescription = 'Exercise Description',
 		randomMode = false,
 		generateExpectedNotes,
 		generateScoreProps,
@@ -53,7 +49,7 @@
 	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
 	let expectedNotes = $derived(generateExpectedNotes(selectedNote));
 	let scoreProps = $derived(generateScoreProps(selectedNote));
-	let showKeyboard = $derived(debugMode);
+	let showKeyboard = $derived(debugMode || mistakes >= 3);
 	let keyboardProps = $derived({
 		...calculateOptimalRange(expectedNotes),
 		midiNotes: currentNotes,
@@ -96,6 +92,7 @@
 
 	onMount(async () => {
 		await midiManager.initialize();
+		midiManager.setupVirtualKeyboard();
 		midiManager.setEventHandlers({
 			onNoteOn: handleNoteOn,
 			onNoteOff: handleNoteOff
@@ -107,7 +104,7 @@
 		feedbackMessage = message;
 		setTimeout(() => {
 			feedbackMessage = '';
-		}, 2000);
+		}, 5000);
 	}
 
 	function onCompleteExercise(): void {
@@ -133,6 +130,7 @@
 
 	function toggleDebug(): void {
 		debugMode = !debugMode;
+		midiManager.setDebugMode(debugMode);
 	}
 
 	function handleNoteSelectEvent(event: Event) {
@@ -170,8 +168,8 @@
 		</div>
 	{/if}
 
-	<div class="exercise-controls">
-		{#if !randomMode}
+	{#if !randomMode}
+		<div class="exercise-controls">
 			<div class="control-group">
 				<label for="note-select">Key:</label>
 				<select id="note-select" value={selectedNote} onchange={handleNoteSelectEvent}>
@@ -180,25 +178,8 @@
 					{/each}
 				</select>
 			</div>
-		{/if}
-
-		<div class="control-group">
-			<button onclick={toggleDebug} class="debug-btn">
-				{debugMode ? 'Disable' : 'Enable'} Debug Mode
-			</button>
-			<button onclick={resetExercise} class="reset-btn"> Reset Exercise </button>
 		</div>
-	</div>
-
-	<div class="progress-info">
-		<div class="progress-bar">
-			<div class="progress-fill" style="width: {progressPercentage}%"></div>
-		</div>
-		<div class="progress-stats">
-			<span>Progress: {progressPercentage}%</span>
-			<span>Errors: {mistakes}</span>
-		</div>
-	</div>
+	{/if}
 
 	<div class="score-section">
 		<Score {...scoreProps} />
@@ -210,7 +191,14 @@
 
 	{#if debugMode}
 		<div class="debug-section">
-			<DebugPanel {noteEvents} {expectedNotes} {currentNotes} />
+			<DebugPanel
+				{noteEvents}
+				{expectedNotes}
+				{currentNotes}
+				{debugMode}
+				onToggleDebugMode={toggleDebug}
+				virtualMidi={midiManager.getVirtualMidi() ?? undefined}
+			/>
 		</div>
 	{/if}
 
@@ -235,6 +223,23 @@
 			<p>Active notes: {currentNotes.length > 0 ? currentNotes.join(', ') : 'None'}</p>
 		</div>
 	{/if}
+
+	<div class="progress-info">
+		<div class="progress-bar">
+			<div class="progress-fill" style="width: {progressPercentage}%"></div>
+		</div>
+		<div class="progress-stats">
+			<span>Progress: {progressPercentage}%</span>
+			<span>Errors: {mistakes}</span>
+		</div>
+	</div>
+
+	<div class="control-group">
+		<button onclick={toggleDebug} class="debug-btn">
+			{debugMode ? 'Disable' : 'Enable'} Debug Mode
+		</button>
+		<button onclick={resetExercise} class="reset-btn"> Reset Exercise </button>
+	</div>
 </div>
 
 <style>
@@ -244,7 +249,7 @@
 		padding: 1rem;
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
+		gap: 0.75rem;
 	}
 
 	.feedback {
@@ -348,7 +353,7 @@
 	}
 
 	.score-section {
-		min-height: 200px;
+		min-height: 280px;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -359,12 +364,11 @@
 	}
 
 	.keyboard-section {
-		transition: opacity 0.3s ease;
+		transition: all 0.3s ease;
 	}
 
 	.keyboard-section.hidden {
-		opacity: 0.3;
-		pointer-events: none;
+		display: none;
 	}
 
 	.debug-section {
@@ -381,7 +385,7 @@
 	@media (max-width: 768px) {
 		.exercise-container {
 			padding: 0.5rem;
-			gap: 1rem;
+			gap: 0.5rem;
 		}
 
 		.exercise-controls {
@@ -415,7 +419,7 @@
 		}
 
 		.score-section {
-			min-height: 160px;
+			min-height: 220px;
 			padding: 0.5rem;
 		}
 	}

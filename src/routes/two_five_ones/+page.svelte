@@ -162,8 +162,6 @@
 
 <div class="progression-exercise">
 	<BaseExercise
-		exerciseTitle={'ii-V-I Progression'}
-		exerciseDescription={'Play each chord in sequence: ii7 - V7 - Imaj7'}
 		{randomMode}
 		{generateExpectedNotes}
 		{generateScoreProps}
@@ -171,10 +169,13 @@
 		{isCompleted}
 	>
 		{#snippet children(api: any)}
-			{#if api.completed !== exerciseCompleted}
-				{(exerciseCompleted = api.completed)}
+			{@const wasCompleted = exerciseCompleted}
+			{@const isNowCompleted = api.completed}
+			{#if isNowCompleted && !wasCompleted}
+				{(exerciseCompleted = true)}
+			{:else if !isNowCompleted && wasCompleted}
+				{(exerciseCompleted = false)}
 			{/if}
-
 			<div class="progression-controls">
 				{#if !randomMode}
 					<div class="control-group">

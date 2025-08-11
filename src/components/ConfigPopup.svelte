@@ -1,9 +1,10 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import type { Inversion, ScaleMode } from '$lib/types/notes';
+	import type { ChordVoicing, Inversion, ScaleMode } from '$lib/types/notes';
 	import {
 		AllChordTypes,
+		AllChordVoicings,
 		AllInversions,
 		AllNotes,
 		AllScaleModes
@@ -16,6 +17,7 @@
 		allowedChordTypes,
 		allowedInversions,
 		allowedScaleModes,
+		allowedVoicings,
 		allowedExerciseTypes,
 		onUpdate,
 		onClose
@@ -25,6 +27,7 @@
 		allowedChordTypes: ChordType[];
 		allowedInversions: Inversion[];
 		allowedScaleModes: ScaleMode[];
+		allowedVoicings: ChordVoicing[];
 		allowedExerciseTypes: ExerciseType[];
 		onUpdate: (type: string, value: string[]) => void;
 		onClose: () => void;
@@ -47,6 +50,9 @@
 				break;
 			case 'allowedScaleModes':
 				currentArray = [...allowedScaleModes];
+				break;
+			case 'allowedVoicings':
+				currentArray = [...allowedVoicings];
 				break;
 		}
 
@@ -170,6 +176,23 @@
 									onchange={(e) => handleUpdate('allowedScaleModes', mode, e.currentTarget.checked)}
 								/>
 								<span>{mode}</span>
+							</label>
+						{/each}
+					</div>
+				</div>
+
+				<div class="config-section">
+					<h3>Voicings</h3>
+					<div class="checkbox-grid">
+						{#each AllChordVoicings as voicing}
+							<label class="checkbox-label">
+								<input
+									type="checkbox"
+									checked={allowedVoicings.includes(voicing)}
+									onchange={(e) =>
+										handleUpdate('allowedVoicings', voicing, e.currentTarget.checked)}
+								/>
+								<span>{voicing.charAt(0).toUpperCase() + voicing.slice(1)}</span>
 							</label>
 						{/each}
 					</div>

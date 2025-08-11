@@ -110,6 +110,24 @@ export class MIDIManager {
 		}
 	}
 
+	setDebugMode(enabled: boolean): void {
+		this.debugMode = enabled;
+		if (this.virtualMidi) {
+			// Cleanup existing keyboard setup
+			if (this.keyboardCleanup) {
+				this.keyboardCleanup();
+				this.keyboardCleanup = null;
+			}
+			// Setup keyboard input with new debug mode
+			this.keyboardCleanup = setupKeyboardInput(this.virtualMidi, this.debugMode);
+			console.debug(`MIDI Manager: Debug mode ${enabled ? 'enabled' : 'disabled'}`);
+		}
+	}
+
+	getVirtualMidi(): VirtualMidiInput | null {
+		return this.virtualMidi;
+	}
+
 	private safeGetMidiNote(event: MIDIMessageEvent): NoteEvent | null {
 		try {
 			if (!event.data || event.data.length < 3) {
