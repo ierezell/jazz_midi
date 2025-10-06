@@ -6,8 +6,46 @@
 
 	let { leftHand, rightHand, selectedNote }: ScoreProps = $props();
 
+	// VexFlow expects scientific pitch where middle C is C4 and prefers accidentals
+	// consistent with the key signature. Our app maps MIDI 60 to 'C3', so convert
+	// note octave to VexFlow convention by adding 1 to the octave number and
+	// choose flats vs sharps according to the selected key.
+	const FLAT_KEYS = new Set(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb']);
+	const SHARP_TO_FLAT: Record<string, string> = {
+		'A#': 'Bb',
+		'C#': 'Db',
+		'D#': 'Eb',
+		'F#': 'Gb',
+		'G#': 'Ab',
+		'E#': 'F',
+		'B#': 'C'
+	};
+
+	function prefersFlats(key: string): boolean {
+		if (key.includes('b')) return true;
+		return FLAT_KEYS.has(key);
+	}
+
+	function toVexflow(note: NoteFullName): string {
+		const match = /(.*?)(\d+)$/.exec(note);
+		if (!match) return note;
+		let base = match[1];
+		const octave = parseInt(match[2], 10);
+
+		// If the key signature prefers flats, convert sharp names to flats
+		if (prefersFlats(selectedNote) && base.includes('#')) {
+			base = SHARP_TO_FLAT[base] ?? base;
+		}
+
+		return `${base}${octave + 1}` as NoteFullName;
+	}
+
 	const fmt = (group: NoteFullName[][]) =>
-		group?.map((chord) => (chord.length > 1 ? `(${chord.join(' ')})` : chord[0])).join(', ') || '';
+		group
+			?.map((chord) =>
+				chord.length > 1 ? `(${chord.map((n) => toVexflow(n)).join(' ')})` : toVexflow(chord[0])
+			)
+			.join(', ') || '';
 
 	let stringRightHand = $derived(fmt(rightHand));
 	let stringLeftHand = $derived(fmt(leftHand));
@@ -61,8 +99,8 @@
 		// Only proceed if we have notes to render
 		if ((!rightHand || rightHand.length === 0) && (!leftHand || leftHand.length === 0)) {
 			console.debug('No notes to render, rendering test chord');
-			// Render a test C major chord for debugging
-			const testRightHand = 'C4, E4, G4';
+			// Render a test C major chord for debugging (use octave 3 as default)
+			const testRightHand = `${toVexflow('C3')}, ${toVexflow('E3')}, ${toVexflow('G3')}`;
 			try {
 				const stave = system.addStave({
 					voices: [

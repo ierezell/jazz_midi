@@ -1,6 +1,8 @@
 export class AudioManager {
 	private audioElements: Map<string, HTMLAudioElement> = new Map();
 	private enabled = true;
+	// Whether audio playback has been unlocked by a user gesture
+	private unlocked = false;
 	private volume = 0.7;
 
 	constructor() {
@@ -41,6 +43,13 @@ export class AudioManager {
 		if (!this.enabled) {
 			return;
 		}
+		// If playback hasn't been unlocked by a user gesture, skip attempting to play
+		if (!this.unlocked) {
+			console.warn(
+				`Audio playback blocked: user gesture required to enable sound. Call audioManager.unlock() from a user interaction.`
+			);
+			return;
+		}
 		const audio = this.audioElements.get(soundName);
 		if (!audio) {
 			console.warn(`Sound "${soundName}" not found`);
@@ -65,6 +74,44 @@ export class AudioManager {
 
 	async playError(): Promise<void> {
 		await this.playSound('error', 0.6);
+	}
+
+	/**
+	 * Attempt to unlock audio playback. Must be called from a user gesture (click/keydown).
+	 * Returns true if unlocking succeeded and audio can be played.
+	 */
+	async unlock(): Promise<boolean> {
+		if (this.unlocked) return true;
+		try {
+			// Try to play any preloaded audio at zero volume briefly to unlock playback
+			const audio = this.audioElements.get('success') ?? Array.from(this.audioElements.values())[0];
+			if (!audio) {
+				// Nothing to play – consider unlocked
+				this.unlocked = true;
+				return true;
+			}
+			const previousVolume = audio.volume;
+			audio.volume = 0;
+			// Some browsers require a play() call from a user gesture to allow future autoplay
+			await audio.play();
+			audio.pause();
+			audio.currentTime = 0;
+			audio.volume = previousVolume;
+			this.unlocked = true;
+			this.enabled = true;
+			console.debug('AudioManager: audio unlocked by user gesture');
+			return true;
+		} catch (error) {
+			// If the play() call failed, keep unlocked=false and return false
+			console.warn('AudioManager: unlock failed (user gesture required):', error);
+			this.enabled = false;
+			this.unlocked = false;
+			return false;
+		}
+	}
+
+	needsUserGesture(): boolean {
+		return !this.unlocked;
 	}
 }
 

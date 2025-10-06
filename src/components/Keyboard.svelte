@@ -6,7 +6,14 @@
 	import type { KeyboardProps } from '$lib/types/types';
 	import Key from './Key.svelte';
 
-	let { midiNotes, middleC, octaves, noteRoles, expectedNotes = [] }: KeyboardProps = $props();
+	let {
+		midiNotes,
+		middleC,
+		octaves,
+		noteRoles,
+		expectedNotes = [],
+		showExpected = false
+	}: KeyboardProps = $props();
 
 	let clientWidth = $state(10);
 	let clientHeight = $state(10);
@@ -19,7 +26,10 @@
 
 <div class="keyboard" bind:clientWidth bind:clientHeight>
 	{#each keys as note}
-		{@const noteRoleColor = DEFAULT_NOTE_ROLE_COLORS[noteRoles[note]]}
+		{@const noteRoleColor =
+			showExpected && expectedNotes.includes(note as MidiNote)
+				? '#2ecc71'
+				: DEFAULT_NOTE_ROLE_COLORS[noteRoles[note]]}
 		{@const isPressed = midiNotes.includes(note as MidiNote)}
 		{@const isWrong =
 			isPressed && expectedNotes.length > 0 && !expectedNotes.includes(note as MidiNote)}

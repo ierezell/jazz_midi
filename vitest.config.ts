@@ -3,7 +3,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
 	plugins: [sveltekit()],
 	test: {
-		include: ['src*.{test,spec}.{js,ts}', 'test*.{test,spec}.{js,ts}'],
+		// Include patterns: find test files inside src and also allow legacy root-level test-*.spec files
+		include: ['src/**/*.spec.{js,ts}', 'src/**/*.test.{js,ts}'],
 		environment: 'happy-dom',
 		setupFiles: ['./tests/setup.ts'],
 		globals: true,

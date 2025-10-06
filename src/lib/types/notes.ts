@@ -296,4 +296,4 @@ export type Chord = {
 };
 
 export type ScaleMode = 'Maj' | 'Min' | 'Blues';
-export type ChordVoicing = 'full' | 'left-hand' | 'right-hand' | 'split';
+export type ChordVoicing = 'full-right' | 'full-left' | '1735' | '1537';

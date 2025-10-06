@@ -468,9 +468,17 @@ export const AllNoteRole: NoteRole[] = [
 	'thirteenth'
 ];
 
-export const AllChordVoicings: ChordVoicing[] = ['full', 'left-hand', 'right-hand', 'split'];
+export const AllChordVoicings: ChordVoicing[] = [
+	'full-right',
+	'full-left',
+	'1735',
+	'1537'
+];
 
 export const AllScaleModes: ScaleMode[] = ['Maj', 'Min', 'Blues'];
+
+export const DEFAULT_OCTAVE = '3';
+export const DEFAULT_MIDDLE_C: MidiNote = NoteToMidi['C3'];
 
 export const DEFAULT_NOTE_ROLE_COLORS: Record<NoteRole, string> = {
 	root: '#e74c3c',
@@ -483,7 +491,8 @@ export const DEFAULT_NOTE_ROLE_COLORS: Record<NoteRole, string> = {
 };
 
 export const SCALE_INTERVALS: Record<ScaleMode, number[]> = {
-	Maj: [0, 2, 4, 5, 7, 9, 11],
-	Min: [0, 2, 3, 5, 7, 8, 10],
-	Blues: [0, 3, 5, 6, 7, 10]
+	// Include the octave (12) so scales start on the root and can end on the octave
+	Maj: [0, 2, 4, 5, 7, 9, 11, 12],
+	Min: [0, 2, 3, 5, 7, 8, 10, 12],
+	Blues: [0, 3, 5, 6, 7, 10, 12]
 };

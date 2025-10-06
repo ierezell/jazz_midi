@@ -3,7 +3,12 @@
 <script lang="ts">
 	import { chords, generateChordNotesData } from '$lib/MusicTheoryUtils';
 	import type { ChordVoicing, Inversion } from '$lib/types/notes';
-	import { AllChordTypes, AllChordVoicings, NoteToMidi } from '$lib/types/notes.constants';
+	import {
+		AllChordTypes,
+		AllChordVoicings,
+		NoteToMidi,
+		DEFAULT_OCTAVE
+	} from '$lib/types/notes.constants';
 	import type {
 		ChordType,
 		MidiNote,
@@ -41,9 +46,15 @@
 	);
 	let voicing: ChordVoicing = $state(
 		propVoicing ??
-			(randomMode ? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)] : 'full')
+			(randomMode
+				? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
+				: 'full-right')
 	);
 	let exerciseCompleted = $state(false);
+
+	function handleParentReset(): void {
+		exerciseCompleted = false;
+	}
 
 	$effect(() => {
 		if (exerciseCompleted && onComplete) {
@@ -52,7 +63,7 @@
 	});
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
-		const rootNote = (selectedNote + '4') as NoteFullName;
+		const rootNote = (selectedNote + DEFAULT_OCTAVE) as NoteFullName;
 		const rootMidi = NoteToMidi[rootNote];
 		const currentChord = chords(rootMidi, chordType, inversion);
 
@@ -64,21 +75,24 @@
 		].filter((note) => note !== undefined) as MidiNote[];
 
 		switch (voicing) {
-			case 'full':
+			case 'full-right':
 				return allChordNotes;
-			case 'left-hand':
-				return [currentChord.root, currentChord.seventh].filter(
-					(note) => note !== undefined
-				) as MidiNote[];
-			case 'right-hand':
-				return [currentChord.third, currentChord.fifth];
-			case 'split':
-				const leftHand = [
-					currentChord.root - 12,
-					(currentChord.seventh || currentChord.root) - 12
-				].filter((note) => note >= 24) as MidiNote[];
-				const rightHand = [currentChord.third, currentChord.fifth];
-				return [...leftHand, ...rightHand];
+			case 'full-left':
+				return allChordNotes.map((n) => (n as number) - 12).filter((n) => n >= 24) as MidiNote[];
+			case '1735':
+				return [
+					(currentChord.root as number) - 12,
+					((currentChord.seventh || currentChord.root) as number) - 12,
+					currentChord.third,
+					currentChord.fifth
+				].filter((n) => n !== undefined && (n as number) >= 24) as MidiNote[];
+			case '1537':
+				return [
+					(currentChord.root as number) - 12,
+					(currentChord.fifth as number) - 12,
+					currentChord.third,
+					(currentChord.seventh as number) || currentChord.root
+				].filter((n) => n !== undefined && (n as number) >= 24) as MidiNote[];
 			default:
 				return allChordNotes;
 		}
@@ -88,11 +102,21 @@
 		selectedNote: Note,
 		event: NoteEvent,
 		expectedNotes: MidiNote[]
-	): { isCorrect: boolean; message: string } {
+	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
 		if (expectedNotes.includes(event.noteNumber)) {
-			return { isCorrect: true, message: 'Correct chord tone!' };
+			return {
+				isCorrect: true,
+				message: 'Correct chord tone!',
+				collected: true,
+				resetCollected: false
+			};
 		}
-		return { isCorrect: false, message: 'Not a chord tone. Try again!' };
+		return {
+			isCorrect: false,
+			message: 'Not a chord tone. Try again!',
+			collected: false,
+			resetCollected: true
+		};
 	}
 
 	function handleChordTypeChange(event: Event): void {
@@ -159,6 +183,7 @@
 	{generateScoreProps}
 	{validateNoteEvent}
 	{isCompleted}
+	onReset={handleParentReset}
 >
 	{#snippet children(api: any)}
 		{@const wasCompleted = exerciseCompleted}
@@ -192,10 +217,10 @@
 				<div class="control-group">
 					<label for="voicing">Voicing:</label>
 					<select id="voicing" value={voicing} onchange={handleVoicingChange}>
-						<option value="full">Full</option>
-						<option value="left-hand">Left Hand</option>
-						<option value="right-hand">Right Hand</option>
-						<option value="split">Split</option>
+						<option value="full-right">Full Right Hand</option>
+						<option value="full-left">Full Left Hand</option>
+						<option value="1735">1 & 7 Left / 3 & 5 Right</option>
+						<option value="1537">1 & 5 Left / 3 & 7 Right</option>
 					</select>
 				</div>
 			{/if}

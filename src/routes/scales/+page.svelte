@@ -2,14 +2,10 @@
 
 <script lang="ts">
 	import type { ScaleMode } from '$lib/types/notes';
-	import {
-		AllScaleModes,
-		MidiToNote,
-		NoteToMidi,
-		SCALE_INTERVALS
-	} from '$lib/types/notes.constants';
+	import { AllScaleModes, MidiToNote } from '$lib/types/notes.constants';
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import BaseExercise from '../../components/BaseExercise.svelte';
+	import { generateExpectedNotesFor } from '$lib/scaleExercise';
 
 	interface Props {
 		randomMode: boolean;
@@ -36,7 +32,15 @@
 			(randomMode ? AllScaleModes[Math.floor(Math.random() * AllScaleModes.length)] : 'Maj')
 	);
 	let playedNotes: Set<MidiNote> = $state(new Set());
+	// For sequential mode we track the actual played order
+	let playedSequence: MidiNote[] = $state([]);
 	let exerciseCompleted = $state(false);
+
+	function handleParentReset(): void {
+		playedNotes = new Set();
+		playedSequence = [];
+		exerciseCompleted = false;
+	}
 
 	$effect(() => {
 		if (exerciseCompleted && onComplete) {
@@ -45,17 +49,12 @@
 	});
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
-		const rootMidi = NoteToMidi[(selectedNote + (handMode ? '4' : '3')) as NoteFullName];
-
-		const scaleNotes = SCALE_INTERVALS[scaleMode].map(
-			(interval) => (rootMidi + interval) as MidiNote
-		);
-
+		const scaleNotes = generateExpectedNotesFor(selectedNote, scaleMode, handMode);
+		const octave = handMode ? '3' : '1';
 		console.debug(
-			`Scale for ${selectedNote}4:`,
+			`Scale for ${selectedNote}${octave}:`,
 			scaleNotes.map((note) => MidiToNote[note])
 		);
-
 		return scaleNotes;
 	}
 
@@ -76,7 +75,7 @@
 		event: NoteEvent,
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string } {
+	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
 		if (sequentialMode) {
 			return validateSequential(event, expectedNotes, currentNotes);
 		} else {
@@ -88,27 +87,42 @@
 		event: NoteEvent,
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string } {
-		const nextExpectedIndex = playedNotes.size;
+	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		const nextExpectedIndex = playedSequence.length;
 		const expectedNote = expectedNotes[nextExpectedIndex];
 
+		let collected: boolean = false;
 		if (event.noteNumber === expectedNote) {
-			playedNotes = playedNotes.add(event.noteNumber);
+			playedSequence = [...playedSequence, event.noteNumber];
+			// Create a new Set instance so Svelte detects the change
+			playedNotes = new Set([...playedNotes, event.noteNumber]);
+			// Inform BaseExercise to add this note to cumulative progress
+			collected = true;
 		} else {
-			const expectedNoteName = MidiToNote[expectedNote]?.slice(0, -1) || expectedNote.toString();
+			const expectedNoteName = MidiToNote[expectedNote]?.slice(0, -1) ?? String(expectedNote);
+			playedSequence = [];
 			playedNotes = new Set();
 			return {
 				isCorrect: false,
-				message: `Wrong note! Expected ${expectedNoteName} (note ${nextExpectedIndex + 1})`
+				message: `Wrong note! Expected ${expectedNoteName} (note ${nextExpectedIndex + 1})`,
+				collected: false,
+				resetCollected: true
 			};
 		}
 
-		if (playedNotes.size === expectedNotes.length) {
-			return { isCorrect: true, message: 'Perfect scale! 🎵✨' };
+		if (playedSequence.length === expectedNotes.length) {
+			return {
+				isCorrect: true,
+				message: 'Perfect scale! 🎵✨',
+				collected: true,
+				resetCollected: false
+			};
 		} else {
 			return {
 				isCorrect: true,
-				message: `Good! Note ${nextExpectedIndex + 1}/${expectedNotes.length}`
+				message: `Good! Note ${nextExpectedIndex + 1}/${expectedNotes.length}`,
+				collected: true,
+				resetCollected: false
 			};
 		}
 	}
@@ -117,38 +131,40 @@
 		event: NoteEvent,
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string } {
+	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
 		if (expectedNotes.includes(event.noteNumber)) {
-			playedNotes = playedNotes.add(event.noteNumber);
+			// Use a fresh Set to ensure reactivity when notes are added
+			playedNotes = new Set([...playedNotes, event.noteNumber]);
+			if (playedNotes.size === expectedNotes.length) {
+				return {
+					isCorrect: true,
+					message: 'Perfect scale! 🎵',
+					collected: playedNotes.has(event.noteNumber),
+					resetCollected: false
+				};
+			} else {
+				return {
+					isCorrect: true,
+					message: `Good! ${playedNotes.size}/${expectedNotes.length} notes`,
+					collected: playedNotes.has(event.noteNumber),
+					resetCollected: false
+				};
+			}
 		} else {
 			playedNotes = new Set();
-			return { isCorrect: false, message: 'Wrong note!' };
-		}
-
-		if (playedNotes.size === expectedNotes.length) {
-			return { isCorrect: true, message: 'Perfect scale! 🎵' };
-		} else {
-			return {
-				isCorrect: true,
-				message: `Good! ${playedNotes.size}/${expectedNotes.length} notes`
-			};
+			return { isCorrect: false, message: 'Wrong note!', resetCollected: true, collected: false };
 		}
 	}
 
 	function isScaleCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
 		if (sequentialMode) {
 			return (
-				currentNotes.length === expectedNotes.length &&
-				currentNotes.every((note, index) => note === expectedNotes[index])
+				playedSequence.length === expectedNotes.length &&
+				playedSequence.every((note, index) => note === expectedNotes[index])
 			);
 		} else {
-			const uniqueCurrentNotes = [...new Set(currentNotes)];
 			const uniqueExpectedNotes = [...new Set(expectedNotes)];
-
-			return (
-				uniqueCurrentNotes.length === uniqueExpectedNotes.length &&
-				uniqueCurrentNotes.every((note) => uniqueExpectedNotes.includes(note))
-			);
+			return playedNotes.size === uniqueExpectedNotes.length;
 		}
 	}
 
@@ -156,18 +172,21 @@
 		const target = event.target as HTMLInputElement;
 		sequentialMode = target.checked;
 		playedNotes = new Set();
+		playedSequence = [];
 	}
 
 	function handleHandModeToggle(event: Event): void {
 		const target = event.target as HTMLInputElement;
 		handMode = target.checked;
 		playedNotes = new Set();
+		playedSequence = [];
 	}
 
 	function handleScaleModeChange(event: Event): void {
 		const target = event.target as HTMLInputElement;
 		scaleMode = target.value as ScaleMode;
 		playedNotes = new Set();
+		playedSequence = [];
 	}
 </script>
 
@@ -177,6 +196,7 @@
 	{generateScoreProps}
 	validateNoteEvent={validateScaleNote}
 	isCompleted={isScaleCompleted}
+	onReset={handleParentReset}
 >
 	{#snippet children(api: any)}
 		{@const wasCompleted = exerciseCompleted}

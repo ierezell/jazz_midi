@@ -10,7 +10,12 @@
 		Note,
 		NoteFullName
 	} from '$lib/types/notes';
-	import { AllChordVoicings, MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
+	import {
+		AllChordVoicings,
+		MidiToNote,
+		NoteToMidi,
+		DEFAULT_OCTAVE
+	} from '$lib/types/notes.constants';
 	import type { NoteEvent, ScoreProps } from '$lib/types/types';
 	import BaseExercise from '../../components/BaseExercise.svelte';
 
@@ -34,9 +39,14 @@
 	);
 	let voicing: ChordVoicing = $state(
 		propVoicing ??
-			(randomMode ? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)] : 'full')
+			(randomMode ? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)] : 'full-right')
 	);
 	let exerciseCompleted = $state(false);
+
+	function handleParentReset(): void {
+		resetProgression();
+		exerciseCompleted = false;
+	}
 
 	// Track completion state and call onComplete callback
 	$effect(() => {
@@ -51,9 +61,9 @@
 	}
 
 	function getCurrentChord(selectedNote: Note): Chord {
-		const twoChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName] + 2;
-		const fiveChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName] + 7;
-		const oneChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName];
+		const twoChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName] + 2;
+		const fiveChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName] + 7;
+		const oneChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName];
 
 		const twoChord = chords(twoChordRoot as MidiNote, 'min7', inversion);
 		const fiveChord = chords(fiveChordRoot as MidiNote, '7', inversion);
@@ -76,7 +86,8 @@
 		event: NoteEvent,
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string } {
+	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		const chordName = getChordNames(selectedNote)[currentChordIndex];
 		if (expectedNotes.includes(event.noteNumber)) {
 			const correctCount = currentNotes.filter((note) => expectedNotes.includes(note)).length;
 			const totalExpected = expectedNotes.length;
@@ -86,21 +97,37 @@
 					setTimeout(() => {
 						currentChordIndex++;
 					}, 1000);
-					return { isCorrect: true, message: getChordCompletedMessage() };
+					return {
+						isCorrect: true,
+						message: getChordCompletedMessage(),
+						collected: true,
+						resetCollected: false
+					};
 				} else {
-					return { isCorrect: true, message: getChordCompletedMessage() };
+					return {
+						isCorrect: true,
+						message: getChordCompletedMessage(),
+						collected: true,
+						resetCollected: false
+					};
 				}
 			} else {
 				return {
 					isCorrect: true,
-					message: `Good! ${correctCount}/${totalExpected} notes for ${getChordNames(selectedNote)[currentChordIndex]}`
+					message: `Good! ${correctCount}/${totalExpected} notes for ${chordName}`,
+					collected: true,
+					resetCollected: false
 				};
 			}
 		}
 
+		const missing = expectedNotes.filter((n) => !currentNotes.includes(n));
+		const missingNames = missing.map((n) => MidiToNote[n].slice(0, -1)).join(', ');
 		return {
 			isCorrect: false,
-			message: `Wrong note! Expected: ${getChordNames()[currentChordIndex]}`
+			message: `Wrong note. For ${chordName} expected: ${missingNames}`,
+			collected: false,
+			resetCollected: true
 		};
 	}
 
@@ -122,9 +149,9 @@
 	}
 
 	function getChordNames(selectedNote: Note = 'C'): string[] {
-		const twoChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName] + 2;
-		const fiveChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName] + 7;
-		const oneChordRoot = NoteToMidi[(selectedNote + '4') as NoteFullName];
+		const twoChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName] + 2;
+		const fiveChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName] + 7;
+		const oneChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName];
 
 		return [
 			`${MidiToNote[twoChordRoot as MidiNote].slice(0, -1)}m7`,
@@ -167,6 +194,7 @@
 		{generateScoreProps}
 		{validateNoteEvent}
 		{isCompleted}
+		onReset={handleParentReset}
 	>
 		{#snippet children(api: any)}
 			{@const wasCompleted = exerciseCompleted}
@@ -191,10 +219,10 @@
 					<div class="control-group">
 						<label for="voicing">Voicing:</label>
 						<select id="voicing" value={voicing} onchange={handleVoicingChange}>
-							<option value="full">Full</option>
-							<option value="left-hand">Left Hand</option>
-							<option value="right-hand">Right Hand</option>
-							<option value="split">Split</option>
+							<option value="full-right">Full Right Hand</option>
+							<option value="full-left">Full Left Hand</option>
+							<option value="1735">1 & 7 Left / 3 & 5 Right</option>
+							<option value="1537">1 & 5 Left / 3 & 7 Right</option>
 						</select>
 					</div>
 				{/if}

@@ -1,5 +1,5 @@
 import type { ChordVoicing, Inversion } from './types/notes';
-import { MidiToNote, NoteToMidi } from './types/notes.constants';
+import { MidiToNote, NoteToMidi, DEFAULT_OCTAVE, DEFAULT_MIDDLE_C } from './types/notes.constants';
 import type { Chord, ChordType, MidiNote, Note, NoteFullName, NoteRole } from './types/types';
 
 const inverseTriadChord = (
@@ -18,21 +18,23 @@ const inverseTriadChord = (
 			};
 		case 1:
 			return {
-				root: (notes[1] - 12) as MidiNote,
+				root: notes[1],
 				third: notes[2],
-				fifth: notes[0],
+				fifth: (notes[0] + 12) as MidiNote,
 				inversion: 1,
 				chordType: chordType
 			};
 		case 2:
 			return {
-				root: (notes[2] - 12) as MidiNote,
-				third: (notes[0] - 12) as MidiNote,
-				fifth: notes[1],
+				root: notes[2],
+				third: (notes[0] + 12) as MidiNote,
+				fifth: (notes[1] + 12) as MidiNote,
 				inversion: 2,
 				chordType: chordType
 			};
 		case 3:
+			// triads should not reach a 3rd inversion (handled earlier), but keep a safe
+			// fallback that mirrors root position.
 			return {
 				root: notes[0],
 				third: notes[1],
@@ -59,28 +61,28 @@ const inverseSeventhChord = (
 			};
 		case 1:
 			return {
-				root: (notes[1] - 12) as MidiNote,
+				root: notes[1],
 				third: notes[2],
 				fifth: notes[3],
-				seventh: notes[0],
+				seventh: (notes[0] + 12) as MidiNote,
 				inversion: 1,
 				chordType: chordType
 			};
 		case 2:
 			return {
-				root: (notes[2] - 12) as MidiNote,
-				third: (notes[3] - 12) as MidiNote,
-				fifth: notes[0],
-				seventh: notes[1],
+				root: notes[2],
+				third: notes[3],
+				fifth: (notes[0] + 12) as MidiNote,
+				seventh: (notes[1] + 12) as MidiNote,
 				inversion: 2,
 				chordType: chordType
 			};
 		case 3:
 			return {
-				root: (notes[3] - 12) as MidiNote,
-				third: notes[0],
-				fifth: notes[1],
-				seventh: notes[2],
+				root: notes[3],
+				third: (notes[0] + 12) as MidiNote,
+				fifth: (notes[1] + 12) as MidiNote,
+				seventh: (notes[2] + 12) as MidiNote,
 				inversion: 3,
 				chordType: chordType
 			};
@@ -103,42 +105,54 @@ export const chords = (
 	const majorSeventh = (rootMidi + 11) as MidiNote;
 	let chord = [] as MidiNote[];
 	switch (chordType) {
-		case 'major':
+		case 'major': {
 			chord = [rootMidi, majorThird, perfectFifth] as MidiNote[];
 			break;
-		case 'minor':
+		}
+		case 'minor': {
 			chord = [rootMidi, minorThird, perfectFifth] as MidiNote[];
 			break;
-		case 'maj7':
+		}
+		case 'maj7': {
 			chord = [rootMidi, majorThird, perfectFifth, majorSeventh] as MidiNote[];
 			break;
-		case 'min7':
+		}
+		case 'min7': {
 			chord = [rootMidi, minorThird, perfectFifth, minorSeventh] as MidiNote[];
 			break;
+		}
 		case '7':
-		case 'dom7':
+		case 'dom7': {
 			chord = [rootMidi, majorThird, perfectFifth, minorSeventh] as MidiNote[];
 			break;
-		case 'diminished':
+		}
+		case 'diminished': {
 			chord = [rootMidi, minorThird, flatFifth] as MidiNote[];
 			break;
-		case 'augmented':
+		}
+		case 'augmented': {
 			chord = [rootMidi, majorThird, augmentedFifth] as MidiNote[];
 			break;
-		case 'sus2':
+		}
+		case 'sus2': {
 			chord = [rootMidi, second, perfectFifth] as MidiNote[];
 			break;
-		case 'sus4':
+		}
+		case 'sus4': {
 			chord = [rootMidi, fourth, perfectFifth] as MidiNote[];
 			break;
-		case 'dim7':
+		}
+		case 'dim7': {
 			chord = [rootMidi, minorThird, flatFifth, diminishedSeventh] as MidiNote[];
 			break;
-		case 'half-dim7':
+		}
+		case 'half-dim7': {
 			chord = [rootMidi, minorThird, flatFifth, minorSeventh] as MidiNote[];
 			break;
-		default:
+		}
+		default: {
 			chord = [rootMidi] as MidiNote[];
+		}
 	}
 	if (chord.length === 3) {
 		if (inversion === 3) {
@@ -162,41 +176,54 @@ export function generateChordNotesDataFromChord(
 	) as MidiNote[];
 
 	switch (voicing) {
-		case 'full':
-			// All notes in right hand as a single chord
-			const fullResult = {
+		case 'full-right': {
+			// All notes in the right hand
+			return {
 				leftHand: [],
 				rightHand: [allChordNotes.map((midi) => MidiToNote[midi])]
 			};
-			return fullResult;
-		case 'left-hand':
-			const leftOnly = [chord.root, chord.seventh].filter(
-				(note) => note !== undefined
-			) as MidiNote[];
+		}
+		case 'full-left': {
+			// All notes in the left hand, lowered by one octave
+			const lowered = allChordNotes
+				.map((midi) => (midi - 12) as MidiNote)
+				.filter((n) => n >= 24) as MidiNote[];
 			return {
-				leftHand: [leftOnly.map((midi) => MidiToNote[midi])],
+				leftHand: [lowered.map((midi) => MidiToNote[midi])],
 				rightHand: []
 			};
-		case 'right-hand':
-			const rightOnly = [chord.third, chord.fifth];
+		}
+		case '1735': {
+			// root & seventh in left hand (lowered by an octave), third & fifth in right hand
+			const left = [
+				(chord.root - 12) as MidiNote,
+				((chord.seventh || chord.root) - 12) as MidiNote
+			].filter((n) => n !== undefined && n >= 24) as MidiNote[];
+			const right = [chord.third, chord.fifth].filter((n) => n !== undefined) as MidiNote[];
 			return {
-				leftHand: [],
-				rightHand: [rightOnly.map((midi) => MidiToNote[midi])]
+				leftHand: [left.map((midi) => MidiToNote[midi])],
+				rightHand: [right.map((midi) => MidiToNote[midi])]
 			};
-		case 'split':
-			const leftHand = [chord.root - 12, (chord.seventh || chord.root) - 12].filter(
-				(note) => note >= 24
-			) as MidiNote[];
-			const rightHand = [chord.third, chord.fifth];
+		}
+		case '1537': {
+			// root & fifth in left hand (lowered by an octave), third & seventh in right hand
+			const left = [
+				(chord.root - 12) as MidiNote,
+				(chord.fifth - 12) as MidiNote
+			].filter((n) => n !== undefined && n >= 24) as MidiNote[];
+			const right = [chord.third, chord.seventh || chord.root].filter((n) => n !== undefined) as MidiNote[];
 			return {
-				leftHand: [leftHand.map((midi) => MidiToNote[midi])],
-				rightHand: [rightHand.map((midi) => MidiToNote[midi])]
+				leftHand: [left.map((midi) => MidiToNote[midi])],
+				rightHand: [right.map((midi) => MidiToNote[midi])]
 			};
-		default:
+		}
+		default: {
+			// Fallback to full-right if unknown voicing
 			return {
 				leftHand: [],
 				rightHand: [allChordNotes.map((midi) => MidiToNote[midi])]
 			};
+		}
 	}
 }
 
@@ -209,7 +236,7 @@ export function generateChordNotesData(
 	leftHand: NoteFullName[][];
 	rightHand: NoteFullName[][];
 } {
-	const rootNote = (selectedNote + '4') as NoteFullName;
+	const rootNote = (selectedNote + DEFAULT_OCTAVE) as NoteFullName;
 	const rootMidi = NoteToMidi[rootNote];
 	const currentChord = chords(rootMidi, chordType, inversion);
 
@@ -222,7 +249,7 @@ export function calculateOptimalRange(
 	maxOctaves: number = 7
 ): { middleC: number; octaves: number } {
 	if (notes.length === 0) {
-		return { middleC: 60, octaves: minOctaves };
+		return { middleC: DEFAULT_MIDDLE_C, octaves: minOctaves };
 	}
 	const minNote = Math.min(...notes);
 	const maxNote = Math.max(...notes);

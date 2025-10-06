@@ -2,7 +2,12 @@
 	import { audioManager } from '$lib/AudioManager';
 	import { midiManager } from '$lib/MIDIManager';
 	import { calculateOptimalRange, getNoteRole } from '$lib/MusicTheoryUtils';
-	import { AllNotes, DEFAULT_NOTE_ROLE_COLORS, NoteToMidi } from '$lib/types/notes.constants';
+	import {
+		AllNotes,
+		DEFAULT_NOTE_ROLE_COLORS,
+		NoteToMidi,
+		DEFAULT_OCTAVE
+	} from '$lib/types/notes.constants';
 	import {
 		type KeyboardProps,
 		type MidiNote,
@@ -24,8 +29,14 @@
 			event: NoteEvent,
 			expectedNotes: MidiNote[],
 			currentNotes: MidiNote[]
-		) => { isCorrect: boolean; message: string };
+		) => {
+			isCorrect: boolean;
+			message: string;
+			collected: boolean;
+			resetCollected: boolean;
+		};
 		isCompleted: (currentNotes: MidiNote[], expectedNotes: MidiNote[]) => boolean;
+		onReset?: () => void;
 	}
 
 	let {
@@ -34,12 +45,17 @@
 		generateScoreProps,
 		validateNoteEvent,
 		isCompleted,
+		onReset,
 		children
 	}: BaseExerciseProps & { children?: any } = $props();
+
+	const KEYBOARD_SHOW_AFTER_MISTAKES = 3;
+	const EXPECTED_NOTES_SHOW_AFTER_MISTAKES = 5;
 
 	let selectedNote: Note = $state('C');
 	let noteEvents: NoteEvent[] = $state([]);
 	let mistakes = $state(0);
+	let collectedNotes: Set<MidiNote> = $state(new Set());
 	let startTime = $state(0);
 	let completed = $state(false);
 	let debugMode = $state(false);
@@ -49,7 +65,10 @@
 	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
 	let expectedNotes = $derived(generateExpectedNotes(selectedNote));
 	let scoreProps = $derived(generateScoreProps(selectedNote));
-	let showKeyboard = $derived(debugMode || mistakes >= 3);
+	let showKeyboard = $derived(debugMode || mistakes >= KEYBOARD_SHOW_AFTER_MISTAKES);
+	let showExpected = $derived.by(() => {
+		return mistakes >= EXPECTED_NOTES_SHOW_AFTER_MISTAKES;
+	});
 	let keyboardProps = $derived({
 		...calculateOptimalRange(expectedNotes),
 		midiNotes: currentNotes,
@@ -57,34 +76,34 @@
 		noteRoles: Object.fromEntries(
 			expectedNotes.map((note) => [
 				note,
-				getNoteRole(note, NoteToMidi[`${selectedNote}4` as keyof typeof NoteToMidi])
+				getNoteRole(note, NoteToMidi[`${selectedNote}${DEFAULT_OCTAVE}` as keyof typeof NoteToMidi])
 			])
 		),
-		expectedNotes: expectedNotes
+		expectedNotes: expectedNotes,
+		showExpected: showExpected
 	} as KeyboardProps);
 
-	function handleNoteOn(note: NoteEvent): void {
-		noteEvents = [...noteEvents, note];
-		const result = validateNoteEvent(selectedNote, note, expectedNotes, currentNotes);
+	let progressPercentage = $derived.by(() => {
+		if (expectedNotes.length === 0) return 0;
+		const uniqueExpected = [...new Set(expectedNotes)];
+		return Math.round((collectedNotes.size / uniqueExpected.length) * 100);
+	});
 
-		if (result.isCorrect) {
-			showFeedback(result.message, 'success');
-			audioManager.playSuccess();
-		} else {
-			mistakes++;
-			showFeedback(result.message, 'error');
-			audioManager.playError();
-		}
-
-		const completionChecker = isCompleted;
-		if (completionChecker(currentNotes, expectedNotes)) {
-			onCompleteExercise();
-		}
-	}
-
-	function handleNoteOff(note: NoteEvent): void {
-		noteEvents = noteEvents.filter((e) => e.noteNumber !== note.noteNumber);
-	}
+	let exposedAPI = $derived({
+		selectedNote,
+		currentNotes,
+		expectedNotes,
+		mistakes,
+		completed,
+		collectedNotes,
+		debugMode,
+		feedbackMessage,
+		showNotesRoles,
+		handleNoteSelect,
+		resetExercise,
+		toggleDebug,
+		showFeedback
+	});
 
 	onDestroy(() => {
 		midiManager.cleanup();
@@ -98,21 +117,60 @@
 			onNoteOff: handleNoteOff
 		});
 		startTime = Date.now();
+
+		// Unlock audio playback on first user gesture (some browsers block play() before a gesture)
+		const attemptUnlock = async () => {
+			if (audioManager.needsUserGesture()) {
+				const ok = await audioManager.unlock();
+				if (ok) {
+					showFeedback('Audio enabled', 'info');
+				} else {
+					showFeedback('Click or press any key to enable audio', 'info');
+				}
+			}
+		};
+
+		window.addEventListener('pointerdown', attemptUnlock, { once: true });
+		window.addEventListener('keydown', attemptUnlock, { once: true });
 	});
 
-	function showFeedback(message: string, type: 'success' | 'error' | 'info'): void {
-		feedbackMessage = message;
-		setTimeout(() => {
-			feedbackMessage = '';
-		}, 5000);
+	function handleNoteOn(note: NoteEvent): void {
+		if (debugMode) {
+			console.debug(
+				`MIDI Note ON: ${note.noteNumber} (${note.noteFullName}) velocity=${note.velocity} channel=${note.channel}`
+			);
+		}
+		noteEvents = [...noteEvents, note];
+		const result = validateNoteEvent(selectedNote, note, expectedNotes, currentNotes);
+
+		if (result.resetCollected) {
+			collectedNotes = new Set();
+		}
+
+		if (result.collected) {
+			collectedNotes = new Set([...collectedNotes, note.noteNumber]);
+		}
+
+		if (result.isCorrect) {
+			showFeedback(result.message, 'success');
+		} else {
+			mistakes++;
+			showFeedback(result.message, 'error');
+			audioManager.playError();
+		}
+
+		if (isCompleted(currentNotes, expectedNotes)) {
+			onCompleteExercise();
+		}
 	}
 
-	function onCompleteExercise(): void {
-		completed = true;
-		const timeElapsed = Date.now() - startTime;
-		const accuracy = Math.round(((expectedNotes.length - mistakes) / expectedNotes.length) * 100);
-		showFeedback(`Exercise completed! Time: ${timeElapsed}ms, Accuracy: ${accuracy}%`, 'success');
-		audioManager.playSound?.('success');
+	function handleNoteOff(note: NoteEvent): void {
+		if (debugMode) {
+			console.debug(
+				`MIDI Note OFF: ${note.noteNumber} (${note.noteFullName}) channel=${note.channel}`
+			);
+		}
+		noteEvents = noteEvents.filter((e) => e.noteNumber !== note.noteNumber);
 	}
 
 	function handleNoteSelect(note: Note): void {
@@ -126,6 +184,26 @@
 		completed = false;
 		feedbackMessage = '';
 		startTime = Date.now();
+		selectedNote = selectedNote;
+		collectedNotes = new Set();
+		// Notify parent exercises so they can reset their own tracking
+		onReset?.();
+	}
+
+	function showFeedback(message: string, type: 'success' | 'error' | 'info'): void {
+		feedbackMessage = `${type} : ${message}`;
+		setTimeout(() => {
+			feedbackMessage = '';
+		}, 5000);
+	}
+
+	function onCompleteExercise(): void {
+		completed = true;
+		const timeElapsed = Date.now() - startTime;
+		const accuracy = Math.round(((expectedNotes.length - mistakes) / expectedNotes.length) * 100);
+		showFeedback(`Exercise completed! Time: ${timeElapsed}ms, Accuracy: ${accuracy}%`, 'success');
+		audioManager.playSound?.('success');
+		resetExercise();
 	}
 
 	function toggleDebug(): void {
@@ -138,27 +216,6 @@
 		const note = target.value as Note;
 		handleNoteSelect(note);
 	}
-
-	let progressPercentage = $derived.by(() => {
-		if (expectedNotes.length === 0) return 0;
-		const correctNotes = currentNotes.filter((note: MidiNote) => expectedNotes.includes(note));
-		return Math.round((correctNotes.length / expectedNotes.length) * 100);
-	});
-
-	let exposedAPI = $derived({
-		selectedNote,
-		currentNotes,
-		expectedNotes,
-		mistakes,
-		completed,
-		debugMode,
-		feedbackMessage,
-		showNotesRoles,
-		handleNoteSelect,
-		resetExercise,
-		toggleDebug,
-		showFeedback
-	});
 </script>
 
 <div class="exercise-container">

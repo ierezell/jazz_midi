@@ -3,7 +3,7 @@
 <script lang="ts">
 	import { chords } from '$lib/MusicTheoryUtils';
 	import type { ChordType, MidiNote, Note } from '$lib/types/notes';
-	import { AllChordTypes, AllNotes, NoteToMidi } from '$lib/types/notes.constants';
+	import { AllChordTypes, AllNotes, NoteToMidi, MidiToNote } from '$lib/types/notes.constants';
 	import type { NoteEvent } from '$lib/types/types';
 	import type { VirtualMidiInput } from '../lib/virtualMidi';
 	interface DebugPanelProps {
@@ -22,6 +22,10 @@
 		expectedNotes = [],
 		currentNotes = []
 	}: DebugPanelProps = $props();
+
+    // readable names derived from midi arrays for template rendering
+    let expectedNoteNames = $derived(expectedNotes.map((n) => MidiToNote[n]));
+    let currentNoteNames = $derived(currentNotes.map((n) => MidiToNote[n]));
 	let selectedNote: Note = $state('C');
 	let selectedChordType: ChordType = $state('maj7');
 	let selectedOctave: number = $state(5);
@@ -115,12 +119,14 @@
 				<div class="section">
 					<h4>Exercise Status</h4>
 					<div class="status-info">
-						{#if expectedNotes.length > 0}
-							<div>Expected Notes: {expectedNotes.join(', ')}</div>
-						{/if}
-						{#if currentNotes.length > 0}
-							<div>Current Notes: {currentNotes.join(', ')}</div>
-						{/if}
+									{#if expectedNotes.length > 0}
+										<div>
+											Expected Notes: {expectedNoteNames.join(', ')}
+										</div>
+									{/if}
+									{#if currentNotes.length > 0}
+										<div>Current Notes: {currentNoteNames.join(', ')}</div>
+									{/if}
 						{#if noteEvents.length > 0}
 							<div>Recent Events: {noteEvents.length}</div>
 						{/if}

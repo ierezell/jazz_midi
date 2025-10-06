@@ -38,6 +38,7 @@ export interface KeyboardProps {
 	debugMode: boolean;
 	noteRoles: { [key: number]: NoteRole };
 	expectedNotes: MidiNote[];
+	showExpected: boolean;
 }
 
 export interface ExerciseStatistics {

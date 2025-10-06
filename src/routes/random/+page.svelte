@@ -31,7 +31,7 @@
 		type: 'chord',
 		key: 'C',
 		chordType: 'maj7',
-		voicing: 'full',
+ 		voicing: 'full-right',
 		inversion: 0,
 		description: 'Cmaj - Random Voicing'
 	});
