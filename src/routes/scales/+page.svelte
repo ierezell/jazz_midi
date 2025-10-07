@@ -11,6 +11,7 @@
 		randomMode: boolean;
 		onComplete?: () => void;
 		scaleMode?: ScaleMode;
+		rootKey?: Note;
 		sequentialMode?: boolean;
 		handMode?: boolean;
 	}
@@ -20,7 +21,8 @@
 		onComplete,
 		scaleMode: propScaleMode,
 		sequentialMode: propSequentialMode,
-		handMode: propHandMode
+		handMode: propHandMode,
+		rootKey: propKey
 	}: Props = $props();
 
 	let sequentialMode: boolean = $state(
@@ -197,6 +199,7 @@
 	validateNoteEvent={validateScaleNote}
 	isCompleted={isScaleCompleted}
 	onReset={handleParentReset}
+	initialNote={propKey}
 >
 	{#snippet children(api: any)}
 		{@const wasCompleted = exerciseCompleted}

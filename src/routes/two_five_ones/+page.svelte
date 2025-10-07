@@ -23,6 +23,7 @@
 		randomMode: boolean;
 		onComplete?: () => void;
 		inversion?: Inversion;
+		rootKey?: Note;
 		voicing?: ChordVoicing;
 	}
 
@@ -30,6 +31,7 @@
 		randomMode = false,
 		onComplete,
 		inversion: propInversion,
+		rootKey: propKey,
 		voicing: propVoicing
 	}: Props = $props();
 
@@ -39,7 +41,9 @@
 	);
 	let voicing: ChordVoicing = $state(
 		propVoicing ??
-			(randomMode ? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)] : 'full-right')
+			(randomMode
+				? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
+				: 'full-right')
 	);
 	let exerciseCompleted = $state(false);
 
@@ -195,6 +199,7 @@
 		{validateNoteEvent}
 		{isCompleted}
 		onReset={handleParentReset}
+		initialNote={propKey}
 	>
 		{#snippet children(api: any)}
 			{@const wasCompleted = exerciseCompleted}

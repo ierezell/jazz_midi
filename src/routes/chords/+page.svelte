@@ -24,6 +24,7 @@
 		onComplete?: () => void;
 		chordType?: ChordType;
 		inversion?: Inversion;
+		rootKey?: Note;
 		voicing?: ChordVoicing;
 	}
 
@@ -32,6 +33,7 @@
 		onComplete,
 		chordType: propChordType,
 		inversion: propInversion,
+		rootKey: propKey,
 		voicing: propVoicing
 	}: Props = $props();
 	let possibleChordTypes = ['maj7', 'min7', '7', 'dom7', 'half-dim7', 'dim7'] as ChordType[];
@@ -55,12 +57,6 @@
 	function handleParentReset(): void {
 		exerciseCompleted = false;
 	}
-
-	$effect(() => {
-		if (exerciseCompleted && onComplete) {
-			onComplete();
-		}
-	});
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
 		const rootNote = (selectedNote + DEFAULT_OCTAVE) as NoteFullName;
@@ -184,6 +180,7 @@
 	{validateNoteEvent}
 	{isCompleted}
 	onReset={handleParentReset}
+	initialNote={propKey}
 >
 	{#snippet children(api: any)}
 		{@const wasCompleted = exerciseCompleted}

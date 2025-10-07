@@ -37,6 +37,8 @@
 		};
 		isCompleted: (currentNotes: MidiNote[], expectedNotes: MidiNote[]) => boolean;
 		onReset?: () => void;
+		onComplete?: () => void;
+		initialNote?: Note;
 	}
 
 	let {
@@ -46,13 +48,14 @@
 		validateNoteEvent,
 		isCompleted,
 		onReset,
+		initialNote,
 		children
 	}: BaseExerciseProps & { children?: any } = $props();
 
 	const KEYBOARD_SHOW_AFTER_MISTAKES = 3;
 	const EXPECTED_NOTES_SHOW_AFTER_MISTAKES = 5;
 
-	let selectedNote: Note = $state('C');
+	let selectedNote: Note = $state(initialNote ?? 'C');
 	let noteEvents: NoteEvent[] = $state([]);
 	let mistakes = $state(0);
 	let collectedNotes: Set<MidiNote> = $state(new Set());

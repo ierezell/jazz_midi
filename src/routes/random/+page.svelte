@@ -3,13 +3,7 @@
 <script lang="ts">
 	import type { ChordType, ChordVoicing, Inversion, Note, ScaleMode } from '$lib/types/notes';
 
-	import {
-		AllChordTypes,
-		AllChordVoicings,
-		AllNotes,
-		AllScaleModes,
-		AllThreeNotesChords
-	} from '$lib/types/notes.constants';
+	import { AllChordVoicings, AllScaleModes, AllThreeNotesChords } from '$lib/types/notes.constants';
 	import { allExerciseType, type ExerciseType } from '$lib/types/types';
 	import { onDestroy, onMount } from 'svelte';
 	import ConfigPopup from '../../components/ConfigPopup.svelte';
@@ -31,7 +25,7 @@
 		type: 'chord',
 		key: 'C',
 		chordType: 'maj7',
- 		voicing: 'full-right',
+		voicing: 'full-right',
 		inversion: 0,
 		description: 'Cmaj - Random Voicing'
 	});
@@ -41,12 +35,12 @@
 	let completionTimeout: ReturnType<typeof setTimeout> | null = null;
 	let countdown = $state(0);
 	let countdownInterval: ReturnType<typeof setInterval> | null = null;
-	let allowedNotes = $state<Note[]>(AllNotes); // Start with all notes allowed
-	let allowedChordTypes: ChordType[] = $state<ChordType[]>(AllChordTypes); // All possible chord types
+	let allowedNotes = $state<Note[]>(['C', 'F', 'G']); // Start with all notes allowed
+	let allowedChordTypes: ChordType[] = $state<ChordType[]>(['maj7', 'min7', '7', 'major', 'minor']); // All possible chord types
 	let allowedInversions: Inversion[] = $state<Inversion[]>([0, 1, 2, 3]); // All possible inversions
 	let allowedScaleModes: ScaleMode[] = $state<ScaleMode[]>(AllScaleModes); // Available scale modes
 	let allowedVoicings: ChordVoicing[] = $state<ChordVoicing[]>(AllChordVoicings); // Available voicing types
-	let allowedExerciseTypes: ExerciseType[] = $state<ExerciseType[]>(allExerciseType); // Available exercise types
+	let allowedExerciseTypes: ExerciseType[] = $state<ExerciseType[]>(['chord', 'II-V-I', 'scale']); // Available exercise types
 	let showConfigPopup = $state(false); // Control visibility of the config popup
 
 	$effect(() => {
@@ -225,6 +219,7 @@
 					chordType={currentConfig.chordType}
 					inversion={currentConfig.inversion}
 					voicing={currentConfig.voicing}
+					rootKey={currentConfig.key}
 				/>
 			{:else if currentConfig.type === 'scale'}
 				<ScalesPage
@@ -232,6 +227,7 @@
 					onComplete={handleExerciseComplete}
 					scaleMode={currentConfig.scaleMode}
 					sequentialMode={Math.random() > 0.5}
+					rootKey={currentConfig.key}
 				/>
 			{:else if currentConfig.type === 'II-V-I'}
 				<TwoFiveOnesPage
@@ -239,6 +235,7 @@
 					onComplete={handleExerciseComplete}
 					inversion={currentConfig.inversion}
 					voicing={currentConfig.voicing}
+					rootKey={currentConfig.key}
 				/>
 			{/if}
 		{/key}
