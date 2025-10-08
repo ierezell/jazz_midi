@@ -32,8 +32,12 @@
 		let base = match[1];
 		const octave = parseInt(match[2], 10);
 
-		// If the key signature prefers flats, convert sharp names to flats
-		if (prefersFlats(selectedNote) && base.includes('#')) {
+		// VexFlow has issues with certain sharp notes like A# and D#
+		// Always convert these problematic sharps to their flat equivalents
+		if (base === 'A#' || base === 'D#') {
+			base = SHARP_TO_FLAT[base] ?? base;
+		} else if (prefersFlats(selectedNote) && base.includes('#')) {
+			// For other sharps, only convert if the key signature prefers flats
 			base = SHARP_TO_FLAT[base] ?? base;
 		}
 
@@ -121,6 +125,7 @@
 		}
 
 		console.debug('Rendering score with notes:', { stringLeftHand, stringRightHand });
+		console.debug('Selected note for key signature:', selectedNote);
 
 		try {
 			if (rightHand && rightHand.length > 0 && stringRightHand) {

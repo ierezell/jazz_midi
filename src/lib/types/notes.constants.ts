@@ -1,5 +1,5 @@
 import type { ChordType, MidiNote, Note, NoteFullName, NoteRole } from '$lib/types/types';
-import type { ChordVoicing, Inversion, ScaleMode } from './notes';
+import type { ChordVoicing, Inversion, ScaleMode, IntervalType } from './notes';
 export const AllMidiNotes: MidiNote[] = [
 	24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
 	48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71,
@@ -495,4 +495,52 @@ export const SCALE_INTERVALS: Record<ScaleMode, number[]> = {
 	Maj: [0, 2, 4, 5, 7, 9, 11, 12],
 	Min: [0, 2, 3, 5, 7, 8, 10, 12],
 	Blues: [0, 3, 5, 6, 7, 10, 12]
+};
+
+export const AllIntervals: IntervalType[] = [
+	'unison',
+	'minor2nd',
+	'major2nd',
+	'minor3rd',
+	'major3rd',
+	'perfect4th',
+	'tritone',
+	'perfect5th',
+	'minor6th',
+	'major6th',
+	'minor7th',
+	'major7th',
+	'octave'
+];
+
+export const INTERVAL_SEMITONES: Record<IntervalType, number> = {
+	unison: 0,
+	minor2nd: 1,
+	major2nd: 2,
+	minor3rd: 3,
+	major3rd: 4,
+	perfect4th: 5,
+	tritone: 6,
+	perfect5th: 7,
+	minor6th: 8,
+	major6th: 9,
+	minor7th: 10,
+	major7th: 11,
+	octave: 12
+};
+
+export const INTERVAL_NAMES: Record<IntervalType, string> = {
+	unison: 'Unison',
+	minor2nd: 'Minor 2nd',
+	major2nd: 'Major 2nd',
+	minor3rd: 'Minor 3rd',
+	major3rd: 'Major 3rd',
+	perfect4th: 'Perfect 4th',
+	tritone: 'Tritone',
+	perfect5th: 'Perfect 5th',
+	minor6th: 'Minor 6th',
+	major6th: 'Major 6th',
+	minor7th: 'Minor 7th',
+	major7th: 'Major 7th',
+	octave: 'Octave'
 };

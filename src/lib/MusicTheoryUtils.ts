@@ -1,5 +1,5 @@
-import type { ChordVoicing, Inversion } from './types/notes';
-import { MidiToNote, NoteToMidi, DEFAULT_OCTAVE, DEFAULT_MIDDLE_C } from './types/notes.constants';
+import type { ChordVoicing, Inversion, IntervalType } from './types/notes';
+import { MidiToNote, NoteToMidi, DEFAULT_OCTAVE, DEFAULT_MIDDLE_C, INTERVAL_SEMITONES } from './types/notes.constants';
 import type { Chord, ChordType, MidiNote, Note, NoteFullName, NoteRole } from './types/types';
 
 const inverseTriadChord = (
@@ -286,4 +286,24 @@ export function getNoteRole(noteNumber: MidiNote, rootNumber: MidiNote): NoteRol
 		default:
 			return 'unknown';
 	}
+}
+
+/**
+ * Calculate the MIDI note number for a given interval from a root note
+ * @param rootNote - The root note (without octave)
+ * @param intervalType - The type of interval
+ * @param octave - The octave for the root note (defaults to '3')
+ * @returns Array of MIDI notes [root, interval] or just [interval] based on includeRoot
+ */
+export function calculateInterval(
+	rootNote: Note,
+	intervalType: IntervalType,
+	octave: string = DEFAULT_OCTAVE,
+): MidiNote {
+	const rootNoteName = (rootNote + octave) as NoteFullName;
+	const rootMidi = NoteToMidi[rootNoteName];
+	const intervalSemitones = INTERVAL_SEMITONES[intervalType];
+	const targetMidi = (rootMidi + intervalSemitones) as MidiNote;
+
+	return targetMidi;
 }

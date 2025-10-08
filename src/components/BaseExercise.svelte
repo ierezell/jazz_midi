@@ -36,9 +36,9 @@
 			resetCollected: boolean;
 		};
 		isCompleted: (currentNotes: MidiNote[], expectedNotes: MidiNote[]) => boolean;
-		onReset?: () => void;
-		onComplete?: () => void;
-		initialNote?: Note;
+		onReset: () => void;
+		onComplete: () => void;
+		initialNote: Note;
 	}
 
 	let {

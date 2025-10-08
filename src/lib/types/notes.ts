@@ -297,3 +297,18 @@ export type Chord = {
 
 export type ScaleMode = 'Maj' | 'Min' | 'Blues';
 export type ChordVoicing = 'full-right' | 'full-left' | '1735' | '1537';
+
+export type IntervalType =
+	| 'unison'
+	| 'minor2nd'
+	| 'major2nd'
+	| 'minor3rd'
+	| 'major3rd'
+	| 'perfect4th'
+	| 'tritone'
+	| 'perfect5th'
+	| 'minor6th'
+	| 'major6th'
+	| 'minor7th'
+	| 'major7th'
+	| 'octave';

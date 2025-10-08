@@ -1,7 +1,7 @@
 import type { ChordType, Inversion, MidiNote, Note, NoteFullName } from './notes';
 
 // Re-export types from notes module
-export type { ChordType, MidiNote, Note, NoteFullName } from './notes';
+export type { ChordType, MidiNote, Note, NoteFullName, IntervalType } from './notes';
 
 export type NoteEvent = {
 	noteNumber: MidiNote;

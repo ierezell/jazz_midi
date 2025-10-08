@@ -17,11 +17,16 @@
 
 	let clientWidth = $state(10);
 	let clientHeight = $state(10);
-	let keys = [...Array(octaves * 12 + 1).keys()].map(
-		(i) => i + (middleC - Math.floor(octaves / 2) * 12)
+
+	// Validate octaves to prevent RangeError
+	const safeOctaves = Math.max(1, Math.min(10, octaves || 2));
+	const safeMiddleC = Math.max(24, Math.min(108, middleC || 60));
+
+	let keys = [...Array(safeOctaves * 12 + 1).keys()].map(
+		(i) => i + (safeMiddleC - Math.floor(safeOctaves / 2) * 12)
 	);
 
-	const totalKeys = 12 * octaves;
+	const totalKeys = 12 * safeOctaves;
 </script>
 
 <div class="keyboard" bind:clientWidth bind:clientHeight>
