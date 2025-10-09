@@ -33,32 +33,32 @@
 				<li aria-current={page.url.pathname === '/about' ? 'page' : undefined}>
 					<a href={resolve('/about')} data-sveltekit-preload-data="hover">About</a>
 				</li>
-				<li aria-current={page.url.pathname.startsWith('/exercices/random') ? 'page' : undefined}>
-					<a href={resolve('/exercices/random')} data-sveltekit-preload-data="hover">🎲 Random</a>
+				<li aria-current={page.url.pathname.startsWith('/exercises/random') ? 'page' : undefined}>
+					<a href={resolve('/exercises/random')} data-sveltekit-preload-data="hover">🎲 Random</a>
 				</li>
 				<li
-					aria-current={page.url.pathname.startsWith('/exercices/two_five_ones')
+					aria-current={page.url.pathname.startsWith('/exercises/two_five_ones')
 						? 'page'
 						: undefined}
 				>
-					<a href={resolve('/exercices/two_five_ones')} data-sveltekit-preload-data="hover"
+					<a href={resolve('/exercises/two_five_ones')} data-sveltekit-preload-data="hover"
 						>II-V-I</a
 					>
 				</li>
-				<li aria-current={page.url.pathname.startsWith('/exercices/scales') ? 'page' : undefined}>
-					<a href={resolve('/exercices/scales')} data-sveltekit-preload-data="hover">Scales</a>
+				<li aria-current={page.url.pathname.startsWith('/exercises/scales') ? 'page' : undefined}>
+					<a href={resolve('/exercises/scales')} data-sveltekit-preload-data="hover">Scales</a>
 				</li>
-				<li aria-current={page.url.pathname.startsWith('/exercices/chords') ? 'page' : undefined}>
-					<a href={resolve('/exercices/chords')} data-sveltekit-preload-data="hover">Chords</a>
+				<li aria-current={page.url.pathname.startsWith('/exercises/chords') ? 'page' : undefined}>
+					<a href={resolve('/exercises/chords')} data-sveltekit-preload-data="hover">Chords</a>
 				</li>
 				<li
-					aria-current={page.url.pathname.startsWith('/exercices/intervals') ? 'page' : undefined}
+					aria-current={page.url.pathname.startsWith('/exercises/intervals') ? 'page' : undefined}
 				>
-					<a href={resolve('/exercices/intervals')} data-sveltekit-preload-data="hover">Intervals</a
+					<a href={resolve('/exercises/intervals')} data-sveltekit-preload-data="hover">Intervals</a
 					>
 				</li>
-				<li aria-current={page.url.pathname.startsWith('/exercices/names') ? 'page' : undefined}>
-					<a href={resolve('/exercices/names')} data-sveltekit-preload-data="hover">🎵 Names</a>
+				<li aria-current={page.url.pathname.startsWith('/exercises/names') ? 'page' : undefined}>
+					<a href={resolve('/exercises/names')} data-sveltekit-preload-data="hover">🎵 Names</a>
 				</li>
 				<li aria-current={page.url.pathname.startsWith('/profile') ? 'page' : undefined}>
 					<a href={resolve('/profile')} data-sveltekit-preload-data="hover">👤 Profile</a>

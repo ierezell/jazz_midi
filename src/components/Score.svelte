@@ -26,15 +26,29 @@
 		return FLAT_KEYS.has(key);
 	}
 
+	function toValidKeySignature(key: string): string {
+		// VexFlow doesn't support certain sharp keys as key signatures
+		// Convert them to their flat equivalents
+		const KEY_SIGNATURE_CONVERSIONS: Record<string, string> = {
+			'A#': 'Bb',
+			'C#': 'Db',
+			'D#': 'Eb',
+			'F#': 'Gb',
+			'G#': 'Ab'
+		};
+
+		return KEY_SIGNATURE_CONVERSIONS[key] || key;
+	}
+
 	function toVexflow(note: NoteFullName): string {
 		const match = /(.*?)(\d+)$/.exec(note);
 		if (!match) return note;
 		let base = match[1];
 		const octave = parseInt(match[2], 10);
 
-		// VexFlow has issues with certain sharp notes like A# and D#
+		// VexFlow has issues with certain sharp notes like A#, D#, and G#
 		// Always convert these problematic sharps to their flat equivalents
-		if (base === 'A#' || base === 'D#') {
+		if (base === 'A#' || base === 'D#' || base === 'G#') {
 			base = SHARP_TO_FLAT[base] ?? base;
 		} else if (prefersFlats(selectedNote) && base.includes('#')) {
 			// For other sharps, only convert if the key signature prefers flats
@@ -115,7 +129,7 @@
 				});
 				stave.addClef('treble');
 				if (selectedNote) {
-					stave.addKeySignature(selectedNote);
+					stave.addKeySignature(toValidKeySignature(selectedNote));
 				}
 				f.draw();
 			} catch (error) {
@@ -138,7 +152,7 @@
 				});
 				trebleStave.addClef('treble');
 				if (selectedNote) {
-					trebleStave.addKeySignature(selectedNote);
+					trebleStave.addKeySignature(toValidKeySignature(selectedNote));
 				}
 			}
 
@@ -152,7 +166,7 @@
 				});
 				bassStave.addClef('bass');
 				if (selectedNote) {
-					bassStave.addKeySignature(selectedNote);
+					bassStave.addKeySignature(toValidKeySignature(selectedNote));
 				}
 			}
 
