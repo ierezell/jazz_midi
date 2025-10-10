@@ -151,7 +151,7 @@
 		}
 
 		if (result.collected) {
-			collectedNotes = new Set([...collectedNotes, note.noteNumber]);
+			collectedNotes.add(note.noteNumber);
 		}
 
 		if (result.isCorrect) {

@@ -3,10 +3,6 @@ import type { MIDIEventHandlers, MidiNote, Note, NoteEvent } from './types/types
 
 import { createVirtualMidiAccess, setupKeyboardInput, type VirtualMidiInput } from './virtualMidi';
 
-import { AllChordTypes, AllMidiNotes, AllNotes } from './types/notes.constants';
-export type { ChordType, MidiNote, Note, NoteEvent, NoteFullName } from './types/types';
-export { AllChordTypes, AllMidiNotes, AllNotes, MidiToNote, NoteToMidi };
-
 export class MIDIManager {
 	public midiAccess: MIDIAccess | null = null;
 	private virtualMidi: VirtualMidiInput | null = null;
@@ -16,7 +12,7 @@ export class MIDIManager {
 	private errorCallbacks: ((error: Error) => void)[] = [];
 	private debugMode = false;
 
-	constructor() {}
+	constructor() { }
 
 	async initialize(): Promise<boolean> {
 		try {

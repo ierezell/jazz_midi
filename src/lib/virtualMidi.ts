@@ -102,22 +102,14 @@ export function createVirtualMidiAccess(
 		outputs,
 		sysexEnabled: false,
 		onstatechange: null,
-		addEventListener: () => {},
-		removeEventListener: () => {},
+		addEventListener: () => { },
+		removeEventListener: () => { },
 		dispatchEvent: () => false,
 		getVirtualInput: () => virtualInput
 	} as unknown as MIDIAccess & { getVirtualInput: () => VirtualMidiInput };
 	return midiAccess;
 }
 
-let globalVirtualMidi: VirtualMidiInput | null = null;
-
-export function getGlobalVirtualMidi(): VirtualMidiInput {
-	if (!globalVirtualMidi) {
-		globalVirtualMidi = new VirtualMidiInput();
-	}
-	return globalVirtualMidi;
-}
 
 export const keyboardToMidi: Record<string, MidiNote> = {
 	z: 72,

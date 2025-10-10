@@ -1,7 +1,7 @@
-import type { ChordType, Inversion, MidiNote, Note, NoteFullName } from './notes';
+import type { ChordType, Inversion, MidiNote, Note, NoteFullName, Chord } from './notes';
 
 // Re-export types from notes module
-export type { ChordType, MidiNote, Note, NoteFullName, IntervalType } from './notes';
+export type { ChordType, MidiNote, Note, NoteFullName, IntervalType, Chord } from './notes';
 
 export type NoteEvent = {
 	noteNumber: MidiNote;
@@ -12,15 +12,6 @@ export type NoteEvent = {
 	timestamp: number;
 	channel: number;
 };
-export type Chord = {
-	root: MidiNote;
-	third: MidiNote;
-	fifth: MidiNote;
-	seventh?: MidiNote;
-	inversion: Inversion;
-	chordType: ChordType;
-};
-
 export type NoteRole = 'root' | 'third' | 'fifth' | 'seventh' | 'ninth' | 'eleventh' | 'thirteenth';
 
 export interface ScoreProps {
