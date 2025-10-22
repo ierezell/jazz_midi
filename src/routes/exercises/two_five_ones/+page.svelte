@@ -19,6 +19,9 @@
 	import type { NoteEvent, ScoreProps } from '$lib/types/types';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 
+	const description =
+		'Play the II-V-I progression as shown. Use the correct chords and voicings for each step.';
+
 	interface Props {
 		randomMode: boolean;
 		onComplete?: () => void;
@@ -193,14 +196,15 @@
 
 <div class="progression-exercise">
 	<BaseExercise
-		{randomMode}
-		{generateExpectedNotes}
-		{generateScoreProps}
-		{validateNoteEvent}
-		{isCompleted}
+		randomMode={randomMode}
+		generateExpectedNotes={generateExpectedNotes}
+		generateScoreProps={generateScoreProps}
+		validateNoteEvent={validateNoteEvent}
+		isCompleted={isCompleted}
 		onReset={handleParentReset}
 		onComplete={onComplete || (() => {})}
 		initialNote={propKey || 'C'}
+		description={description}
 	>
 		{#snippet children(api: any)}
 			{@const wasCompleted = exerciseCompleted}

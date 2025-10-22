@@ -38,6 +38,7 @@
 		isCompleted: (currentNotes: MidiNote[], expectedNotes: MidiNote[]) => boolean;
 		onReset: () => void;
 		onComplete: () => void;
+		description: string;
 		initialNote: Note;
 	}
 
@@ -49,7 +50,8 @@
 		isCompleted,
 		onReset,
 		initialNote,
-		children
+		children,
+		description
 	}: BaseExerciseProps & { children?: any } = $props();
 
 	const KEYBOARD_SHOW_AFTER_MISTAKES = 3;
@@ -222,6 +224,17 @@
 </script>
 
 <div class="exercise-container">
+	{#if description}
+		<div class="exercise-description">
+			<span class="info-icon" tabindex="0">
+				&#9432;
+				<span class="desc-tooltip"
+					>{description +
+						'if you make more than 3 mistakes, a piano will be shown, and then the correct notes.'}</span
+				>
+			</span>
+		</div>
+	{/if}
 	{#if feedbackMessage}
 		<div class="feedback" role="alert">
 			{feedbackMessage}
@@ -482,5 +495,49 @@
 			min-height: 220px;
 			padding: 0.5rem;
 		}
+	}
+	.exercise-description {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		margin-bottom: 0.25rem;
+		font-size: 1rem;
+	}
+	.info-icon {
+		position: relative;
+		display: inline-block;
+		width: 1.5em;
+		height: 1.5em;
+		border-radius: 50%;
+		background: #e0e0e0;
+		color: #333;
+		text-align: center;
+		line-height: 1.5em;
+		font-weight: bold;
+		cursor: pointer;
+		font-size: 1.2em;
+	}
+	.info-icon:focus .desc-tooltip,
+	.info-icon:hover .desc-tooltip {
+		opacity: 1;
+		pointer-events: auto;
+	}
+	.desc-tooltip {
+		position: absolute;
+		left: 110%;
+		top: 50%;
+		transform: translateY(-50%);
+		background: #222;
+		color: #fff;
+		padding: 0.5em 1em;
+		border-radius: 0.5em;
+		font-size: 0.95em;
+		white-space: pre-line;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.2s;
+		z-index: 10;
+		min-width: 180px;
+		max-width: 320px;
 	}
 </style>

@@ -5,6 +5,8 @@
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 
+	const description = 'Identify and play the note name shown. Use either English or Latin notation.';
+
 	// Note name mappings between English and Latin (Solfège)
 	const ENGLISH_TO_LATIN: Record<Note, string> = {
 		C: 'Do',
@@ -111,13 +113,11 @@
 	function generateScoreProps(selectedNote: Note): ScoreProps {
 		const expectedNotes = generateExpectedNotes(selectedNote);
 		const noteNames = expectedNotes.map((midi) => MidiToNote[midi]);
-
 		// Show the expected note in the right hand
 		const rightNotes = noteNames.map((note) => [note]);
 		const leftNotes: NoteFullName[][] = [];
-
 		return {
-			selectedNote: currentTargetNote,
+			selectedNote,
 			leftHand: leftNotes,
 			rightHand: rightNotes
 		};
@@ -136,7 +136,6 @@
 			const correctAnswer = englishToLatin
 				? ENGLISH_TO_LATIN[currentTargetNote]
 				: currentTargetNote;
-
 			return {
 				isCorrect: true,
 				message: `Perfect! ${currentDisplayNote} (${sourceNotation}) = ${correctAnswer} (${targetNotation}) 🎵✨`,
@@ -148,7 +147,6 @@
 			const correctAnswer = englishToLatin
 				? ENGLISH_TO_LATIN[currentTargetNote]
 				: currentTargetNote;
-
 			return {
 				isCorrect: false,
 				message: `Wrong! You played ${playedNoteName}. ${currentDisplayNote} = ${correctAnswer}`,
@@ -184,14 +182,15 @@
 </script>
 
 <BaseExercise
-	{randomMode}
-	{generateExpectedNotes}
-	{generateScoreProps}
+	randomMode={randomMode}
+	generateExpectedNotes={generateExpectedNotes}
+	generateScoreProps={generateScoreProps}
 	validateNoteEvent={validateNoteName}
 	isCompleted={isNoteNameCompleted}
 	onReset={handleParentReset}
-	onComplete={() => {}}
+	onComplete={onComplete ?? (() => {})}
 	initialNote={propKey || 'C'}
+	description={description}
 >
 	{#snippet children(api: any)}
 		{@const wasCompleted = exerciseCompleted}

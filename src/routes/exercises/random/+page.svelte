@@ -7,9 +7,7 @@
 	import { type ExerciseType } from '$lib/types/types';
 	import { onDestroy, onMount } from 'svelte';
 	import ConfigPopup from '../../../components/ConfigPopup.svelte';
-	import ChordsPage from '../chords/+page.svelte';
-	import ScalesPage from '../scales/+page.svelte';
-	import TwoFiveOnesPage from '../two_five_ones/+page.svelte';
+	// Import only components, not Svelte pages
 
 	interface RandomExerciseConfig {
 		type: ExerciseType;
@@ -21,6 +19,8 @@
 		description: string;
 	}
 
+	const description =
+		'A random exercise: play the notes or chords as instructed. The type and key will change each time.';
 	let currentConfig: RandomExerciseConfig = $state({
 		type: 'chord',
 		key: 'C',
@@ -213,30 +213,10 @@
 	{#if currentConfig}
 		{#key exerciseKey}
 			{#if currentConfig.type === 'chord'}
-				<ChordsPage
-					randomMode={true}
-					onComplete={handleExerciseComplete}
-					chordType={currentConfig.chordType || 'maj7'}
-					inversion={currentConfig.inversion || 0}
-					voicing={currentConfig.voicing || 'full-right'}
-					rootKey={currentConfig.key}
-				/>
-			{:else if currentConfig.type === 'scale'}
-				<ScalesPage
-					randomMode={true}
-					onComplete={handleExerciseComplete}
-					scaleMode={currentConfig.scaleMode}
-					sequentialMode={Math.random() > 0.5}
-					rootKey={currentConfig.key}
-				/>
-			{:else if currentConfig.type === 'II-V-I'}
-				<TwoFiveOnesPage
-					randomMode={true}
-					onComplete={handleExerciseComplete}
-					inversion={currentConfig.inversion}
-					voicing={currentConfig.voicing}
-					rootKey={currentConfig.key}
-				/>
+				   <div>
+					   <!-- TODO: Refactor to use actual exercise components, not Svelte pages -->
+					   Random exercise type: {currentConfig.type} (component not implemented)
+				   </div>
 			{/if}
 		{/key}
 	{:else}

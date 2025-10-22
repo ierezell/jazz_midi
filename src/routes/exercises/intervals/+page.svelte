@@ -13,6 +13,9 @@
 	import { calculateInterval } from '$lib/MusicTheoryUtils';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 
+	const description =
+		'Play the interval shown on the staff using your MIDI keyboard. Listen and check your answer.';
+
 	interface Props {
 		randomMode: boolean;
 		onComplete?: () => void;
@@ -162,43 +165,43 @@
 </script>
 
 <BaseExercise
-	{randomMode}
-	{generateExpectedNotes}
-	{generateScoreProps}
+	randomMode={randomMode}
+	generateExpectedNotes={generateExpectedNotes}
+	generateScoreProps={generateScoreProps}
 	validateNoteEvent={validateIntervalNote}
 	isCompleted={isIntervalCompleted}
 	onReset={handleParentReset}
 	onComplete={() => {}}
 	initialNote={propKey || 'C'}
+	description={description}
 >
-	{#snippet children(api: any)}
-		{@const wasCompleted = exerciseCompleted}
-		{@const isNowCompleted = api.completed}
-		{#if isNowCompleted && !wasCompleted}
-			{(exerciseCompleted = true)}
-		{:else if !isNowCompleted && wasCompleted}
-			{(exerciseCompleted = false)}
-		{/if}
-
-		<div class="interval-controls">
-			{#if !randomMode}
-				<div class="control-group">
-					<label for="intervalType">Interval:</label>
-					<select id="intervalType" value={intervalType} onchange={handleIntervalTypeChange}>
-						{#each AllIntervals as interval}
-							<option value={interval}>{INTERVAL_NAMES[interval]}</option>
-						{/each}
-					</select>
-				</div>
-				<div class="control-group">
-					<label>
-						<input type="checkbox" bind:checked={handMode} onchange={handleHandModeToggle} />
-						Right hand
-					</label>
-				</div>
-			{/if}
-		</div>
-	{/snippet}
+	   {#snippet children(api: any)}
+		   {@const wasCompleted = exerciseCompleted}
+		   {@const isNowCompleted = api.completed}
+		   {#if isNowCompleted && !wasCompleted}
+			   {(exerciseCompleted = true)}
+		   {:else if !isNowCompleted && wasCompleted}
+			   {(exerciseCompleted = false)}
+		   {/if}
+		   <div class="controls">
+			   {#if !randomMode}
+				   <div class="control-group">
+					   <label for="intervalType">Interval Type:</label>
+					   <select id="intervalType" value={intervalType} onchange={handleIntervalTypeChange}>
+						   {#each AllIntervals as interval}
+							   <option value={interval}>{INTERVAL_NAMES[interval]}</option>
+						   {/each}
+					   </select>
+				   </div>
+				   <div class="control-group">
+					   <label>
+						   <input type="checkbox" bind:checked={handMode} onchange={handleHandModeToggle} />
+						   Right hand
+					   </label>
+				   </div>
+			   {/if}
+		   </div>
+	   {/snippet}
 </BaseExercise>
 
 <style>
