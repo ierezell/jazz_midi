@@ -196,52 +196,52 @@
 </script>
 
 <BaseExercise
-   randomMode={randomMode}
-   generateExpectedNotes={generateExpectedNotes}
-   generateScoreProps={generateScoreProps}
-   validateNoteEvent={validateScaleNote}
-   isCompleted={isScaleCompleted}
+	{randomMode}
+	{generateExpectedNotes}
+	{generateScoreProps}
+	validateNoteEvent={validateScaleNote}
+	isCompleted={isScaleCompleted}
 	onReset={handleParentReset}
 	onComplete={onComplete ?? (() => {})}
 	initialNote={propKey || 'C'}
-   description={description}
+	{description}
 >
-   {#snippet children(api: any)}
-	   {@const wasCompleted = exerciseCompleted}
-	   {@const isNowCompleted = api.completed}
-	   {#if isNowCompleted && !wasCompleted}
-		   {(exerciseCompleted = true)}
-	   {:else if !isNowCompleted && wasCompleted}
-		   {(exerciseCompleted = false)}
-	   {/if}
-	   <div class="scale-controls">
-		   {#if !randomMode}
-			   <div class="control-group">
-				   <label>
-					   <input
-						   type="checkbox"
-						   bind:checked={sequentialMode}
-						   onchange={handleSequentialToggle}
-					   />
-					   In order
-				   </label>
-			   </div>
-			   <div class="control-group">
-				   <label>
-					   <input type="checkbox" bind:checked={handMode} onchange={handleHandModeToggle} />
-					   Right hand
-				   </label>
-			   </div>
-			   <div class="control-group">
-				   <label for="scaleMode">Scale mode:</label>
-				   <select id="scaleMode" value={scaleMode} onchange={handleScaleModeChange}>
-					   <option value="Maj">Major</option>
-					   <option value="Min">Minor</option>
-				   </select>
-			   </div>
-		   {/if}
-	   </div>
-   {/snippet}
+	{#snippet children(api: any)}
+		{@const wasCompleted = exerciseCompleted}
+		{@const isNowCompleted = api.completed}
+		{#if isNowCompleted && !wasCompleted}
+			{(exerciseCompleted = true)}
+		{:else if !isNowCompleted && wasCompleted}
+			{(exerciseCompleted = false)}
+		{/if}
+		<div class="scale-controls">
+			{#if !randomMode}
+				<div class="control-group">
+					<label>
+						<input
+							type="checkbox"
+							bind:checked={sequentialMode}
+							onchange={handleSequentialToggle}
+						/>
+						In order
+					</label>
+				</div>
+				<div class="control-group">
+					<label>
+						<input type="checkbox" bind:checked={handMode} onchange={handleHandModeToggle} />
+						Right hand
+					</label>
+				</div>
+				<div class="control-group">
+					<label for="scaleMode">Scale mode:</label>
+					<select id="scaleMode" value={scaleMode} onchange={handleScaleModeChange}>
+						<option value="Maj">Major</option>
+						<option value="Min">Minor</option>
+					</select>
+				</div>
+			{/if}
+		</div>
+	{/snippet}
 </BaseExercise>
 
 <style>

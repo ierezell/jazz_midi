@@ -226,7 +226,7 @@
 <div class="exercise-container">
 	{#if description}
 		<div class="exercise-description">
-			<span class="info-icon" tabindex="0">
+			<span class="info-icon">
 				&#9432;
 				<span class="desc-tooltip"
 					>{description +

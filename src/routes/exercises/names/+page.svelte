@@ -5,7 +5,8 @@
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 
-	const description = 'Identify and play the note name shown. Use either English or Latin notation.';
+	const description =
+		'Identify and play the note name shown. Use either English or Latin notation.';
 
 	// Note name mappings between English and Latin (Solfège)
 	const ENGLISH_TO_LATIN: Record<Note, string> = {
@@ -182,15 +183,15 @@
 </script>
 
 <BaseExercise
-	randomMode={randomMode}
-	generateExpectedNotes={generateExpectedNotes}
-	generateScoreProps={generateScoreProps}
+	{randomMode}
+	{generateExpectedNotes}
+	{generateScoreProps}
 	validateNoteEvent={validateNoteName}
 	isCompleted={isNoteNameCompleted}
 	onReset={handleParentReset}
 	onComplete={onComplete ?? (() => {})}
 	initialNote={propKey || 'C'}
-	description={description}
+	{description}
 >
 	{#snippet children(api: any)}
 		{@const wasCompleted = exerciseCompleted}

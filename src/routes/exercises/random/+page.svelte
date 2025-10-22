@@ -213,10 +213,10 @@
 	{#if currentConfig}
 		{#key exerciseKey}
 			{#if currentConfig.type === 'chord'}
-				   <div>
-					   <!-- TODO: Refactor to use actual exercise components, not Svelte pages -->
-					   Random exercise type: {currentConfig.type} (component not implemented)
-				   </div>
+				<div>
+					<!-- TODO: Refactor to use actual exercise components, not Svelte pages -->
+					Random exercise type: {currentConfig.type} (component not implemented)
+				</div>
 			{/if}
 		{/key}
 	{:else}

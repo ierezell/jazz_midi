@@ -16,21 +16,12 @@
 	const description =
 		'Play the interval shown on the staff using your MIDI keyboard. Listen and check your answer.';
 
-	interface Props {
-		randomMode: boolean;
-		onComplete?: () => void;
-		intervalType?: IntervalType;
-		rootKey?: Note;
-		rightHandMode?: boolean;
-	}
-
-	let {
-		randomMode,
-		onComplete,
-		intervalType: propIntervalType,
-		rightHandMode: propRightHandMode,
-		rootKey: propKey
-	}: Props = $props();
+	const props = $props();
+	let randomMode = props.randomMode;
+	let onComplete = props.onComplete;
+	let propIntervalType = props.intervalType;
+	let propRightHandMode = props.rightHandMode;
+	let propKey = props.rootKey;
 
 	let intervalType: IntervalType = $state(
 		propIntervalType ??
@@ -165,55 +156,46 @@
 </script>
 
 <BaseExercise
-	randomMode={randomMode}
-	generateExpectedNotes={generateExpectedNotes}
-	generateScoreProps={generateScoreProps}
+	{randomMode}
+	{generateExpectedNotes}
+	{generateScoreProps}
 	validateNoteEvent={validateIntervalNote}
 	isCompleted={isIntervalCompleted}
 	onReset={handleParentReset}
 	onComplete={() => {}}
 	initialNote={propKey || 'C'}
-	description={description}
+	{description}
 >
-	   {#snippet children(api: any)}
-		   {@const wasCompleted = exerciseCompleted}
-		   {@const isNowCompleted = api.completed}
-		   {#if isNowCompleted && !wasCompleted}
-			   {(exerciseCompleted = true)}
-		   {:else if !isNowCompleted && wasCompleted}
-			   {(exerciseCompleted = false)}
-		   {/if}
-		   <div class="controls">
-			   {#if !randomMode}
-				   <div class="control-group">
-					   <label for="intervalType">Interval Type:</label>
-					   <select id="intervalType" value={intervalType} onchange={handleIntervalTypeChange}>
-						   {#each AllIntervals as interval}
-							   <option value={interval}>{INTERVAL_NAMES[interval]}</option>
-						   {/each}
-					   </select>
-				   </div>
-				   <div class="control-group">
-					   <label>
-						   <input type="checkbox" bind:checked={handMode} onchange={handleHandModeToggle} />
-						   Right hand
-					   </label>
-				   </div>
-			   {/if}
-		   </div>
-	   {/snippet}
+	{#snippet children(api: any)}
+		{@const wasCompleted = exerciseCompleted}
+		{@const isNowCompleted = api.completed}
+		{#if isNowCompleted && !wasCompleted}
+			{(exerciseCompleted = true)}
+		{:else if !isNowCompleted && wasCompleted}
+			{(exerciseCompleted = false)}
+		{/if}
+		<div class="controls">
+			{#if !randomMode}
+				<div class="control-group">
+					<label for="intervalType">Interval Type:</label>
+					<select id="intervalType" value={intervalType} onchange={handleIntervalTypeChange}>
+						{#each AllIntervals as interval}
+							<option value={interval}>{INTERVAL_NAMES[interval]}</option>
+						{/each}
+					</select>
+				</div>
+				<div class="control-group">
+					<label>
+						<input type="checkbox" bind:checked={handMode} onchange={handleHandModeToggle} />
+						Right hand
+					</label>
+				</div>
+			{/if}
+		</div>
+	{/snippet}
 </BaseExercise>
 
 <style>
-	.interval-controls {
-		display: flex;
-		gap: 2rem;
-		margin-bottom: 1rem;
-		align-items: center;
-		justify-content: center;
-		flex-wrap: wrap;
-	}
-
 	.control-group {
 		display: flex;
 		gap: 1rem;
@@ -241,13 +223,6 @@
 		}
 		60% {
 			transform: translateY(-5px);
-		}
-	}
-
-	@media (max-width: 768px) {
-		.interval-controls {
-			flex-direction: column;
-			gap: 1rem;
 		}
 	}
 </style>

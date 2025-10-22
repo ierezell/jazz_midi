@@ -196,15 +196,15 @@
 
 <div class="progression-exercise">
 	<BaseExercise
-		randomMode={randomMode}
-		generateExpectedNotes={generateExpectedNotes}
-		generateScoreProps={generateScoreProps}
-		validateNoteEvent={validateNoteEvent}
-		isCompleted={isCompleted}
+		{randomMode}
+		{generateExpectedNotes}
+		{generateScoreProps}
+		{validateNoteEvent}
+		{isCompleted}
 		onReset={handleParentReset}
 		onComplete={onComplete || (() => {})}
 		initialNote={propKey || 'C'}
-		description={description}
+		{description}
 	>
 		{#snippet children(api: any)}
 			{@const wasCompleted = exerciseCompleted}

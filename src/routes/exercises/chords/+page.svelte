@@ -19,7 +19,8 @@
 	} from '$lib/types/types';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 
-const description = 'Play the notes of the displayed chord on your MIDI keyboard. Try to match the voicing and inversion shown.';
+	const description =
+		'Play the notes of the displayed chord on your MIDI keyboard. Try to match the voicing and inversion shown.';
 
 	interface Props {
 		randomMode: boolean;
@@ -178,69 +179,70 @@ const description = 'Play the notes of the displayed chord on your MIDI keyboard
 </script>
 
 <BaseExercise
-   randomMode={randomMode}
-   generateExpectedNotes={generateExpectedNotes}
-   generateScoreProps={generateScoreProps}
-   validateNoteEvent={validateNoteEvent}
-   isCompleted={isCompleted}
-   onReset={handleParentReset}
-   onComplete={onComplete}
-   initialNote={propKey}
-   description={description}
+	{randomMode}
+	{generateExpectedNotes}
+	{generateScoreProps}
+	{validateNoteEvent}
+	{isCompleted}
+	onReset={handleParentReset}
+	{onComplete}
+	initialNote={propKey}
+	{description}
 >
-   {#snippet children(api: any)}
-	   {@const wasCompleted = exerciseCompleted}
-	   {@const isNowCompleted = api.completed}
-	   {#if isNowCompleted && !wasCompleted}
-		   {(exerciseCompleted = true)}
-	   {:else if !isNowCompleted && wasCompleted}
-		   {(exerciseCompleted = false)}
-	   {/if}
-	   <div class="controls">
-		   {#if !randomMode}
-			   <div class="control-group">
-				   <label for="chord-type">Chord Type:</label>
-				   <select id="chord-type" value={chordType} onchange={handleChordTypeChange}>
-					   {#each AllChordTypes as type}
-						   <option value={type}>{type}</option>
-					   {/each}
-				   </select>
-			   </div>
+	{#snippet children(api: any)}
+		{@const wasCompleted = exerciseCompleted}
+		{@const isNowCompleted = api.completed}
+		{#if isNowCompleted && !wasCompleted}
+			{(exerciseCompleted = true)}
+		{:else if !isNowCompleted && wasCompleted}
+			{(exerciseCompleted = false)}
+		{/if}
+		<div class="controls">
+			{#if !randomMode}
+				<div class="control-group">
+					<label for="chord-type">Chord Type:</label>
+					<select id="chord-type" value={chordType} onchange={handleChordTypeChange}>
+						{#each AllChordTypes as type}
+							<option value={type}>{type}</option>
+						{/each}
+					</select>
+				</div>
 
-			   <div class="control-group">
-				   <label for="inversion">Inversion:</label>
-				   <select id="inversion" value={inversion} onchange={handleInversionChange}>
-					   <option value={0}>Root</option>
-					   <option value={1}>1st</option>
-					   <option value={2}>2nd</option>
-					   <option value={3}>3rd</option>
-				   </select>
-			   </div>
+				<div class="control-group">
+					<label for="inversion">Inversion:</label>
+					<select id="inversion" value={inversion} onchange={handleInversionChange}>
+						<option value={0}>Root</option>
+						<option value={1}>1st</option>
+						<option value={2}>2nd</option>
+						<option value={3}>3rd</option>
+					</select>
+				</div>
 
-			   <div class="control-group">
-				   <label for="voicing">Voicing:</label>
-				   <select id="voicing" value={voicing} onchange={handleVoicingChange}>
-					   <option value="full-right">Full Right Hand</option>
-					   <option value="full-left">Full Left Hand</option>
-					   <option value="1735">1 & 7 Left / 3 & 5 Right</option>
-					   <option value="1537">1 & 5 Left / 3 & 7 Right</option>
-				   </select>
-			   </div>
-		   {/if}
-	   </div>
-   {/snippet}
+				<div class="control-group">
+					<label for="voicing">Voicing:</label>
+					<select id="voicing" value={voicing} onchange={handleVoicingChange}>
+						<option value="full-right">Full Right Hand</option>
+						<option value="full-left">Full Left Hand</option>
+						<option value="1735">1 & 7 Left / 3 & 5 Right</option>
+						<option value="1537">1 & 5 Left / 3 & 7 Right</option>
+					</select>
+				</div>
+			{/if}
+		</div>
+	{/snippet}
 </BaseExercise>
-	<style>
-	   .controls {
-		   display: flex;
-		   flex-wrap: wrap;
-		   gap: 1rem;
-		   justify-content: center;
-		   margin: 2rem 0;
-		   padding: 1rem;
-		   background-color: #f8f9fa;
-		   border-radius: 0.5rem;
-	   }
+
+<style>
+	.controls {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+		justify-content: center;
+		margin: 2rem 0;
+		padding: 1rem;
+		background-color: #f8f9fa;
+		border-radius: 0.5rem;
+	}
 
 	.control-group {
 		display: flex;
