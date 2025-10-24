@@ -1,6 +1,5 @@
 <script lang="ts">
-	import welcomeFallback from '$lib/images/svelte-welcome.png';
-	import welcome from '$lib/images/svelte-welcome.webp';
+	import logo from '$lib/images/logo.png';
 	import { midiManager } from '$lib/MIDIManager';
 	import { onMount } from 'svelte';
 	onMount(async () => {
@@ -20,17 +19,8 @@
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 <section>
-	<h1>
-		<span class="welcome">
-			<picture>
-				<source srcset={welcome} type="image/webp" />
-				<img src={welcomeFallback} alt="Welcome" />
-			</picture>
-		</span>
-		to the jazz <br />midi app
-	</h1>
+		<img style="width: 50%;" src={logo} alt="Svelte Logo" />
 	<main>
-		<h1>Jazz MIDI</h1>
 		{#if midiManager.midiAccess}
 			<div>
 				<h2>MIDI Inputs</h2>

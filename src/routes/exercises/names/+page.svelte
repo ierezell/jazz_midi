@@ -182,6 +182,8 @@
 	});
 </script>
 
+
+<!-- Hide the score section for the Note Name exercise (not needed) -->
 <BaseExercise
 	{randomMode}
 	{generateExpectedNotes}
@@ -190,6 +192,7 @@
 	isCompleted={isNoteNameCompleted}
 	onReset={handleParentReset}
 	onComplete={onComplete ?? (() => {})}
+	showScore={false}
 	initialNote={propKey || 'C'}
 	{description}
 >

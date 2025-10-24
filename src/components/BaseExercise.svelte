@@ -40,6 +40,11 @@
 		onComplete: () => void;
 		description: string;
 		initialNote: Note;
+		/**
+		 * Show the score section (default true). Set to false to hide the score UI for
+		 * exercises that don't need a staff (e.g. note-name exercises).
+		 */
+		showScore?: boolean;
 	}
 
 	let {
@@ -50,6 +55,7 @@
 		isCompleted,
 		onReset,
 		initialNote,
+		showScore,
 		children,
 		description
 	}: BaseExerciseProps & { children?: any } = $props();
@@ -66,6 +72,9 @@
 	let debugMode = $state(false);
 	let feedbackMessage = $state('');
 	let showNotesRoles = $state(false);
+
+	// showScore controls whether the Score UI is rendered; default to true
+	let showScoreState = $state(showScore ?? true);
 
 	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
 	let expectedNotes = $derived(generateExpectedNotes(selectedNote));
@@ -254,9 +263,11 @@
 		</div>
 	{/if}
 
-	<div class="score-section">
-		<Score {...scoreProps} />
-	</div>
+	{#if showScoreState}
+		<div class="score-section">
+			<Score {...scoreProps} />
+		</div>
+	{/if}
 
 	<div class="keyboard-section" class:hidden={!showKeyboard}>
 		<Keyboard {...keyboardProps} />
@@ -343,9 +354,6 @@
 		align-items: center;
 		gap: 1rem;
 		padding: 1rem;
-		background: var(--color-bg-secondary, #f8f9fa);
-		border-radius: 8px;
-		border: 1px solid var(--color-border, #e1e5e9);
 	}
 
 	.control-group {

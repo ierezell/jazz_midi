@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import github from '$lib/images/github.svg';
-	import logo from '$lib/images/svelte-logo.svg';
 	import { userStatsService } from '$lib/UserStatsService';
 	import { onDestroy, onMount } from 'svelte';
 	import '../styles/app.css';
@@ -18,9 +16,6 @@
 <div class="app">
 	<header>
 		<div class="corner">
-			<a href="https://svelte.dev/docs/kit">
-				<img src={logo} alt="SvelteKit" />
-			</a>
 		</div>
 		<nav>
 			<svg viewBox="0 0 2 3" aria-hidden="true">
@@ -29,9 +24,6 @@
 			<ul>
 				<li aria-current={page.url.pathname === '/' ? 'page' : undefined}>
 					<a href={resolve('/')} data-sveltekit-preload-data="hover">Home</a>
-				</li>
-				<li aria-current={page.url.pathname === '/about' ? 'page' : undefined}>
-					<a href={resolve('/about')} data-sveltekit-preload-data="hover">About</a>
 				</li>
 				<li aria-current={page.url.pathname.startsWith('/exercises/random') ? 'page' : undefined}>
 					<a href={resolve('/exercises/random')} data-sveltekit-preload-data="hover">🎲 Random</a>
@@ -69,18 +61,13 @@
 			</svg>
 		</nav>
 		<div class="corner">
-			<a href="https://github.com/sveltejs/kit">
-				<img src={github} alt="GitHub" />
-			</a>
 		</div>
 	</header>
 	<main>
 		{@render children()}
 	</main>
 	<footer>
-		<p>
-			Go to <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to learn about SvelteKit
-		</p>
+		© 2025 Jazz midi. All rights reserved.
 	</footer>
 </div>
 
