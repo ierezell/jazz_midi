@@ -164,7 +164,15 @@
 	function handleDirectionToggle(event: Event): void {
 		const target = event.target as HTMLInputElement;
 		englishToLatin = target.checked;
-		generateNewNote();
+		// If we're in English -> Latin mode we should display the English note (currentTargetNote).
+		// If we're in Latin -> English mode we display the Latin form for the target note.
+		if (englishToLatin) {
+			// Show English note, expect Latin equivalent
+			currentDisplayNote = currentTargetNote;
+		} else {
+			// Show Latin note, expect English equivalent
+			currentDisplayNote = ENGLISH_TO_LATIN[currentTargetNote];
+		}
 	}
 
 	function handleNextNote(): void {
