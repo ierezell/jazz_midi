@@ -104,6 +104,96 @@ export interface AchievementRequirement {
 }
 export class UserStatsService {
 	private static instance: UserStatsService;
+	// Helper to determine if a usable localStorage is available (works in SSR-safe way)
+	private static hasLocalStorage(): boolean {
+		try {
+			// globalThis used to support various environments
+			if (typeof globalThis === 'undefined') return false;
+			// Ensure localStorage exists and has the expected API
+			// Some test/SSR harnesses may inject a non-standard object.
+			// Check that getItem/setItem/removeItem are functions.
+			// Accessing localStorage may throw in some restricted environments, so guard in try/catch.
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const ls: any = (globalThis as any).localStorage;
+			return (
+				!!ls &&
+				typeof ls.getItem === 'function' &&
+				typeof ls.setItem === 'function' &&
+				typeof ls.removeItem === 'function'
+			);
+		} catch (e) {
+			return false;
+		}
+	}
+	// Returns a storage-like object with getItem/setItem/removeItem.
+	// If the environment provides a working localStorage, return it.
+	// Otherwise provide an in-memory Map fallback so calls are safe in SSR/tests.
+	private static _memoryStorage: Map<string, string> | null = null;
+	// Cache whether we've already detected storage so we log once
+	private static _storageResolved = false;
+	private static _usingRealLocalStorage = false;
+	private static getStorage(): {
+		getItem(key: string): string | null;
+		setItem(key: string, value: string): void;
+		removeItem(key: string): void;
+	} {
+		try {
+			// prefer real localStorage when available and functional
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const ls: any = (globalThis as any).localStorage;
+			if (
+				ls &&
+				typeof ls.getItem === 'function' &&
+				typeof ls.setItem === 'function' &&
+				typeof ls.removeItem === 'function'
+			) {
+				if (!UserStatsService._storageResolved) {
+					UserStatsService._usingRealLocalStorage = true;
+					UserStatsService._storageResolved = true;
+					console.info('UserStatsService: using real localStorage');
+				}
+				return ls as typeof ls;
+			}
+			// If there is a localStorage-like object but missing methods, log once
+			if (!UserStatsService._storageResolved && ls) {
+				UserStatsService._usingRealLocalStorage = false;
+				UserStatsService._storageResolved = true;
+				console.warn(
+					'UserStatsService: localStorage object detected but missing expected methods — using in-memory fallback'
+				);
+			}
+		} catch (e) {
+			// accessing localStorage may throw in some environments — log once
+			if (!UserStatsService._storageResolved) {
+				UserStatsService._usingRealLocalStorage = false;
+				UserStatsService._storageResolved = true;
+				console.info(
+					'UserStatsService: accessing localStorage threw an error — using in-memory fallback'
+				);
+			}
+		}
+		// create in-memory storage if needed
+		if (!UserStatsService._memoryStorage)
+			UserStatsService._memoryStorage = new Map<string, string>();
+		if (!UserStatsService._storageResolved) {
+			UserStatsService._usingRealLocalStorage = false;
+			UserStatsService._storageResolved = true;
+			console.info('UserStatsService: no localStorage available — using in-memory fallback');
+		}
+		return {
+			getItem(key: string) {
+				return UserStatsService._memoryStorage!.has(key)
+					? UserStatsService._memoryStorage!.get(key)!
+					: null;
+			},
+			setItem(key: string, value: string) {
+				UserStatsService._memoryStorage!.set(key, value);
+			},
+			removeItem(key: string) {
+				UserStatsService._memoryStorage!.delete(key);
+			}
+		};
+	}
 	private storageKey = 'jazz-midi-user-stats';
 	private profileKey = 'jazz-midi-user-profile';
 	private listeners: ((stats: UserStatistics) => void)[] = [];
@@ -175,18 +265,16 @@ export class UserStatsService {
 		});
 	}
 	startSession(): void {
-		if (typeof localStorage !== 'undefined') {
-			localStorage.setItem('jazz-midi-session-start', Date.now().toString());
-		}
+		const storage = UserStatsService.getStorage();
+		storage.setItem('jazz-midi-session-start', Date.now().toString());
 	}
 	endSession(): void {
-		if (typeof localStorage !== 'undefined') {
-			const startTime = localStorage.getItem('jazz-midi-session-start');
-			if (startTime) {
-				const duration = (Date.now() - parseInt(startTime)) / (1000 * 60);
-				this.recordSession(duration);
-				localStorage.removeItem('jazz-midi-session-start');
-			}
+		const storage = UserStatsService.getStorage();
+		const startTime = storage.getItem('jazz-midi-session-start');
+		if (startTime) {
+			const duration = (Date.now() - parseInt(startTime)) / (1000 * 60);
+			this.recordSession(duration);
+			storage.removeItem('jazz-midi-session-start');
 		}
 	}
 	exportData(): string {
@@ -228,16 +316,15 @@ export class UserStatsService {
 	}
 	private loadProfile(): UserProfile {
 		try {
-			if (typeof localStorage !== 'undefined') {
-				const stored = localStorage.getItem(this.profileKey);
-				if (stored) {
-					const parsed = JSON.parse(stored);
-					return {
-						...parsed,
-						createdAt: new Date(parsed.createdAt),
-						lastActivity: new Date(parsed.lastActivity)
-					};
-				}
+			const storage = UserStatsService.getStorage();
+			const stored = storage.getItem(this.profileKey);
+			if (stored) {
+				const parsed = JSON.parse(stored);
+				return {
+					...parsed,
+					createdAt: new Date(parsed.createdAt),
+					lastActivity: new Date(parsed.lastActivity)
+				};
 			}
 		} catch (error) {
 			console.warn('Failed to load user profile:', error);
@@ -246,34 +333,33 @@ export class UserStatsService {
 	}
 	private loadStatistics(): UserStatistics {
 		try {
-			if (typeof localStorage !== 'undefined') {
-				const stored = localStorage.getItem(this.storageKey);
-				if (stored) {
-					const parsed = JSON.parse(stored);
-					return {
-						...parsed,
-						masteredChords:
-							parsed.masteredChords?.map((m: any) => ({
-								...m,
-								lastPracticed: new Date(m.lastPracticed)
-							})) || [],
-						masteredScales:
-							parsed.masteredScales?.map((m: any) => ({
-								...m,
-								lastPracticed: new Date(m.lastPracticed)
-							})) || [],
-						masteredProgressions:
-							parsed.masteredProgressions?.map((m: any) => ({
-								...m,
-								lastPracticed: new Date(m.lastPracticed)
-							})) || [],
-						recentSessions:
-							parsed.recentSessions?.map((s: any) => ({
-								...s,
-								date: new Date(s.date)
-							})) || []
-					};
-				}
+			const storage = UserStatsService.getStorage();
+			const stored = storage.getItem(this.storageKey);
+			if (stored) {
+				const parsed = JSON.parse(stored);
+				return {
+					...parsed,
+					masteredChords:
+						parsed.masteredChords?.map((m: any) => ({
+							...m,
+							lastPracticed: new Date(m.lastPracticed)
+						})) || [],
+					masteredScales:
+						parsed.masteredScales?.map((m: any) => ({
+							...m,
+							lastPracticed: new Date(m.lastPracticed)
+						})) || [],
+					masteredProgressions:
+						parsed.masteredProgressions?.map((m: any) => ({
+							...m,
+							lastPracticed: new Date(m.lastPracticed)
+						})) || [],
+					recentSessions:
+						parsed.recentSessions?.map((s: any) => ({
+							...s,
+							date: new Date(s.date)
+						})) || []
+				};
 			}
 		} catch (error) {
 			console.warn('Failed to load user statistics:', error);
@@ -520,18 +606,16 @@ export class UserStatsService {
 	}
 	private saveProfile(): void {
 		try {
-			if (typeof localStorage !== 'undefined') {
-				localStorage.setItem(this.profileKey, JSON.stringify(this.profile));
-			}
+			const storage = UserStatsService.getStorage();
+			storage.setItem(this.profileKey, JSON.stringify(this.profile));
 		} catch (error) {
 			console.warn('Failed to save user profile:', error);
 		}
 	}
 	private saveStatistics(): void {
 		try {
-			if (typeof localStorage !== 'undefined') {
-				localStorage.setItem(this.storageKey, JSON.stringify(this.statistics));
-			}
+			const storage = UserStatsService.getStorage();
+			storage.setItem(this.storageKey, JSON.stringify(this.statistics));
 		} catch (error) {
 			console.warn('Failed to save user statistics:', error);
 		}
