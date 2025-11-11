@@ -6,6 +6,7 @@
 	import { AllChordTypes, AllNotes, NoteToMidi, MidiToNote } from '$lib/types/notes.constants';
 	import type { NoteEvent } from '$lib/types/types';
 	import type { VirtualMidiInput } from '../lib/virtualMidi';
+	import { getKeyboardToMidi } from '../lib/virtualMidi';
 	interface DebugPanelProps {
 		virtualMidi?: VirtualMidiInput;
 		debugMode?: boolean;
@@ -23,16 +24,43 @@
 		currentNotes = []
 	}: DebugPanelProps = $props();
 
-    // readable names derived from midi arrays for template rendering
-    let expectedNoteNames = $derived(expectedNotes.map((n) => MidiToNote[n]));
-    let currentNoteNames = $derived(currentNotes.map((n) => MidiToNote[n]));
+	// readable names derived from midi arrays for template rendering
+	let expectedNoteNames = $derived(expectedNotes.map((n) => MidiToNote[n]));
+	let currentNoteNames = $derived(currentNotes.map((n) => MidiToNote[n]));
+
 	let selectedNote: Note = $state('C');
 	let selectedChordType: ChordType = $state('maj7');
-	let selectedOctave: number = $state(5);
+	let selectedOctave: number = $state(3);
+
+	// Dynamic keyboard shortcuts using the same mapping function
+	let keyboardShortcuts = $derived.by(() => {
+		const mapping = getKeyboardToMidi(selectedOctave);
+		const formatKeyMapping = (keys: string[]) =>
+			keys
+				.map((key) => ({ key: key.toUpperCase(), note: MidiToNote[mapping[key.toLowerCase()]] }))
+				.filter((item) => item.note); // Filter out unmapped keys
+
+		return {
+			white: formatKeyMapping(['z', 'x', 'c', 'v', 'b', 'n', 'm']),
+			black: formatKeyMapping(['s', 'd', 'g', 'h', 'j'])
+		};
+	});
+
+	// Sync octave changes with virtual MIDI
+	$effect(() => {
+		if (virtualMidi) {
+			virtualMidi.setOctave(selectedOctave);
+		}
+	});
 	function playChord() {
 		if (!virtualMidi) return;
-		const rootNote = (selectedNote + selectedOctave) as keyof typeof NoteToMidi;
-		const chord = chords(NoteToMidi[rootNote], selectedChordType);
+		// Use the same octave calculation as the keyboard mapping
+		const baseNote = selectedOctave * 12 + 12; // Same formula as getKeyboardToMidi
+		const noteOffset = AllNotes.indexOf(selectedNote as Note);
+		if (noteOffset === -1) return;
+
+		const rootMidi = (baseNote + noteOffset) as MidiNote;
+		const chord = chords(rootMidi, selectedChordType);
 		const chordNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
 			(n) => n != null && n != undefined
 		) as MidiNote[];
@@ -44,8 +72,12 @@
 	}
 	function playScale() {
 		if (!virtualMidi) return;
-		const rootNote = (selectedNote + selectedOctave) as keyof typeof NoteToMidi;
-		const root = NoteToMidi[rootNote];
+		// Use the same octave calculation as the keyboard mapping
+		const baseNote = selectedOctave * 12 + 12;
+		const noteOffset = AllNotes.indexOf(selectedNote as Note);
+		if (noteOffset === -1) return;
+
+		const root = (baseNote + noteOffset) as MidiNote;
 		const majorScale = [0, 2, 4, 5, 7, 9, 11, 12].map((interval) => (root + interval) as MidiNote);
 		majorScale.forEach((note, index) => {
 			setTimeout(() => {
@@ -84,9 +116,9 @@
 							</select>
 						</label>
 						<label>
-							Octave:
+							Keyboard Octave:
 							<select bind:value={selectedOctave}>
-								{#each [4, 5, 6] as octave}
+								{#each [2, 3, 4, 5, 6] as octave}
 									<option value={octave}>{octave}</option>
 								{/each}
 							</select>
@@ -119,14 +151,14 @@
 				<div class="section">
 					<h4>Exercise Status</h4>
 					<div class="status-info">
-									{#if expectedNotes.length > 0}
-										<div>
-											Expected Notes: {expectedNoteNames.join(', ')}
-										</div>
-									{/if}
-									{#if currentNotes.length > 0}
-										<div>Current Notes: {currentNoteNames.join(', ')}</div>
-									{/if}
+						{#if expectedNotes.length > 0}
+							<div>
+								Expected Notes: {expectedNoteNames.join(', ')}
+							</div>
+						{/if}
+						{#if currentNotes.length > 0}
+							<div>Current Notes: {currentNoteNames.join(', ')}</div>
+						{/if}
 						{#if noteEvents.length > 0}
 							<div>Recent Events: {noteEvents.length}</div>
 						{/if}
@@ -135,34 +167,19 @@
 			{/if}
 			{#if virtualMidi}
 				<div class="section">
-					<h4>Keyboard Shortcuts</h4>
+					<h4>Keyboard Shortcuts (Octave {selectedOctave})</h4>
 					<div class="shortcuts">
 						<div class="shortcut-row">
-							<strong>Lower Row (White Keys):</strong><br />
-							<kbd>Z</kbd> <span>C5</span>
-							<kbd>X</kbd> <span>D5</span>
-							<kbd>C</kbd> <span>E5</span>
-							<kbd>V</kbd> <span>F5</span>
-							<kbd>B</kbd> <span>G5</span>
-							<kbd>N</kbd> <span>A5</span>
-							<kbd>M</kbd> <span>B5</span>
+							<strong>White Keys:</strong><br />
+							{#each keyboardShortcuts.white as { key, note }}
+								<kbd>{key}</kbd> <span>{note}</span>
+							{/each}
 						</div>
 						<div class="shortcut-row">
-							<strong>Lower Row (Black Keys):</strong><br />
-							<kbd>S</kbd> <span>C#5</span>
-							<kbd>D</kbd> <span>D#5</span>
-							<kbd>G</kbd> <span>F#5</span>
-							<kbd>H</kbd> <span>G#5</span>
-							<kbd>J</kbd> <span>A#5</span>
-						</div>
-						<div class="shortcut-row">
-							<strong>Upper Row (White Keys):</strong><br />
-							<kbd>Q</kbd> <span>C6</span>
-							<kbd>W</kbd> <span>D6</span>
-							<kbd>E</kbd> <span>E6</span>
-							<kbd>R</kbd> <span>F6</span>
-							<kbd>T</kbd> <span>G6</span>
-							<kbd>Y</kbd> <span>A6</span>
+							<strong>Black Keys:</strong><br />
+							{#each keyboardShortcuts.black as { key, note }}
+								<kbd>{key}</kbd> <span>{note}</span>
+							{/each}
 						</div>
 					</div>
 				</div>

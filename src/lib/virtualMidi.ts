@@ -6,6 +6,7 @@ export interface VirtualMidiOptions {
 export class VirtualMidiInput {
 	private listeners: ((event: MIDIMessageEvent) => void)[] = [];
 	private activeNotes: Set<MidiNote> = new Set();
+	private currentOctave: number = 4; // Start at octave 4
 	constructor(private options: VirtualMidiOptions = {}) {
 		this.options = {
 			velocity: 100,
@@ -48,6 +49,14 @@ export class VirtualMidiInput {
 	}
 	playChord(notes: MidiNote[], velocity: number = this.options.velocity || 100) {
 		notes.forEach((note) => this.pressKey(note, velocity));
+	}
+
+	setOctave(octave: number) {
+		this.currentOctave = Math.max(0, Math.min(8, octave)); // Clamp between 0-8
+	}
+
+	getOctave(): number {
+		return this.currentOctave;
 	}
 
 	private createMidiMessage(status: number, note: MidiNote, velocity: number): Uint8Array {
@@ -111,46 +120,66 @@ export function createVirtualMidiAccess(
 }
 
 
-export const keyboardToMidi: Record<string, MidiNote> = {
-	z: 72,
-	x: 74,
-	c: 76,
-	v: 77,
-	b: 79,
-	n: 81,
-	m: 83,
-	',': 84,
-	'.': 86,
-	'/': 88,
-	s: 73,
-	d: 75,
-	g: 78,
-	h: 80,
-	j: 82,
-	l: 85,
-	';': 87,
-	"'": 89,
-	q: 84,
-	w: 86,
-	e: 88,
-	r: 89,
-	t: 91,
-	y: 93,
-	u: 95,
-	i: 96,
-	o: 98,
-	p: 100,
-	'[': 101,
-	']': 103,
-	'2': 73,
-	'3': 75,
-	'5': 78,
-	'6': 80,
-	'7': 82,
-	'9': 85,
-	'0': 87,
-	'=': 90
+// Base keyboard layout (semitones from C)
+const keyboardLayout: Record<string, number> = {
+	// Lower row - white keys (C octave)
+	z: 0,   // C
+	x: 2,   // D
+	c: 4,   // E
+	v: 5,   // F
+	b: 7,   // G
+	n: 9,   // A
+	m: 11,  // B
+	',': 12, // C (next octave)
+	'.': 14, // D (next octave)
+	'/': 16, // E (next octave)
+	// Lower row - black keys
+	s: 1,   // C#
+	d: 3,   // D#
+	g: 6,   // F#
+	h: 8,   // G#
+	j: 10,  // A#
+	l: 13,  // C# (next octave)
+	';': 15, // D# (next octave)
+	"'": 17, // F# (next octave)
+	// Upper row - white keys (next octave)
+	q: 12,  // C (next octave)
+	w: 14,  // D (next octave)
+	e: 16,  // E (next octave)
+	r: 17,  // F (next octave)
+	t: 19,  // G (next octave)
+	y: 21,  // A (next octave)
+	u: 23,  // B (next octave)
+	i: 24,  // C (two octaves up)
+	o: 26,  // D (two octaves up)
+	p: 28,  // E (two octaves up)
+	'[': 29, // F (two octaves up)
+	']': 31, // G (two octaves up)
+	// Number row - black keys
+	'2': 1,  // C#
+	'3': 3,  // D#
+	'5': 6,  // F#
+	'6': 8,  // G#
+	'7': 10, // A#
+	'9': 13, // C# (next octave)
+	'0': 15, // D# (next octave)
+	'=': 20  // G# (next octave)
 };
+
+// Generate dynamic keyboard mapping based on octave
+export function getKeyboardToMidi(baseOctave: number): Record<string, MidiNote> {
+	const mapping: Record<string, MidiNote> = {};
+	const baseNote = baseOctave * 12 + 12; // Convert octave to MIDI (C0 = 12, C1 = 24, etc.)
+
+	for (const [key, semitone] of Object.entries(keyboardLayout)) {
+		const midiNote = baseNote + semitone;
+		if (midiNote >= 24 && midiNote <= 127) { // Valid MIDI range
+			mapping[key] = midiNote as MidiNote;
+		}
+	}
+
+	return mapping;
+}
 
 export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard: boolean = false) {
 	const pressedKeys = new Set<string>();
@@ -159,10 +188,14 @@ export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard
 		if (!enableKeyboard) return;
 		const key = event.key.toLowerCase();
 		console.debug('Key pressed:', key);
+
+		// Get current keyboard mapping based on selected octave
+		const keyboardToMidi = getKeyboardToMidi(virtualMidi.getOctave());
+
 		if (keyboardToMidi[key] && !pressedKeys.has(key)) {
 			pressedKeys.add(key);
 			const midiNote = keyboardToMidi[key] as MidiNote;
-			console.debug(`Pressing MIDI note ${midiNote} for key '${key}'`);
+			console.debug(`Pressing MIDI note ${midiNote} for key '${key}' (octave ${virtualMidi.getOctave()})`);
 			virtualMidi.pressKey(midiNote);
 			event.preventDefault();
 		}
@@ -171,10 +204,14 @@ export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard
 	function handleKeyUp(event: KeyboardEvent) {
 		if (!enableKeyboard) return;
 		const key = event.key.toLowerCase();
+
+		// Get current keyboard mapping based on selected octave
+		const keyboardToMidi = getKeyboardToMidi(virtualMidi.getOctave());
+
 		if (keyboardToMidi[key] && pressedKeys.has(key)) {
 			pressedKeys.delete(key);
 			const midiNote = keyboardToMidi[key] as MidiNote;
-			console.debug(`Releasing MIDI note ${midiNote} for key '${key}'`);
+			console.debug(`Releasing MIDI note ${midiNote} for key '${key}' (octave ${virtualMidi.getOctave()})`);
 			virtualMidi.releaseKey(midiNote);
 			event.preventDefault();
 		}
@@ -183,7 +220,9 @@ export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard
 	if (enableKeyboard) {
 		console.debug(
 			'Virtual keyboard input setup complete. Available keys:',
-			Object.keys(keyboardToMidi)
+			Object.keys(keyboardLayout),
+			'Base octave:',
+			virtualMidi.getOctave()
 		);
 	} else {
 		console.debug('Virtual keyboard input setup (keyboard disabled)');
