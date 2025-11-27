@@ -68,7 +68,7 @@
 		try {
 			const expectedNote = calculateInterval(selectedNote, intervalType, '4');
 			const rootNote = (selectedNote + '4') as NoteFullName;
-			const intervalNote = (expectedNote + '4') as NoteFullName;
+			const intervalNote = MidiToNote[expectedNote];
 
 			let leftHand: NoteFullName[][] = [];
 			let rightHand: NoteFullName[][] = [];

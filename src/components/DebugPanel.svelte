@@ -70,8 +70,14 @@
 		if (!virtualMidi) return;
 		virtualMidi.releaseAllKeys();
 	}
+	let scaleTimeouts: ReturnType<typeof setTimeout>[] = [];
+
 	function playScale() {
 		if (!virtualMidi) return;
+		// Clear any existing timeouts
+		scaleTimeouts.forEach((t) => clearTimeout(t));
+		scaleTimeouts = [];
+
 		// Use the same octave calculation as the keyboard mapping
 		const baseNote = selectedOctave * 12 + 12;
 		const noteOffset = AllNotes.indexOf(selectedNote as Note);
@@ -80,10 +86,11 @@
 		const root = (baseNote + noteOffset) as MidiNote;
 		const majorScale = [0, 2, 4, 5, 7, 9, 11, 12].map((interval) => (root + interval) as MidiNote);
 		majorScale.forEach((note, index) => {
-			setTimeout(() => {
+			const timeout = setTimeout(() => {
 				virtualMidi!.pressKey(note);
 				setTimeout(() => virtualMidi!.releaseKey(note), 300);
 			}, index * 400);
+			scaleTimeouts.push(timeout);
 		});
 	}
 	function playRandomNote() {

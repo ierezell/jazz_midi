@@ -1,0 +1,35 @@
+{
+  "name": "Autumn Leaves",
+  "composer": "Joseph Kosma",
+  "key": "Gm",
+  "chords": [
+    {
+      "note": "C",
+      "type": "min7"
+    },
+    {
+      "note": "F",
+      "type": "7"
+    },
+    {
+      "note": "Bb",
+      "type": "maj7"
+    },
+    {
+      "note": "Eb",
+      "type": "maj7"
+    },
+    {
+      "note": "A",
+      "type": "half-dim7"
+    },
+    {
+      "note": "D",
+      "type": "7"
+    },
+    {
+      "note": "G",
+      "type": "min7"
+    }
+  ]
+}

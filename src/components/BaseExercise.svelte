@@ -54,6 +54,7 @@
 		validateNoteEvent,
 		isCompleted,
 		onReset,
+		onComplete,
 		initialNote,
 		showScore,
 		children,
@@ -64,6 +65,13 @@
 	const EXPECTED_NOTES_SHOW_AFTER_MISTAKES = 5;
 
 	let selectedNote: Note = $state(initialNote ?? 'C');
+
+	$effect(() => {
+		if (initialNote !== undefined && initialNote !== selectedNote) {
+			selectedNote = initialNote;
+			resetExercise();
+		}
+	});
 	let noteEvents: NoteEvent[] = $state([]);
 	let mistakes = $state(0);
 	let collectedNotes: Set<MidiNote> = $state(new Set());
@@ -217,6 +225,7 @@
 		const accuracy = Math.round(((expectedNotes.length - mistakes) / expectedNotes.length) * 100);
 		showFeedback(`Exercise completed! Time: ${timeElapsed}ms, Accuracy: ${accuracy}%`, 'success');
 		audioManager.playSound?.('success');
+		onComplete?.();
 		resetExercise();
 	}
 

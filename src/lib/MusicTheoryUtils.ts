@@ -267,7 +267,7 @@ export function calculateOptimalRange(
 export function getNoteRole(noteNumber: MidiNote, rootNumber: MidiNote): NoteRole | 'unknown' {
 	// Yeah... I should do noteNumber: Note, rootNumber: Note and convert here....
 	const normalizedNote = noteNumber % 12;
-	const difference = normalizedNote - (rootNumber % 12);
+	const difference = (normalizedNote - (rootNumber % 12) + 12) % 12;
 	switch (difference) {
 		case 0:
 			return 'root';

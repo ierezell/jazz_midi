@@ -1,0 +1,39 @@
+{
+  "name": "All The Things You Are",
+  "composer": "Jerome Kern",
+  "key": "Ab",
+  "chords": [
+    {
+      "note": "F",
+      "type": "min7"
+    },
+    {
+      "note": "Bb",
+      "type": "min7"
+    },
+    {
+      "note": "Eb",
+      "type": "7"
+    },
+    {
+      "note": "Ab",
+      "type": "maj7"
+    },
+    {
+      "note": "Db",
+      "type": "maj7"
+    },
+    {
+      "note": "G",
+      "type": "7"
+    },
+    {
+      "note": "C",
+      "type": "maj7"
+    },
+    {
+      "note": "C",
+      "type": "maj7"
+    }
+  ]
+}

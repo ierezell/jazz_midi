@@ -39,19 +39,11 @@
 	let playedNotes: Set<MidiNote> = $state(new Set());
 	// For sequential mode we track the actual played order
 	let playedSequence: MidiNote[] = $state([]);
-	let exerciseCompleted = $state(false);
 
 	function handleParentReset(): void {
 		playedNotes = new Set();
 		playedSequence = [];
-		exerciseCompleted = false;
 	}
-
-	$effect(() => {
-		if (exerciseCompleted && onComplete) {
-			onComplete();
-		}
-	});
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
 		const scaleNotes = generateExpectedNotesFor(selectedNote, scaleMode, handMode);
@@ -207,13 +199,6 @@
 	{description}
 >
 	{#snippet children(api: any)}
-		{@const wasCompleted = exerciseCompleted}
-		{@const isNowCompleted = api.completed}
-		{#if isNowCompleted && !wasCompleted}
-			{(exerciseCompleted = true)}
-		{:else if !isNowCompleted && wasCompleted}
-			{(exerciseCompleted = false)}
-		{/if}
 		<div class="scale-controls">
 			{#if !randomMode}
 				<div class="control-group">
