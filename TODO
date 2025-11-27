@@ -1,9 +1,0 @@
-- Scale does not start on scale note
-- Once scale completed in random does not move to next exercice
-- No armor ? 
-- After X tries show notes on keyboard in green
-- Correct printed notes, not correct expected ?? 
-- Hands to far in split
-- Add more tests
-
-- Ensure that BaseExercice and scale are using correct props, and children (scale) is not using it's own.
