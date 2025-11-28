@@ -1,5 +1,3 @@
 - Profile page/stats broken af
 - debug mode could have more love
-- Home can have a facelifting
-- navbar needs more love and organisation
 - UI / UX

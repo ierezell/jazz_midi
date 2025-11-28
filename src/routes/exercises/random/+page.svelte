@@ -217,29 +217,29 @@
 		{#key exerciseKey}
 			{#if currentConfig.type === 'chord'}
 				<ChordsPage
-						randomMode={true}
-						onComplete={handleExerciseComplete}
-						chordType={currentConfig.chordType || 'maj7'}
-						inversion={currentConfig.inversion || 0}
-						voicing={currentConfig.voicing || 'full-right'}
-						rootKey={currentConfig.key}
-					/>
-				{:else if currentConfig.type === 'scale'}
-					<ScalesPage
-						randomMode={true}
-						onComplete={handleExerciseComplete}
-						scaleMode={currentConfig.scaleMode}
-						sequentialMode={Math.random() > 0.5}
-						rootKey={currentConfig.key}
-					/>
-				{:else if currentConfig.type === 'II-V-I'}
-					<TwoFiveOnesPage
-						randomMode={true}
-						onComplete={handleExerciseComplete}
-						inversion={currentConfig.inversion}
-						voicing={currentConfig.voicing}
-						rootKey={currentConfig.key}
-					/>
+					randomMode={true}
+					onComplete={handleExerciseComplete}
+					chordType={currentConfig.chordType || 'maj7'}
+					inversion={currentConfig.inversion || 0}
+					voicing={currentConfig.voicing || 'full-right'}
+					rootKey={currentConfig.key}
+				/>
+			{:else if currentConfig.type === 'scale'}
+				<ScalesPage
+					randomMode={true}
+					onComplete={handleExerciseComplete}
+					scaleMode={currentConfig.scaleMode}
+					sequentialMode={Math.random() > 0.5}
+					rootKey={currentConfig.key}
+				/>
+			{:else if currentConfig.type === 'II-V-I'}
+				<TwoFiveOnesPage
+					randomMode={true}
+					onComplete={handleExerciseComplete}
+					inversion={currentConfig.inversion}
+					voicing={currentConfig.voicing}
+					rootKey={currentConfig.key}
+				/>
 				<div>
 					<!-- TODO: Refactor to use actual exercise components, not Svelte pages -->
 					Random exercise type: {currentConfig.type} (component not implemented)

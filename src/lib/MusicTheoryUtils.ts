@@ -1,5 +1,11 @@
 import type { ChordVoicing, Inversion, IntervalType } from './types/notes';
-import { MidiToNote, NoteToMidi, DEFAULT_OCTAVE, DEFAULT_MIDDLE_C, INTERVAL_SEMITONES } from './types/notes.constants';
+import {
+	MidiToNote,
+	NoteToMidi,
+	DEFAULT_OCTAVE,
+	DEFAULT_MIDDLE_C,
+	INTERVAL_SEMITONES
+} from './types/notes.constants';
 import type { Chord, ChordType, MidiNote, Note, NoteFullName, NoteRole } from './types/types';
 
 const inverseTriadChord = (
@@ -164,6 +170,51 @@ export const chords = (
 	}
 };
 
+export function getVoicedChordNotes(chord: Chord, voicing: ChordVoicing): MidiNote[] {
+	const allChordNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
+		(note) => note !== undefined
+	) as MidiNote[];
+
+	// Calculate 9th (Root + 14 semitones)
+	const ninth = (chord.root + 14) as MidiNote;
+
+	switch (voicing) {
+		case 'full-right':
+			return allChordNotes;
+		case 'full-left':
+			return allChordNotes.map((n) => (n - 12) as MidiNote).filter((n) => n >= 24);
+		case '1735':
+			return [
+				(chord.root - 12) as MidiNote,
+				((chord.seventh || chord.root) - 12) as MidiNote,
+				chord.third,
+				chord.fifth
+			].filter((n) => n !== undefined && n >= 24) as MidiNote[];
+		case '1537':
+			return [
+				(chord.root - 12) as MidiNote,
+				(chord.fifth - 12) as MidiNote,
+				chord.third,
+				chord.seventh || chord.root
+			].filter((n) => n !== undefined && n >= 24) as MidiNote[];
+		case 'rootless-a':
+			// Type A: 3, 5, 7, 9
+			return [chord.third, chord.fifth, chord.seventh, ninth].filter(
+				(n) => n !== undefined
+			) as MidiNote[];
+		case 'rootless-b':
+			// Type B: 7, 9, 3, 5
+			return [
+				chord.seventh,
+				ninth,
+				(chord.third + 12) as MidiNote,
+				(chord.fifth + 12) as MidiNote
+			].filter((n) => n !== undefined) as MidiNote[];
+		default:
+			return allChordNotes;
+	}
+}
+
 export function generateChordNotesDataFromChord(
 	chord: Chord,
 	voicing: ChordVoicing
@@ -171,59 +222,41 @@ export function generateChordNotesDataFromChord(
 	leftHand: NoteFullName[][];
 	rightHand: NoteFullName[][];
 } {
-	const allChordNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
-		(note) => note !== undefined
-	) as MidiNote[];
+	const voicedNotes = getVoicedChordNotes(chord, voicing);
 
 	switch (voicing) {
-		case 'full-right': {
-			// All notes in the right hand
+		case 'full-right':
 			return {
 				leftHand: [],
-				rightHand: [allChordNotes.map((midi) => MidiToNote[midi])]
+				rightHand: [voicedNotes.map((midi) => MidiToNote[midi])]
 			};
-		}
-		case 'full-left': {
-			// All notes in the left hand, lowered by one octave
-			const lowered = allChordNotes
-				.map((midi) => (midi - 12) as MidiNote)
-				.filter((n) => n >= 24) as MidiNote[];
+		case 'full-left':
 			return {
-				leftHand: [lowered.map((midi) => MidiToNote[midi])],
+				leftHand: [voicedNotes.map((midi) => MidiToNote[midi])],
 				rightHand: []
 			};
-		}
-		case '1735': {
-			// root & seventh in left hand (lowered by an octave), third & fifth in right hand
-			const left = [
-				(chord.root - 12) as MidiNote,
-				((chord.seventh || chord.root) - 12) as MidiNote
-			].filter((n) => n !== undefined && n >= 24) as MidiNote[];
-			const right = [chord.third, chord.fifth].filter((n) => n !== undefined) as MidiNote[];
-			return {
-				leftHand: [left.map((midi) => MidiToNote[midi])],
-				rightHand: [right.map((midi) => MidiToNote[midi])]
-			};
-		}
+		case '1735':
 		case '1537': {
-			// root & fifth in left hand (lowered by an octave), third & seventh in right hand
-			const left = [
-				(chord.root - 12) as MidiNote,
-				(chord.fifth - 12) as MidiNote
-			].filter((n) => n !== undefined && n >= 24) as MidiNote[];
-			const right = [chord.third, chord.seventh || chord.root].filter((n) => n !== undefined) as MidiNote[];
+			// First 2 notes left, next 2 right
+			const left = voicedNotes.slice(0, 2);
+			const right = voicedNotes.slice(2);
 			return {
 				leftHand: [left.map((midi) => MidiToNote[midi])],
 				rightHand: [right.map((midi) => MidiToNote[midi])]
 			};
 		}
-		default: {
-			// Fallback to full-right if unknown voicing
+		case 'rootless-a':
+		case 'rootless-b': {
 			return {
 				leftHand: [],
-				rightHand: [allChordNotes.map((midi) => MidiToNote[midi])]
+				rightHand: [voicedNotes.map((midi) => MidiToNote[midi])]
 			};
 		}
+		default:
+			return {
+				leftHand: [],
+				rightHand: [voicedNotes.map((midi) => MidiToNote[midi])]
+			};
 	}
 }
 
@@ -298,7 +331,7 @@ export function getNoteRole(noteNumber: MidiNote, rootNumber: MidiNote): NoteRol
 export function calculateInterval(
 	rootNote: Note,
 	intervalType: IntervalType,
-	octave: string = DEFAULT_OCTAVE,
+	octave: string = DEFAULT_OCTAVE
 ): MidiNote {
 	const rootNoteName = (rootNote + octave) as NoteFullName;
 	const rootMidi = NoteToMidi[rootNoteName];

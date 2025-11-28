@@ -44,7 +44,7 @@ export interface ExerciseStatistics {
 
 export interface ExerciseResult {
 	exerciseId: string;
-	exerciseType: 'chord' | 'scale' | 'progression';
+	exerciseType: 'chord' | 'scale' | 'progression' | 'partition' | 'rhythm';
 	success: boolean;
 	accuracy: number;
 	timeElapsed: number;

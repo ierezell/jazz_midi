@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { audioManager } from '$lib/AudioManager';
 	import { midiManager } from '$lib/MIDIManager';
+	import { userStatsService } from '$lib/UserStatsService';
 	import { calculateOptimalRange, getNoteRole } from '$lib/MusicTheoryUtils';
 	import {
 		AllNotes,
@@ -45,6 +46,7 @@
 		 * exercises that don't need a staff (e.g. note-name exercises).
 		 */
 		showScore?: boolean;
+		exerciseType?: 'chord' | 'scale' | 'progression' | 'partition' | 'rhythm';
 	}
 
 	let {
@@ -58,7 +60,8 @@
 		initialNote,
 		showScore,
 		children,
-		description
+		description,
+		exerciseType = 'chord'
 	}: BaseExerciseProps & { children?: any } = $props();
 
 	const KEYBOARD_SHOW_AFTER_MISTAKES = 3;
@@ -181,6 +184,17 @@
 			audioManager.playError();
 		}
 
+		if (exerciseType) {
+			userStatsService.updateNoteProgress(
+				note.noteName,
+				exerciseType,
+				undefined,
+				result.isCorrect,
+				0,
+				result.isCorrect ? 100 : 0
+			);
+		}
+
 		if (isCompleted(currentNotes, expectedNotes)) {
 			onCompleteExercise();
 		}
@@ -225,6 +239,20 @@
 		const accuracy = Math.round(((expectedNotes.length - mistakes) / expectedNotes.length) * 100);
 		showFeedback(`Exercise completed! Time: ${timeElapsed}ms, Accuracy: ${accuracy}%`, 'success');
 		audioManager.playSound?.('success');
+
+		if (exerciseType) {
+			userStatsService.recordExerciseResult({
+				exerciseId: window.location.pathname,
+				exerciseType,
+				success: true,
+				accuracy,
+				timeElapsed,
+				mistakes,
+				score: Math.max(0, 100 - mistakes * 10),
+				timestamp: new Date()
+			});
+		}
+
 		onComplete?.();
 		resetExercise();
 	}
@@ -329,7 +357,7 @@
 
 	<div class="control-group">
 		<button onclick={toggleDebug} class="debug-btn">
-			{debugMode ? 'Disable' : 'Enable'} Debug Mode
+			{debugMode ? 'Disable' : 'Enable'} Virtual Keyboard
 		</button>
 		<button onclick={resetExercise} class="reset-btn"> Reset Exercise </button>
 	</div>

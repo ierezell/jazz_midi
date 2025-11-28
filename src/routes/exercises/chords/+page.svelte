@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import { chords, generateChordNotesData } from '$lib/MusicTheoryUtils';
+	import { chords, generateChordNotesData, getVoicedChordNotes } from '$lib/MusicTheoryUtils';
 	import type { ChordVoicing, Inversion } from '$lib/types/notes';
 	import {
 		AllChordTypes,
@@ -68,35 +68,7 @@
 		const rootMidi = NoteToMidi[rootNote];
 		const currentChord = chords(rootMidi, chordType, inversion);
 
-		const allChordNotes = [
-			currentChord.root,
-			currentChord.third,
-			currentChord.fifth,
-			currentChord.seventh
-		].filter((note) => note !== undefined) as MidiNote[];
-
-		switch (voicing) {
-			case 'full-right':
-				return allChordNotes;
-			case 'full-left':
-				return allChordNotes.map((n) => (n as number) - 12).filter((n) => n >= 24) as MidiNote[];
-			case '1735':
-				return [
-					(currentChord.root as number) - 12,
-					((currentChord.seventh || currentChord.root) as number) - 12,
-					currentChord.third,
-					currentChord.fifth
-				].filter((n) => n !== undefined && (n as number) >= 24) as MidiNote[];
-			case '1537':
-				return [
-					(currentChord.root as number) - 12,
-					(currentChord.fifth as number) - 12,
-					currentChord.third,
-					(currentChord.seventh as number) || currentChord.root
-				].filter((n) => n !== undefined && (n as number) >= 24) as MidiNote[];
-			default:
-				return allChordNotes;
-		}
+		return getVoicedChordNotes(currentChord, voicing);
 	}
 
 	function validateNoteEvent(
@@ -104,14 +76,36 @@
 		event: NoteEvent,
 		expectedNotes: MidiNote[]
 	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
-		if (expectedNotes.includes(event.noteNumber)) {
-			return {
-				isCorrect: true,
-				message: 'Correct chord tone!',
-				collected: true,
-				resetCollected: false
-			};
+		// For rootless, we might want to be lenient about octaves if we didn't calculate them perfectly
+		// But BaseExercise expects exact matches usually.
+		// Let's check if the note class matches any expected note class
+
+		const expectedClasses = expectedNotes.map((n) => n % 12);
+		const playedClass = event.noteNumber % 12;
+
+		if (expectedClasses.includes(playedClass)) {
+			// It's a correct note class.
+			// Now check if it's the exact note if we are strict, or just allow it.
+			// Let's try to be exact first.
+			if (expectedNotes.includes(event.noteNumber)) {
+				return {
+					isCorrect: true,
+					message: 'Correct chord tone!',
+					collected: true,
+					resetCollected: false
+				};
+			}
+			// If we are in rootless mode, maybe allow any octave?
+			if (voicing.startsWith('rootless')) {
+				return {
+					isCorrect: true,
+					message: 'Correct chord tone (octave ignored)!',
+					collected: true,
+					resetCollected: false
+				};
+			}
 		}
+
 		return {
 			isCorrect: false,
 			message: 'Not a chord tone. Try again!',
@@ -171,6 +165,16 @@
 	}
 
 	function isCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+		// If rootless, check if we have 4 unique note classes that match expected
+		if (voicing.startsWith('rootless')) {
+			const currentClasses = new Set(currentNotes.map((n) => n % 12));
+			const expectedClasses = new Set(expectedNotes.map((n) => n % 12));
+			return (
+				currentClasses.size === expectedClasses.size &&
+				[...currentClasses].every((c) => expectedClasses.has(c))
+			);
+		}
+
 		return (
 			currentNotes.length === expectedNotes.length &&
 			currentNotes.every((note) => expectedNotes.includes(note))
@@ -225,6 +229,8 @@
 						<option value="full-left">Full Left Hand</option>
 						<option value="1735">1 & 7 Left / 3 & 5 Right</option>
 						<option value="1537">1 & 5 Left / 3 & 7 Right</option>
+						<option value="rootless-a">Rootless A (3-5-7-9)</option>
+						<option value="rootless-b">Rootless B (7-9-3-5)</option>
 					</select>
 				</div>
 			{/if}

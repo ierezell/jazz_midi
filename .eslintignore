@@ -1,0 +1,6 @@
+docs/**
+build/**
+dist/**
+.svelte-kit/**
+node_modules/**
+*.config.js

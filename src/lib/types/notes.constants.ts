@@ -314,7 +314,9 @@ export const AllChordVoicings: ChordVoicing[] = [
 	'full-right',
 	'full-left',
 	'1735',
-	'1537'
+	'1537',
+	'rootless-a',
+	'rootless-b'
 ];
 
 export const AllScaleModes: ScaleMode[] = ['Maj', 'Min', 'Blues'];

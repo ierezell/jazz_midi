@@ -197,6 +197,7 @@
 	onComplete={onComplete ?? (() => {})}
 	initialNote={propKey || 'C'}
 	{description}
+	exerciseType="scale"
 >
 	{#snippet children(api: any)}
 		<div class="scale-controls">

@@ -3,23 +3,31 @@
 <script lang="ts">
 	import type { Achievement, UserProfile, UserStatistics } from '$lib/UserStatsService';
 	import { userStatsService } from '$lib/UserStatsService';
+	import { journeyService } from '$lib/JourneyService';
 	import { onMount } from 'svelte';
 	import StatsWidget from '../../components/StatsWidget.svelte';
 	import type { PageData } from './$types';
+	import { fade, fly } from 'svelte/transition';
+	import { Trophy, Target, Clock, Zap, Edit2, Save, X, Download, Upload } from 'lucide-svelte';
+
 	let { data }: { data: PageData } = $props();
-	let profile = $state<UserProfile>(data.profile);
-	let statistics = $state<UserStatistics>(data.statistics);
-	let achievements = $state<Achievement[]>(data.achievements);
+
+	let profile = $state<UserProfile>(userStatsService.getProfile());
+	let statistics = $state<UserStatistics>(userStatsService.getStatistics());
+	let achievements = $state<Achievement[]>(userStatsService.getAchievements());
+	let currentLevel = $state(journeyService.getCurrentLevel());
+	let levelProgress = $derived(journeyService.getLevelProgress(currentLevel));
+
 	let isEditing = $state(false);
 	let showExportDialog = $state(false);
 	let exportData = $state('');
+
 	let completionRate = $derived(
 		statistics.totalExercises > 0
 			? Math.round((statistics.completedExercises / statistics.totalExercises) * 100)
 			: 0
 	);
-	let levelProgress = $derived(Math.round(((profile.experiencePoints % 1000) / 1000) * 100));
-	let nextLevelXP = $derived(profile.level * 1000 - profile.experiencePoints);
+
 	function formatTime(minutes: number): string {
 		const hours = Math.floor(minutes / 60);
 		const mins = Math.round(minutes % 60);
@@ -28,13 +36,15 @@
 		}
 		return `${mins}m`;
 	}
-	function formatDate(date: Date): string {
+
+	function formatDate(date: Date | string): string {
 		return new Intl.DateTimeFormat('en-US', {
 			year: 'numeric',
 			month: 'short',
 			day: 'numeric'
-		}).format(date);
+		}).format(new Date(date));
 	}
+
 	function getMasteryColor(level: string): string {
 		switch (level) {
 			case 'expert':
@@ -47,22 +57,21 @@
 				return '#6c757d';
 		}
 	}
-	function getTrendArrow(trend: number): string {
-		if (trend > 0) return '↗️';
-		if (trend < 0) return '↘️';
-		return '→';
-	}
+
 	function toggleEdit(): void {
 		isEditing = !isEditing;
 	}
+
 	function saveProfile(): void {
 		userStatsService.updateProfile(profile);
 		isEditing = false;
 	}
+
 	function handleExport(): void {
 		exportData = userStatsService.exportData();
 		showExportDialog = true;
 	}
+
 	function handleImport(event: Event): void {
 		const input = event.target as HTMLInputElement;
 		const file = input.files?.[0];
@@ -82,15 +91,19 @@
 			reader.readAsText(file);
 		}
 	}
+
 	function copyExportData(): void {
 		navigator.clipboard.writeText(exportData);
 		alert('Data copied to clipboard!');
 	}
+
 	onMount(() => {
 		const unsubscribe = userStatsService.subscribe((newStats) => {
 			statistics = newStats;
 			profile = userStatsService.getProfile();
 			achievements = userStatsService.getAchievements();
+			currentLevel = journeyService.getCurrentLevel();
+			levelProgress = journeyService.getLevelProgress(currentLevel);
 		});
 		return () => {
 			unsubscribe();
@@ -102,25 +115,41 @@
 	<title>Profile - Jazz MIDI</title>
 	<meta name="description" content="Your jazz practice progress and statistics" />
 </svelte:head>
+
 <div class="profile-container">
-	<header class="profile-header">
+	<header class="profile-header" in:fade>
 		<div class="avatar-section">
 			<div class="avatar">
 				{profile.avatar || '🎹'}
 			</div>
 			<div class="profile-info">
 				{#if isEditing}
-					<input type="text" bind:value={profile.name} class="name-input" placeholder="Your name" />
-					<div class="edit-actions">
-						<button onclick={saveProfile} class="save-btn">Save</button>
-						<button onclick={toggleEdit} class="cancel-btn">Cancel</button>
+					<div class="edit-mode">
+						<input
+							type="text"
+							bind:value={profile.name}
+							class="name-input"
+							placeholder="Your name"
+						/>
+						<div class="edit-actions">
+							<button onclick={saveProfile} class="icon-btn save" title="Save"
+								><Save size={20} /></button
+							>
+							<button onclick={toggleEdit} class="icon-btn cancel" title="Cancel"
+								><X size={20} /></button
+							>
+						</div>
 					</div>
 				{:else}
-					<h1 class="profile-name">{profile.name}</h1>
-					<button onclick={toggleEdit} class="edit-btn">Edit Profile</button>
+					<div class="view-mode">
+						<h1 class="profile-name">{profile.name}</h1>
+						<button onclick={toggleEdit} class="icon-btn edit" title="Edit Profile"
+							><Edit2 size={18} /></button
+						>
+					</div>
 				{/if}
 				<div class="profile-meta">
-					<span>Level {profile.level}</span>
+					<span class="level-tag">Level {currentLevel.id} - {currentLevel.name}</span>
 					<span>•</span>
 					<span>{profile.experiencePoints} XP</span>
 					<span>•</span>
@@ -130,287 +159,176 @@
 		</div>
 		<div class="level-progress">
 			<div class="progress-header">
-				<span>Level {profile.level}</span>
-				<span>{nextLevelXP} XP to next level</span>
+				<span>Current Level Progress</span>
+				<span>{Math.round(levelProgress)}%</span>
 			</div>
 			<div class="progress-bar">
 				<div class="progress-fill" style="width: {levelProgress}%"></div>
 			</div>
 		</div>
 	</header>
-	<section class="stats-overview">
+
+	<section class="stats-overview" in:fly={{ y: 20, duration: 500, delay: 100 }}>
 		<div class="stat-card highlight">
-			<div class="stat-icon">🎯</div>
+			<div class="stat-icon"><Target size={32} /></div>
 			<div class="stat-content">
 				<div class="stat-value">{completionRate}%</div>
 				<div class="stat-label">Success Rate</div>
 			</div>
 		</div>
 		<div class="stat-card">
-			<div class="stat-icon">📊</div>
+			<div class="stat-icon"><Trophy size={32} /></div>
 			<div class="stat-content">
 				<div class="stat-value">{Math.round(statistics.averageScore)}</div>
 				<div class="stat-label">Avg Score</div>
 			</div>
 		</div>
 		<div class="stat-card">
-			<div class="stat-icon">⏱️</div>
+			<div class="stat-icon"><Clock size={32} /></div>
 			<div class="stat-content">
 				<div class="stat-value">{formatTime(statistics.totalPracticeTime)}</div>
 				<div class="stat-label">Practice Time</div>
 			</div>
 		</div>
 		<div class="stat-card">
-			<div class="stat-icon">🔥</div>
+			<div class="stat-icon"><Zap size={32} /></div>
 			<div class="stat-content">
 				<div class="stat-value">{statistics.currentStreak}</div>
-				<div class="stat-label">Current Streak</div>
+				<div class="stat-label">Day Streak</div>
 			</div>
 		</div>
 	</section>
-	<section class="detailed-stats">
-		<h2>Detailed Progress</h2>
-		<StatsWidget showDetailed={true} />
-	</section>
-	<section class="exercise-breakdown">
-		<h2>Exercise Performance</h2>
-		<div class="exercise-grid">
-			<div class="exercise-card">
-				<div class="exercise-header">
-					<h3>🎵 Chords</h3>
-					<span
-						class="mastery-badge"
-						style="background-color: {getMasteryColor(statistics.chordStats.masteryLevel)}"
-					>
-						{statistics.chordStats.masteryLevel}
-					</span>
-				</div>
-				<div class="exercise-stats">
-					<div class="stat-row">
-						<span>Attempted:</span>
-						<span>{statistics.chordStats.attempted}</span>
-					</div>
-					<div class="stat-row">
-						<span>Completed:</span>
-						<span>{statistics.chordStats.completed}</span>
-					</div>
-					<div class="stat-row">
-						<span>Best Score:</span>
-						<span>{statistics.chordStats.bestScore}</span>
-					</div>
-					<div class="stat-row">
-						<span>Avg Accuracy:</span>
-						<span>{Math.round(statistics.chordStats.averageAccuracy)}%</span>
-					</div>
-					<div class="stat-row">
-						<span>Practice Time:</span>
-						<span>{formatTime(statistics.chordStats.totalTime)}</span>
-					</div>
-				</div>
-			</div>
-			<div class="exercise-card">
-				<div class="exercise-header">
-					<h3>🎼 Scales</h3>
-					<span
-						class="mastery-badge"
-						style="background-color: {getMasteryColor(statistics.scaleStats.masteryLevel)}"
-					>
-						{statistics.scaleStats.masteryLevel}
-					</span>
-				</div>
-				<div class="exercise-stats">
-					<div class="stat-row">
-						<span>Attempted:</span>
-						<span>{statistics.scaleStats.attempted}</span>
-					</div>
-					<div class="stat-row">
-						<span>Completed:</span>
-						<span>{statistics.scaleStats.completed}</span>
-					</div>
-					<div class="stat-row">
-						<span>Best Score:</span>
-						<span>{statistics.scaleStats.bestScore}</span>
-					</div>
-					<div class="stat-row">
-						<span>Avg Accuracy:</span>
-						<span>{Math.round(statistics.scaleStats.averageAccuracy)}%</span>
-					</div>
-					<div class="stat-row">
-						<span>Practice Time:</span>
-						<span>{formatTime(statistics.scaleStats.totalTime)}</span>
-					</div>
-				</div>
-			</div>
-			<div class="exercise-card">
-				<div class="exercise-header">
-					<h3>🎸 Progressions</h3>
-					<span
-						class="mastery-badge"
-						style="background-color: {getMasteryColor(statistics.progressionStats.masteryLevel)}"
-					>
-						{statistics.progressionStats.masteryLevel}
-					</span>
-				</div>
-				<div class="exercise-stats">
-					<div class="stat-row">
-						<span>Attempted:</span>
-						<span>{statistics.progressionStats.attempted}</span>
-					</div>
-					<div class="stat-row">
-						<span>Completed:</span>
-						<span>{statistics.progressionStats.completed}</span>
-					</div>
-					<div class="stat-row">
-						<span>Best Score:</span>
-						<span>{statistics.progressionStats.bestScore}</span>
-					</div>
-					<div class="stat-row">
-						<span>Avg Accuracy:</span>
-						<span>{Math.round(statistics.progressionStats.averageAccuracy)}%</span>
-					</div>
-					<div class="stat-row">
-						<span>Practice Time:</span>
-						<span>{formatTime(statistics.progressionStats.totalTime)}</span>
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
-	<section class="mastery-section">
-		<h2>Mastery Progress</h2>
-		{#if statistics.masteredChords.length > 0}
-			<div class="mastery-category">
-				<h3>🎵 Mastered Chords</h3>
-				<div class="mastery-grid">
-					{#each statistics.masteredChords.filter((c) => c.isMastered) as chord}
-						<div class="mastery-item">
-							<div class="mastery-name">{chord.root}{chord.chordType}</div>
-							<div class="mastery-level">{chord.masteryLevel}%</div>
+
+	<div class="content-grid">
+		<section class="main-stats" in:fly={{ y: 20, duration: 500, delay: 200 }}>
+			<h2>Detailed Progress</h2>
+			<StatsWidget showDetailed={true} />
+
+			<div class="exercise-breakdown">
+				<h3>Performance by Category</h3>
+				<div class="exercise-grid">
+					<div class="exercise-card">
+						<div class="exercise-header">
+							<h4>🎵 Chords</h4>
+							<span
+								class="mastery-badge"
+								style="background-color: {getMasteryColor(statistics.chordStats.masteryLevel)}"
+							>
+								{statistics.chordStats.masteryLevel}
+							</span>
 						</div>
-					{/each}
-				</div>
-			</div>
-		{/if}
-		{#if statistics.masteredChords.some((c) => c.isLearning)}
-			<div class="mastery-category">
-				<h3>📚 Currently Learning</h3>
-				<div class="learning-grid">
-					{#each statistics.masteredChords.filter((c) => c.isLearning && !c.isMastered) as chord}
-						<div class="learning-item">
-							<div class="learning-header">
-								<span class="learning-name">{chord.root}{chord.chordType}</span>
-								<span class="learning-progress">{chord.masteryLevel}%</span>
+						<div class="exercise-stats">
+							<div class="stat-row">
+								<span>Completed</span><span>{statistics.chordStats.completed}</span>
 							</div>
-							<div class="progress-bar small">
-								<div class="progress-fill" style="width: {chord.masteryLevel}%"></div>
-							</div>
-							<div class="learning-meta">
-								{chord.attemptsCount} attempts • Last practiced {formatDate(chord.lastPracticed)}
+							<div class="stat-row">
+								<span>Accuracy</span><span
+									>{Math.round(statistics.chordStats.averageAccuracy)}%</span
+								>
 							</div>
 						</div>
-					{/each}
-				</div>
-			</div>
-		{/if}
-	</section>
-	<section class="achievements-section">
-		<h2>🏆 Achievements</h2>
-		<div class="achievements-grid">
-			{#each achievements as achievement}
-				<div class="achievement-card" class:unlocked={achievement.progress >= 100}>
-					<div class="achievement-icon">{achievement.icon}</div>
-					<div class="achievement-content">
-						<h4 class="achievement-name">{achievement.name}</h4>
-						<p class="achievement-description">{achievement.description}</p>
-						<div class="achievement-progress">
-							<div class="progress-bar small">
-								<div class="progress-fill" style="width: {achievement.progress}%"></div>
-							</div>
-							<span class="progress-text">{achievement.progress}%</span>
-						</div>
-						{#if achievement.unlockedAt}
-							<div class="unlock-date">
-								Unlocked {formatDate(achievement.unlockedAt)}
-							</div>
-						{/if}
 					</div>
-				</div>
-			{/each}
-		</div>
-	</section>
-	{#if statistics.recentSessions.length > 0}
-		<section class="activity-section">
-			<h2>📅 Recent Sessions</h2>
-			<div class="sessions-list">
-				{#each statistics.recentSessions as session}
-					<div class="session-item">
-						<div class="session-date">{formatDate(session.date)}</div>
-						<div class="session-stats">
-							<span>{formatTime(session.duration)}</span>
-							<span>•</span>
-							<span>{session.exercisesCompleted} exercises</span>
-							<span>•</span>
-							<span>Avg score: {Math.round(session.averageScore)}</span>
+					<div class="exercise-card">
+						<div class="exercise-header">
+							<h4>🎼 Scales</h4>
+							<span
+								class="mastery-badge"
+								style="background-color: {getMasteryColor(statistics.scaleStats.masteryLevel)}"
+							>
+								{statistics.scaleStats.masteryLevel}
+							</span>
 						</div>
-						<div class="session-category">
-							Focus: {session.topCategory}
+						<div class="exercise-stats">
+							<div class="stat-row">
+								<span>Completed</span><span>{statistics.scaleStats.completed}</span>
+							</div>
+							<div class="stat-row">
+								<span>Accuracy</span><span
+									>{Math.round(statistics.scaleStats.averageAccuracy)}%</span
+								>
+							</div>
 						</div>
 					</div>
-				{/each}
+					<div class="exercise-card">
+						<div class="exercise-header">
+							<h4>🎸 Progressions</h4>
+							<span
+								class="mastery-badge"
+								style="background-color: {getMasteryColor(
+									statistics.progressionStats.masteryLevel
+								)}"
+							>
+								{statistics.progressionStats.masteryLevel}
+							</span>
+						</div>
+						<div class="exercise-stats">
+							<div class="stat-row">
+								<span>Completed</span><span>{statistics.progressionStats.completed}</span>
+							</div>
+							<div class="stat-row">
+								<span>Accuracy</span><span
+									>{Math.round(statistics.progressionStats.averageAccuracy)}%</span
+								>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</section>
-	{/if}
-	<section class="data-section">
-		<h2>⚙️ Data Management</h2>
-		<div class="data-actions">
-			<button onclick={handleExport} class="action-btn export"> 📤 Export Data </button>
-			<label for="import-file" class="action-btn import">
-				📥 Import Data
-				<input
-					id="import-file"
-					type="file"
-					accept=".json"
-					onchange={handleImport}
-					style="display: none;"
-				/>
-			</label>
-		</div>
-	</section>
+
+		<aside class="sidebar" in:fly={{ x: 20, duration: 500, delay: 300 }}>
+			<section class="achievements-section">
+				<h2>🏆 Achievements</h2>
+				<div class="achievements-list">
+					{#each achievements as achievement}
+						<div class="achievement-item" class:unlocked={achievement.progress >= 100}>
+							<div class="achievement-icon">{achievement.icon}</div>
+							<div class="achievement-info">
+								<h4>{achievement.name}</h4>
+								<div class="progress-bar small">
+									<div class="progress-fill" style="width: {achievement.progress}%"></div>
+								</div>
+							</div>
+						</div>
+					{/each}
+				</div>
+			</section>
+
+			<section class="data-section">
+				<h2>⚙️ Data</h2>
+				<div class="data-actions">
+					<button onclick={handleExport} class="action-btn export">
+						<Download size={16} /> Export
+					</button>
+					<label for="import-file" class="action-btn import">
+						<Upload size={16} /> Import
+						<input
+							id="import-file"
+							type="file"
+							accept=".json"
+							onchange={handleImport}
+							style="display: none;"
+						/>
+					</label>
+				</div>
+			</section>
+		</aside>
+	</div>
 </div>
+
 {#if showExportDialog}
-	<div
-		class="modal-overlay"
-		role="button"
-		tabindex="0"
-		onclick={() => (showExportDialog = false)}
-		onkeydown={(e) => {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
-				showExportDialog = false;
-			}
-		}}
-	>
-		<div
-			class="modal"
-			role="dialog"
-			aria-labelledby="export-dialog-title"
-			tabindex="0"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
-		>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="modal-overlay" role="button" tabindex="-1" onclick={() => (showExportDialog = false)}>
+		<div class="modal" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()}>
 			<div class="modal-header">
-				<h3 id="export-dialog-title">Export Your Data</h3>
-				<button onclick={() => (showExportDialog = false)} class="close-btn">×</button>
+				<h3>Export Data</h3>
+				<button onclick={() => (showExportDialog = false)} class="close-btn"><X size={20} /></button
+				>
 			</div>
 			<div class="modal-content">
-				<p>Your practice data has been generated. You can copy it or save it to a file:</p>
 				<textarea readonly class="export-textarea">{exportData}</textarea>
-				<div class="modal-actions">
-					<button onclick={copyExportData} class="action-btn">Copy to Clipboard</button>
-					<button onclick={() => (showExportDialog = false)} class="action-btn secondary"
-						>Close</button
-					>
-				</div>
+				<button onclick={copyExportData} class="action-btn primary">Copy to Clipboard</button>
 			</div>
 		</div>
 	</div>
@@ -420,390 +338,354 @@
 	.profile-container {
 		max-width: 1200px;
 		margin: 0 auto;
-		padding: 2rem;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		min-height: 100vh;
-		color: white;
 	}
+
 	.profile-header {
-		background: rgba(255, 255, 255, 0.1);
+		background: rgba(255, 255, 255, 0.05);
 		backdrop-filter: blur(10px);
-		border-radius: 1rem;
+		border-radius: 1.5rem;
 		padding: 2rem;
 		margin-bottom: 2rem;
+		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
+
 	.avatar-section {
 		display: flex;
 		align-items: center;
 		gap: 2rem;
 		margin-bottom: 2rem;
 	}
+
 	.avatar {
-		width: 120px;
-		height: 120px;
+		width: 100px;
+		height: 100px;
 		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.2);
+		background: rgba(255, 255, 255, 0.1);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		font-size: 3rem;
-		border: 4px solid rgba(255, 255, 255, 0.3);
+		border: 4px solid rgba(255, 255, 255, 0.2);
 	}
+
 	.profile-info {
 		flex: 1;
 	}
+
+	.view-mode,
+	.edit-mode {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin-bottom: 0.5rem;
+	}
+
 	.profile-name {
 		font-size: 2.5rem;
 		font-weight: bold;
-		margin: 0 0 0.5rem 0;
+		margin: 0;
+		background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+		background-clip: text;
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
 	}
+
 	.name-input {
-		font-size: 2.5rem;
-		font-weight: bold;
+		font-size: 1.5rem;
 		background: rgba(255, 255, 255, 0.1);
-		border: 2px solid rgba(255, 255, 255, 0.3);
+		border: 1px solid rgba(255, 255, 255, 0.2);
 		border-radius: 0.5rem;
 		padding: 0.5rem;
 		color: white;
-		margin-bottom: 1rem;
 	}
-	.edit-actions {
-		display: flex;
-		gap: 1rem;
-		margin-bottom: 1rem;
-	}
-	.edit-btn,
-	.save-btn,
-	.cancel-btn {
-		background: rgba(255, 255, 255, 0.2);
-		border: 1px solid rgba(255, 255, 255, 0.3);
-		border-radius: 0.5rem;
+
+	.icon-btn {
+		background: rgba(255, 255, 255, 0.1);
+		border: none;
 		color: white;
-		padding: 0.5rem 1rem;
+		padding: 0.5rem;
+		border-radius: 50%;
 		cursor: pointer;
-		transition: background 0.2s;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s;
 	}
-	.edit-btn:hover,
-	.save-btn:hover {
-		background: rgba(255, 255, 255, 0.3);
+
+	.icon-btn:hover {
+		background: rgba(255, 255, 255, 0.2);
 	}
-	.cancel-btn:hover {
-		background: rgba(220, 53, 69, 0.3);
-	}
+
 	.profile-meta {
 		display: flex;
-		gap: 0.5rem;
-		color: rgba(255, 255, 255, 0.8);
-		font-size: 1.1rem;
+		gap: 1rem;
+		color: rgba(255, 255, 255, 0.6);
+		font-size: 0.9rem;
+		align-items: center;
 	}
-	.level-progress {
-		margin-top: 1rem;
+
+	.level-tag {
+		background: #4caf50;
+		color: white;
+		padding: 0.25rem 0.75rem;
+		border-radius: 1rem;
+		font-weight: bold;
+		font-size: 0.8rem;
 	}
+
+	.progress-bar {
+		height: 8px;
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 4px;
+		overflow: hidden;
+	}
+
+	.progress-bar.small {
+		height: 4px;
+	}
+
+	.progress-fill {
+		height: 100%;
+		background: #4caf50;
+		transition: width 0.5s ease;
+	}
+
 	.progress-header {
 		display: flex;
 		justify-content: space-between;
 		margin-bottom: 0.5rem;
-		font-weight: 500;
+		font-size: 0.9rem;
+		color: rgba(255, 255, 255, 0.8);
 	}
-	.progress-bar {
-		height: 1rem;
-		background: rgba(255, 255, 255, 0.2);
-		border-radius: 0.5rem;
-		overflow: hidden;
-	}
-	.progress-bar.small {
-		height: 0.5rem;
-	}
-	.progress-fill {
-		height: 100%;
-		background: linear-gradient(90deg, #4caf50, #8bc34a);
-		transition: width 0.3s ease;
-	}
+
 	.stats-overview {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 		gap: 1.5rem;
 		margin-bottom: 2rem;
 	}
+
 	.stat-card {
-		background: rgba(255, 255, 255, 0.1);
+		background: rgba(255, 255, 255, 0.05);
 		backdrop-filter: blur(10px);
 		border-radius: 1rem;
 		padding: 1.5rem;
 		display: flex;
 		align-items: center;
 		gap: 1rem;
+		border: 1px solid rgba(255, 255, 255, 0.1);
 		transition: transform 0.2s;
 	}
+
 	.stat-card:hover {
 		transform: translateY(-5px);
+		background: rgba(255, 255, 255, 0.1);
 	}
+
 	.stat-card.highlight {
-		background: linear-gradient(135deg, #4caf50, #45a049);
+		background: linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0.1) 100%);
+		border-color: rgba(76, 175, 80, 0.3);
 	}
+
 	.stat-icon {
-		font-size: 2rem;
+		color: rgba(255, 255, 255, 0.8);
 	}
+
 	.stat-value {
-		font-size: 2rem;
+		font-size: 1.8rem;
 		font-weight: bold;
+		line-height: 1;
 		margin-bottom: 0.25rem;
 	}
+
 	.stat-label {
-		color: rgba(255, 255, 255, 0.8);
 		font-size: 0.9rem;
+		color: rgba(255, 255, 255, 0.6);
 	}
-	.exercise-breakdown,
-	.mastery-section,
-	.achievements-section,
-	.activity-section,
-	.data-section {
-		background: rgba(255, 255, 255, 0.1);
-		backdrop-filter: blur(10px);
+
+	.content-grid {
+		display: grid;
+		grid-template-columns: 1fr 300px;
+		gap: 2rem;
+	}
+
+	@media (max-width: 900px) {
+		.content-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.main-stats,
+	.sidebar section {
+		background: rgba(255, 255, 255, 0.05);
 		border-radius: 1rem;
-		padding: 2rem;
+		padding: 1.5rem;
 		margin-bottom: 2rem;
+		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
-	.exercise-breakdown h2,
-	.mastery-section h2,
-	.achievements-section h2,
-	.activity-section h2,
-	.data-section h2 {
+
+	h2,
+	h3 {
 		margin: 0 0 1.5rem 0;
-		color: white;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
+		font-size: 1.2rem;
+		color: rgba(255, 255, 255, 0.9);
 	}
+
 	.exercise-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 1.5rem;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 1rem;
 	}
+
 	.exercise-card {
-		background: rgba(255, 255, 255, 0.1);
+		background: rgba(255, 255, 255, 0.05);
 		border-radius: 0.75rem;
-		padding: 1.5rem;
+		padding: 1rem;
 	}
+
 	.exercise-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 1rem;
 	}
-	.exercise-header h3 {
+
+	.exercise-header h4 {
 		margin: 0;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
+		font-size: 1rem;
 	}
+
 	.mastery-badge {
-		padding: 0.25rem 0.75rem;
+		font-size: 0.7rem;
+		padding: 0.2rem 0.5rem;
 		border-radius: 1rem;
-		font-size: 0.8rem;
-		font-weight: bold;
 		color: white;
-		text-transform: capitalize;
+		text-transform: uppercase;
+		font-weight: bold;
 	}
-	.exercise-stats {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
+
 	.stat-row {
 		display: flex;
 		justify-content: space-between;
-		padding: 0.25rem 0;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-	}
-	.mastery-category {
-		margin-bottom: 2rem;
-	}
-	.mastery-category h3 {
-		margin-bottom: 1rem;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-	.mastery-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-		gap: 1rem;
-	}
-	.mastery-item {
-		background: rgba(255, 255, 255, 0.1);
-		border-radius: 0.5rem;
-		padding: 1rem;
-		text-align: center;
-	}
-	.mastery-name {
-		font-weight: bold;
-		margin-bottom: 0.5rem;
-	}
-	.mastery-level {
-		color: #4caf50;
-		font-weight: bold;
-	}
-	.learning-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 1rem;
-	}
-	.learning-item {
-		background: rgba(255, 255, 255, 0.1);
-		border-radius: 0.5rem;
-		padding: 1rem;
-	}
-	.learning-header {
-		display: flex;
-		justify-content: space-between;
-		margin-bottom: 0.5rem;
-	}
-	.learning-name {
-		font-weight: bold;
-	}
-	.learning-progress {
-		color: #ffc107;
-		font-weight: bold;
-	}
-	.learning-meta {
-		font-size: 0.8rem;
-		color: rgba(255, 255, 255, 0.7);
-		margin-top: 0.5rem;
-	}
-	.achievements-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 1.5rem;
-	}
-	.achievement-card {
-		background: rgba(255, 255, 255, 0.05);
-		border: 2px solid rgba(255, 255, 255, 0.1);
-		border-radius: 0.75rem;
-		padding: 1.5rem;
-		display: flex;
-		gap: 1rem;
-		transition: all 0.3s ease;
-	}
-	.achievement-card.unlocked {
-		background: rgba(255, 215, 0, 0.1);
-		border-color: rgba(255, 215, 0, 0.3);
-		box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-	}
-	.achievement-icon {
-		font-size: 2rem;
-		flex-shrink: 0;
-	}
-	.achievement-content {
-		flex: 1;
-	}
-	.achievement-name {
-		margin: 0 0 0.5rem 0;
-		font-weight: bold;
-	}
-	.achievement-description {
-		margin: 0 0 1rem 0;
-		color: rgba(255, 255, 255, 0.8);
 		font-size: 0.9rem;
+		color: rgba(255, 255, 255, 0.7);
+		margin-bottom: 0.25rem;
 	}
-	.achievement-progress {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 0.5rem;
-	}
-	.progress-text {
-		font-size: 0.8rem;
-		color: rgba(255, 255, 255, 0.8);
-	}
-	.unlock-date {
-		font-size: 0.8rem;
-		color: #ffd700;
-		font-weight: bold;
-	}
-	.sessions-list {
+
+	.achievements-list {
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
 	}
-	.session-item {
-		background: rgba(255, 255, 255, 0.1);
-		border-radius: 0.5rem;
-		padding: 1rem;
-		border-left: 4px solid #4caf50;
-	}
-	.session-date {
-		font-weight: bold;
-		margin-bottom: 0.5rem;
-	}
-	.session-stats {
-		display: flex;
-		gap: 0.5rem;
-		color: rgba(255, 255, 255, 0.8);
-		margin-bottom: 0.25rem;
-	}
-	.session-category {
-		font-size: 0.9rem;
-		color: rgba(255, 255, 255, 0.7);
-	}
-	.data-actions {
+
+	.achievement-item {
 		display: flex;
 		gap: 1rem;
-		flex-wrap: wrap;
+		padding: 0.75rem;
+		background: rgba(255, 255, 255, 0.05);
+		border-radius: 0.5rem;
+		opacity: 0.5;
 	}
+
+	.achievement-item.unlocked {
+		opacity: 1;
+		background: rgba(255, 215, 0, 0.1);
+		border: 1px solid rgba(255, 215, 0, 0.2);
+	}
+
+	.achievement-icon {
+		font-size: 1.5rem;
+	}
+
+	.achievement-info h4 {
+		margin: 0 0 0.5rem 0;
+		font-size: 0.9rem;
+	}
+
+	.data-actions {
+		display: flex;
+		gap: 0.5rem;
+	}
+
 	.action-btn {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.75rem;
 		background: rgba(255, 255, 255, 0.1);
-		border: 2px solid rgba(255, 255, 255, 0.2);
+		border: 1px solid rgba(255, 255, 255, 0.2);
 		border-radius: 0.5rem;
 		color: white;
-		padding: 0.75rem 1.5rem;
 		cursor: pointer;
-		text-decoration: none;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
+		font-size: 0.9rem;
 		transition: all 0.2s;
-		font-weight: 500;
 	}
+
 	.action-btn:hover {
 		background: rgba(255, 255, 255, 0.2);
-		border-color: rgba(255, 255, 255, 0.3);
-		transform: translateY(-2px);
 	}
-	.action-btn.export {
-		background: rgba(76, 175, 80, 0.2);
-		border-color: rgba(76, 175, 80, 0.4);
+
+	.action-btn.primary {
+		background: #4caf50;
+		border-color: #4caf50;
 	}
-	.action-btn.import {
-		background: rgba(33, 150, 243, 0.2);
-		border-color: rgba(33, 150, 243, 0.4);
-	}
-	.action-btn.secondary {
-		background: rgba(108, 117, 125, 0.2);
-		border-color: rgba(108, 117, 125, 0.4);
-	}
+
 	.modal-overlay {
 		position: fixed;
 		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background: rgba(0, 0, 0, 0.7);
+		background: rgba(0, 0, 0, 0.8);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		z-index: 1000;
+		z-index: 100;
 	}
+
 	.modal {
 		background: #2c3e50;
+		padding: 2rem;
 		border-radius: 1rem;
-		padding: 0;
+		width: 90%;
+		max-width: 500px;
+	}
+
+	.modal-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1rem;
+	}
+
+	.export-textarea {
+		width: 100%;
+		height: 200px;
+		background: rgba(0, 0, 0, 0.2);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		color: white;
+		padding: 0.5rem;
+		margin-bottom: 1rem;
+		border-radius: 0.5rem;
+	}
+
+	.close-btn {
+		background: none;
+		border: none;
+		color: white;
+		cursor: pointer;
+	}
+
+	.modal {
 		max-width: 600px;
 		width: 90%;
 		max-height: 80vh;
 		overflow: hidden;
 		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 	}
+
 	.modal-header {
 		background: #34495e;
 		padding: 1.5rem;
@@ -812,10 +694,12 @@
 		align-items: center;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
+
 	.modal-header h3 {
 		margin: 0;
 		color: white;
 	}
+
 	.close-btn {
 		background: none;
 		border: none;
@@ -850,12 +734,7 @@
 		resize: vertical;
 		margin: 1rem 0;
 	}
-	.modal-actions {
-		display: flex;
-		gap: 1rem;
-		justify-content: flex-end;
-		margin-top: 1rem;
-	}
+
 	@media (max-width: 768px) {
 		.profile-container {
 			padding: 1rem;
@@ -878,13 +757,8 @@
 			grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 			gap: 1rem;
 		}
-		.exercise-grid,
-		.achievements-grid,
-		.learning-grid {
+		.exercise-grid {
 			grid-template-columns: 1fr;
-		}
-		.mastery-grid {
-			grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
 		}
 		.data-actions {
 			flex-direction: column;

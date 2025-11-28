@@ -137,11 +137,17 @@
 			const correctAnswer = englishToLatin
 				? ENGLISH_TO_LATIN[currentTargetNote]
 				: currentTargetNote;
+
+			// Auto-advance to next note after a short delay
+			setTimeout(() => {
+				generateNewNote();
+			}, 1500);
+
 			return {
 				isCorrect: true,
 				message: `Perfect! ${currentDisplayNote} (${sourceNotation}) = ${correctAnswer} (${targetNotation}) 🎵✨`,
 				collected: true,
-				resetCollected: false
+				resetCollected: true
 			};
 		} else {
 			const playedNoteName = MidiToNote[event.noteNumber]?.slice(0, -1) as Note;
@@ -152,13 +158,14 @@
 				isCorrect: false,
 				message: `Wrong! You played ${playedNoteName}. ${currentDisplayNote} = ${correctAnswer}`,
 				collected: false,
-				resetCollected: true
+				resetCollected: false
 			};
 		}
 	}
 
 	function isNoteNameCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
-		return playedCorrectly;
+		// Never complete - continuous practice
+		return false;
 	}
 
 	function handleDirectionToggle(event: Event): void {
@@ -190,10 +197,9 @@
 	});
 </script>
 
-
 <!-- Hide the score section for the Note Name exercise (not needed) -->
 <BaseExercise
-	{randomMode}
+	randomMode={true}
 	{generateExpectedNotes}
 	{generateScoreProps}
 	validateNoteEvent={validateNoteName}

@@ -11,7 +11,7 @@ export interface UserProfile {
 }
 export interface NoteProgress {
 	note: Note;
-	exerciseType: 'scale' | 'chord' | 'progression';
+	exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm';
 	chordType?: ChordType;
 	attempts: number;
 	successes: number;
@@ -32,6 +32,8 @@ export interface UserStatistics {
 	chordStats: ExerciseTypeStats;
 	scaleStats: ExerciseTypeStats;
 	progressionStats: ExerciseTypeStats;
+	partitionStats: ExerciseTypeStats;
+	rhythmStats: ExerciseTypeStats;
 	masteredChords: ChordMastery[];
 	masteredScales: ScaleMastery[];
 	masteredProgressions: ProgressionMastery[];
@@ -178,7 +180,10 @@ export class UserStatsService {
 		if (!UserStatsService._storageResolved) {
 			UserStatsService._usingRealLocalStorage = false;
 			UserStatsService._storageResolved = true;
-			console.info('UserStatsService: no localStorage available — using in-memory fallback');
+			// Only log if we're in the browser (not during SSR)
+			if (typeof window !== 'undefined') {
+				console.info('UserStatsService: no localStorage available — using in-memory fallback');
+			}
 		}
 		return {
 			getItem(key: string) {
@@ -390,6 +395,8 @@ export class UserStatsService {
 			chordStats: this.createDefaultTypeStats(),
 			scaleStats: this.createDefaultTypeStats(),
 			progressionStats: this.createDefaultTypeStats(),
+			partitionStats: this.createDefaultTypeStats(),
+			rhythmStats: this.createDefaultTypeStats(),
 			masteredChords: [],
 			masteredScales: [],
 			masteredProgressions: [],
@@ -453,6 +460,10 @@ export class UserStatsService {
 				return this.statistics.scaleStats;
 			case 'progression':
 				return this.statistics.progressionStats;
+			case 'partition':
+				return this.statistics.partitionStats;
+			case 'rhythm':
+				return this.statistics.rhythmStats;
 			default:
 				throw new Error(`Unknown exercise type: ${type}`);
 		}
@@ -540,7 +551,7 @@ export class UserStatsService {
 	private checkAchievements(): void {}
 	updateNoteProgress(
 		note: Note,
-		exerciseType: 'scale' | 'chord' | 'progression',
+		exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm',
 		chordType: ChordType | undefined,
 		success: boolean,
 		timeSpent: number,
@@ -586,20 +597,22 @@ export class UserStatsService {
 	}
 	getNoteProgress(
 		note: Note,
-		exerciseType: 'scale' | 'chord' | 'progression',
+		exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm',
 		chordType?: ChordType
 	): NoteProgress | undefined {
 		const key = this.generateProgressKey(note, exerciseType, chordType);
 		return this.statistics.noteProgress.get(key);
 	}
-	getProgressByType(exerciseType: 'scale' | 'chord' | 'progression'): NoteProgress[] {
+	getProgressByType(
+		exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm'
+	): NoteProgress[] {
 		return Array.from(this.statistics.noteProgress.values()).filter(
 			(progress) => progress.exerciseType === exerciseType
 		);
 	}
 	private generateProgressKey(
 		note: Note,
-		exerciseType: 'scale' | 'chord' | 'progression',
+		exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm',
 		chordType?: ChordType
 	): string {
 		return chordType ? `${note}-${exerciseType}-${chordType}` : `${note}-${exerciseType}`;

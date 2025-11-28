@@ -205,6 +205,7 @@
 		onComplete={onComplete || (() => {})}
 		initialNote={propKey || 'C'}
 		{description}
+		exerciseType="progression"
 	>
 		{#snippet children(api: any)}
 			{@const wasCompleted = exerciseCompleted}

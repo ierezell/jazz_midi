@@ -1,51 +1,51 @@
 {
-  "name": "Blue Bossa",
-  "composer": "Kenny Dorham",
-  "key": "Cm",
-  "chords": [
-    {
-      "note": "C",
-      "type": "min7"
-    },
-    {
-      "note": "F",
-      "type": "min7"
-    },
-    {
-      "note": "D",
-      "type": "half-dim7"
-    },
-    {
-      "note": "G",
-      "type": "7"
-    },
-    {
-      "note": "C",
-      "type": "min7"
-    },
-    {
-      "note": "Eb",
-      "type": "min7"
-    },
-    {
-      "note": "Ab",
-      "type": "7"
-    },
-    {
-      "note": "Db",
-      "type": "maj7"
-    },
-    {
-      "note": "D",
-      "type": "half-dim7"
-    },
-    {
-      "note": "G",
-      "type": "7"
-    },
-    {
-      "note": "C",
-      "type": "min7"
-    }
-  ]
+	"name": "Blue Bossa",
+	"composer": "Kenny Dorham",
+	"key": "Cm",
+	"chords": [
+		{
+			"note": "C",
+			"type": "min7"
+		},
+		{
+			"note": "F",
+			"type": "min7"
+		},
+		{
+			"note": "D",
+			"type": "half-dim7"
+		},
+		{
+			"note": "G",
+			"type": "7"
+		},
+		{
+			"note": "C",
+			"type": "min7"
+		},
+		{
+			"note": "Eb",
+			"type": "min7"
+		},
+		{
+			"note": "Ab",
+			"type": "7"
+		},
+		{
+			"note": "Db",
+			"type": "maj7"
+		},
+		{
+			"note": "D",
+			"type": "half-dim7"
+		},
+		{
+			"note": "G",
+			"type": "7"
+		},
+		{
+			"note": "C",
+			"type": "min7"
+		}
+	]
 }

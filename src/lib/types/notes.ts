@@ -296,7 +296,13 @@ export type Chord = {
 };
 
 export type ScaleMode = 'Maj' | 'Min' | 'Blues';
-export type ChordVoicing = 'full-right' | 'full-left' | '1735' | '1537';
+export type ChordVoicing =
+	| 'full-right'
+	| 'full-left'
+	| '1735'
+	| '1537'
+	| 'rootless-a'
+	| 'rootless-b';
 
 export type IntervalType =
 	| 'unison'

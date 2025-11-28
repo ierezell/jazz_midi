@@ -161,6 +161,7 @@
 	onComplete={handleChordComplete}
 	initialNote={getCurrentChord().note}
 	{description}
+	exerciseType="progression"
 >
 	{#snippet children(api: any)}
 		<div class="song-controls">

@@ -2,6 +2,7 @@ import { MidiToNote, NoteToMidi } from './types/notes.constants';
 import type { MIDIEventHandlers, MidiNote, Note, NoteEvent } from './types/types';
 
 import { createVirtualMidiAccess, setupKeyboardInput, type VirtualMidiInput } from './virtualMidi';
+import { audioInputService } from './AudioInputService';
 
 export class MIDIManager {
 	public midiAccess: MIDIAccess | null = null;
@@ -11,12 +12,14 @@ export class MIDIManager {
 
 	private errorCallbacks: ((error: Error) => void)[] = [];
 	private debugMode = false;
+	private audioInputEnabled = false;
 
-	constructor() { }
+	constructor() {}
 
 	async initialize(): Promise<boolean> {
 		try {
 			await this.connectMIDI();
+			this.setupAudioInput();
 			return true;
 		} catch (error) {
 			this.handleError(error as Error);
@@ -117,6 +120,30 @@ export class MIDIManager {
 			// Setup keyboard input with new debug mode
 			this.keyboardCleanup = setupKeyboardInput(this.virtualMidi, this.debugMode);
 			console.debug(`MIDI Manager: Debug mode ${enabled ? 'enabled' : 'disabled'}`);
+		}
+	}
+
+	private setupAudioInput(): void {
+		audioInputService.addListener((note: number, velocity: number, isOn: boolean) => {
+			if (!this.audioInputEnabled) return;
+
+			// Create a simulated MIDI event
+			const status = isOn ? 0x90 : 0x80;
+			const data = new Uint8Array([status, note, velocity]);
+			const event = new MIDIMessageEvent('midimessage', { data });
+
+			this.handleMIDIMessage(event);
+		});
+	}
+
+	async setAudioInput(enabled: boolean): Promise<void> {
+		this.audioInputEnabled = enabled;
+		if (enabled) {
+			await audioInputService.start();
+			console.debug('MIDI Manager: Audio input enabled');
+		} else {
+			audioInputService.stop();
+			console.debug('MIDI Manager: Audio input disabled');
 		}
 	}
 
