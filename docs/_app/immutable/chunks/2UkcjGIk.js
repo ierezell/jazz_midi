@@ -1,0 +1,1 @@
+const e="All The Things You Are",t="Jerome Kern",o="Ab",n=[{note:"F",type:"min7"},{note:"Bb",type:"min7"},{note:"Eb",type:"7"},{note:"Ab",type:"maj7"},{note:"Db",type:"maj7"},{note:"G",type:"7"},{note:"C",type:"maj7"},{note:"C",type:"maj7"}],p={name:e,composer:t,key:o,chords:n};export{n as chords,t as composer,p as default,o as key,e as name};

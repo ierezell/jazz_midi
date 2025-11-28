@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { userStatsService } from '$lib/UserStatsService';
 	import { onDestroy, onMount } from 'svelte';
+	import { resolve } from '$app/paths';
 	import '../styles/app.css';
 	import HamburgerMenu from '../components/HamburgerMenu.svelte';
 	import Metronome from '../components/Metronome.svelte';
@@ -21,7 +22,7 @@
 	<header>
 		<div class="header-left">
 			<HamburgerMenu />
-			<a href="/" class="logo">Jazz MIDI</a>
+			<a href={resolve('/')} class="logo">Jazz MIDI</a>
 		</div>
 		<div class="header-right">
 			<MicInputControl />

@@ -1,0 +1,1 @@
+const e="Autumn Leaves",t="Joseph Kosma",o="Gm",n=[{note:"C",type:"min7"},{note:"F",type:"7"},{note:"Bb",type:"maj7"},{note:"Eb",type:"maj7"},{note:"A",type:"half-dim7"},{note:"D",type:"7"},{note:"G",type:"min7"}],s={name:e,composer:t,key:o,chords:n};export{n as chords,t as composer,s as default,o as key,e as name};

@@ -1,0 +1,1 @@
+import{G as e,d as l,b as t,I as u,g as a}from"./Dpgs3mFS.js";function c(n){t===null&&e(),u&&t.l!==null?s(t).m.push(n):l(()=>{const o=a(n);if(typeof o=="function")return o})}function i(n){t===null&&e(),c(()=>()=>a(n))}function s(n){var o=n.l;return o.u??={a:[],b:[],m:[]}}export{i as a,c as o};
