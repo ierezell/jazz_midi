@@ -1,113 +1,58 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { JourneyService } from '../JourneyService';
-import { userStatsService } from '../UserStatsService';
 
 describe('JourneyService', () => {
 	let journeyService: JourneyService;
 
 	beforeEach(() => {
-		// Reset singleton if possible, or just get instance
 		journeyService = JourneyService.getInstance();
+	});
 
-		// Mock userStatsService
-		vi.spyOn(userStatsService, 'getProfile').mockReturnValue({
-			id: 'test',
-			name: 'Test User',
-			createdAt: new Date(),
-			lastActivity: new Date(),
-			totalPracticeTime: 0,
-			level: 1,
-			experiencePoints: 0
+	it('should return all units', () => {
+		const units = journeyService.getUnits();
+		expect(units.length).toBeGreaterThan(0);
+		expect(units[0].id).toBe('basics-scales');
+	});
+
+	it('should get a specific unit by ID', () => {
+		const unit = journeyService.getUnit('basics-scales');
+		expect(unit).toBeDefined();
+		expect(unit?.title).toBe('Major Scales');
+	});
+
+	it('should complete a lesson', () => {
+		const unitId = 'basics-scales';
+		const lessonId = 'c-major-scale';
+		
+		journeyService.completeLesson(unitId, lessonId, 3);
+		
+		const unit = journeyService.getUnit(unitId);
+		const lesson = unit?.lessons.find(l => l.id === lessonId);
+		
+		expect(lesson?.completed).toBe(true);
+		expect(lesson?.stars).toBe(3);
+	});
+
+	it('should generate correct lesson URL', () => {
+		const unit = journeyService.getUnit('basics-scales')!;
+		const lesson = unit.lessons[0];
+		
+		const url = journeyService.getLessonUrl(unit, lesson);
+		
+		expect(url).toContain(lesson.path);
+		expect(url).toContain('unitId=basics-scales');
+		expect(url).toContain('lessonId=c-major-scale');
+	});
+
+	it('should unlock next unit when current is completed', () => {
+		const unit = journeyService.getUnit('basics-scales')!;
+		
+		// Complete all lessons
+		unit.lessons.forEach(lesson => {
+			journeyService.completeLesson(unit.id, lesson.id, 3);
 		});
-
-		vi.spyOn(userStatsService, 'getStatistics').mockReturnValue({
-			totalExercises: 0,
-			completedExercises: 0,
-			averageAccuracy: 0,
-			averageScore: 0,
-			totalPracticeTime: 0,
-			currentStreak: 0,
-			longestStreak: 0,
-			noteProgress: new Map(),
-			chordStats: {
-				attempted: 0,
-				completed: 0,
-				averageAccuracy: 0,
-				averageScore: 0,
-				bestScore: 0,
-				totalTime: 0,
-				masteryLevel: 'beginner'
-			},
-			scaleStats: {
-				attempted: 0,
-				completed: 0,
-				averageAccuracy: 0,
-				averageScore: 0,
-				bestScore: 0,
-				totalTime: 0,
-				masteryLevel: 'beginner'
-			},
-			progressionStats: {
-				attempted: 0,
-				completed: 0,
-				averageAccuracy: 0,
-				averageScore: 0,
-				bestScore: 0,
-				totalTime: 0,
-				masteryLevel: 'beginner'
-			},
-			partitionStats: {
-				attempted: 0,
-				completed: 0,
-				averageAccuracy: 0,
-				averageScore: 0,
-				bestScore: 0,
-				totalTime: 0,
-				masteryLevel: 'beginner'
-			},
-			rhythmStats: {
-				attempted: 0,
-				completed: 0,
-				averageAccuracy: 0,
-				averageScore: 0,
-				bestScore: 0,
-				totalTime: 0,
-				masteryLevel: 'beginner'
-			},
-			masteredChords: [],
-			masteredScales: [],
-			masteredProgressions: [],
-			recentSessions: [],
-			improvementTrend: 0
-		});
-	});
-
-	it('should return the correct initial level', () => {
-		const level = journeyService.getCurrentLevel();
-		expect(level.id).toBe(1);
-		expect(level.name).toBe('Beginner');
-	});
-
-	it('should return the next level', () => {
-		const next = journeyService.getNextLevel();
-		expect(next).toBeDefined();
-		expect(next?.id).toBe(2);
-	});
-
-	it('should calculate level progress', () => {
-		const level = journeyService.getCurrentLevel();
-		const progress = journeyService.getLevelProgress(level);
-		// Level 1 has 0 XP requirement, so progress should be 100% or 0% depending on logic?
-		// Actually requirements are: type: 'xp', target: 0. current is 0. 0/0 is NaN but logic handles it?
-		// Let's check logic: totalProgress += Math.min(1, current / req.target);
-		// If target is 0, division by zero -> Infinity -> min(1, Infinity) = 1.
-		// So progress should be 100%?
-		// Wait, if target is 0, it means "start game".
-		expect(progress).toBe(100);
-	});
-
-	it('should check if exercise is unlocked', () => {
-		expect(journeyService.isExerciseUnlocked('/exercises/chords')).toBe(true);
-		expect(journeyService.isExerciseUnlocked('/exercises/partition')).toBe(false); // Level 3
+		
+		const nextUnit = journeyService.getUnit('basics-chords');
+		expect(nextUnit?.status).toBe('active');
 	});
 });

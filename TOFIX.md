@@ -1,3 +1,4 @@
 - Profile page/stats broken af
 - debug mode could have more love
+- Descriptions css
 - UI / UX

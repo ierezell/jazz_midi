@@ -18,6 +18,7 @@
 	} from '$lib/types/notes.constants';
 	import type { NoteEvent, ScoreProps } from '$lib/types/types';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import { page } from '$app/state';
 
 	const description =
 		'Play the II-V-I progression as shown. Use the correct chords and voicings for each step.';
@@ -38,6 +39,9 @@
 		voicing: propVoicing
 	}: Props = $props();
 
+	// Journey Params
+	const paramKey = $derived(page.url.searchParams.get('key') as Note);
+
 	let currentChordIndex = $state(0);
 	let inversion: Inversion = $state(
 		propInversion ?? (randomMode ? (Math.floor(Math.random() * 4) as Inversion) : 0)
@@ -48,19 +52,14 @@
 				? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
 				: 'full-right')
 	);
+
+	let effectiveRootKey = $derived(paramKey ?? propKey ?? 'C');
 	let exerciseCompleted = $state(false);
 
 	function handleParentReset(): void {
 		resetProgression();
 		exerciseCompleted = false;
 	}
-
-	// Track completion state and call onComplete callback
-	$effect(() => {
-		if (exerciseCompleted && onComplete) {
-			onComplete();
-		}
-	});
 
 	// Function to reset progression state
 	function resetProgression(): void {
@@ -202,8 +201,8 @@
 		{validateNoteEvent}
 		{isCompleted}
 		onReset={handleParentReset}
-		onComplete={onComplete || (() => {})}
-		initialNote={propKey || 'C'}
+		onComplete}
+		initialNote={effectiveRootKey}
 		{description}
 		exerciseType="progression"
 	>
@@ -216,7 +215,7 @@
 				{(exerciseCompleted = false)}
 			{/if}
 			<div class="progression-controls">
-				{#if !randomMode}
+				{#if !randomMode && !page.url.searchParams.get('unitId')}
 					<div class="control-group">
 						<label for="inversion">Inversion:</label>
 						<select id="inversion" value={inversion} onchange={handleInversionChange}>

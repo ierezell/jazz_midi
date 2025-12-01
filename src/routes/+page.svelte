@@ -1,23 +1,19 @@
 <script lang="ts">
-	import { journeyService, type Level } from '$lib/JourneyService';
+	import { journeyService } from '$lib/JourneyService';
 	import { userStatsService } from '$lib/UserStatsService';
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
-	import { ArrowRight, Lock, CheckCircle, Star } from 'lucide-svelte';
+	import { ArrowRight, CheckCircle, Star } from 'lucide-svelte';
 	import { resolve } from '$app/paths';
 
-	let currentLevel = $state<Level>(journeyService.getCurrentLevel());
-	let nextLevel = $state<Level | null>(journeyService.getNextLevel());
-	let progress = $state(0);
 	let profile = $state(userStatsService.getProfile());
+	let units = $state(journeyService.getUnits());
+	let activeUnit = $derived(units.find((u) => u.status === 'active') || units[0]);
 
 	onMount(() => {
-		progress = journeyService.getLevelProgress(currentLevel);
 		const unsubscribe = userStatsService.subscribe(() => {
 			profile = userStatsService.getProfile();
-			currentLevel = journeyService.getCurrentLevel();
-			nextLevel = journeyService.getNextLevel();
-			progress = journeyService.getLevelProgress(currentLevel);
+			units = journeyService.getUnits();
 		});
 		return unsubscribe;
 	});
@@ -26,6 +22,11 @@
 		const parts = path.split('/');
 		const name = parts[parts.length - 1];
 		return name.charAt(0).toUpperCase() + name.slice(1).replace(/_/g, ' ');
+	}
+
+	function getLessonUrl(lessonPath: string): string {
+		// For home page, just link directly to exercises
+		return lessonPath;
 	}
 </script>
 
@@ -43,65 +44,64 @@
 		<div class="level-card current" in:fly={{ y: 20, duration: 500 }}>
 			<div class="level-header">
 				<div class="level-info">
-					<span class="level-badge">Level {currentLevel.id}</span>
-					<h2>{currentLevel.name}</h2>
+					<span class="level-badge">Active Unit</span>
+					<h2>{activeUnit.title}</h2>
 				</div>
-				<div class="level-progress">
-					<div class="progress-bar">
-						<div class="progress-fill" style="width: {progress}%"></div>
+				<div class="stats-display">
+					<div class="stat-item">
+						<Star size={20} fill="#ffd700" color="#ffd700" />
+						<span>{profile.experiencePoints} XP</span>
 					</div>
-					<span class="progress-text">{Math.round(progress)}% Complete</span>
 				</div>
 			</div>
-			<p class="level-description">{currentLevel.description}</p>
+			<p class="level-description">{activeUnit.description}</p>
 
-			<div class="requirements-list">
-				<h3>Requirements for next level:</h3>
-				{#each currentLevel.requirements as req}
-					<div class="requirement-item">
-						{#if (req.type === 'xp' && profile.experiencePoints >= req.target) || (req.type === 'exercise_count' && userStatsService.getStatistics().completedExercises >= req.target)}
-							<CheckCircle size={16} color="#4caf50" />
-						{:else}
-							<div class="circle-placeholder"></div>
-						{/if}
-						<span>{req.description}</span>
-					</div>
-				{/each}
-			</div>
-
-			<div class="exercises-grid">
-				{#each currentLevel.unlockedExercises as exercise}
-					<a href={resolve(exercise as any)} class="exercise-card">
-						<div class="exercise-icon">🎵</div>
-						<div class="exercise-content">
-							<h3>{getExerciseName(exercise)}</h3>
-							<span class="play-link">Start Practice <ArrowRight size={16} /></span>
-						</div>
-					</a>
-				{/each}
-			</div>
-		</div>
-
-		{#if nextLevel}
-			<div class="level-card locked" in:fly={{ y: 20, duration: 500, delay: 200 }}>
-				<div class="level-header">
-					<div class="level-info">
-						<span class="level-badge locked">Level {nextLevel.id}</span>
-						<h2>{nextLevel.name}</h2>
-					</div>
-					<Lock size={24} class="lock-icon" />
-				</div>
-				<p class="level-description">{nextLevel.description}</p>
-				<div class="locked-exercises">
-					{#each nextLevel.unlockedExercises as exercise}
-						<div class="locked-exercise">
-							<Lock size={14} />
-							<span>{getExerciseName(exercise)}</span>
-						</div>
+			<div class="lessons-section">
+				<h3>Continue Learning:</h3>
+				<div class="exercises-grid">
+					{#each activeUnit.lessons as lesson}
+						<a
+							href={journeyService.getLessonUrl(activeUnit, lesson)}
+							class="exercise-card"
+							class:completed={lesson.completed}
+						>
+							<div class="exercise-icon">
+								{#if lesson.completed}
+									<CheckCircle size={32} color="#4caf50" />
+								{:else}
+									🎵
+								{/if}
+							</div>
+							<div class="exercise-content">
+								<h3>{lesson.title}</h3>
+								{#if lesson.completed}
+									<div class="stars">
+										{#each Array(lesson.stars) as _}
+											<Star size={12} fill="#ffd700" color="#ffd700" />
+										{/each}
+									</div>
+								{:else}
+									<span class="play-link">Start Practice <ArrowRight size={16} /></span>
+								{/if}
+							</div>
+						</a>
 					{/each}
 				</div>
 			</div>
-		{/if}
+		</div>
+
+		<div class="quick-links" in:fly={{ y: 20, duration: 500, delay: 200 }}>
+			<a href="/journey" class="link-card">
+				<h3>View Full Journey Map</h3>
+				<p>See all units and track your progress</p>
+				<ArrowRight size={20} />
+			</a>
+			<a href="/profile" class="link-card">
+				<h3>Your Profile</h3>
+				<p>Check stats and achievements</p>
+				<ArrowRight size={20} />
+			</a>
+		</div>
 	</section>
 </div>
 
@@ -121,6 +121,7 @@
 		margin-bottom: 0.5rem;
 		background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
 		background-clip: text;
+		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 	}
 
@@ -153,11 +154,6 @@
 		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 	}
 
-	.level-card.locked {
-		opacity: 0.7;
-		filter: grayscale(0.5);
-	}
-
 	.level-header {
 		display: flex;
 		justify-content: space-between;
@@ -177,37 +173,22 @@
 		display: inline-block;
 	}
 
-	.level-badge.locked {
-		background: #6c757d;
-	}
-
 	.level-info h2 {
 		margin: 0;
 		font-size: 2rem;
 	}
 
-	.level-progress {
-		width: 200px;
-		text-align: right;
+	.stats-display {
+		display: flex;
+		gap: 1rem;
 	}
 
-	.progress-bar {
-		height: 8px;
-		background: rgba(255, 255, 255, 0.1);
-		border-radius: 4px;
-		overflow: hidden;
-		margin-bottom: 0.5rem;
-	}
-
-	.progress-fill {
-		height: 100%;
-		background: #4caf50;
-		transition: width 0.5s ease;
-	}
-
-	.progress-text {
-		font-size: 0.8rem;
-		color: rgba(255, 255, 255, 0.6);
+	.stat-item {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-weight: bold;
+		color: white;
 	}
 
 	.level-description {
@@ -217,32 +198,10 @@
 		line-height: 1.6;
 	}
 
-	.requirements-list {
-		margin-bottom: 2rem;
-		background: rgba(0, 0, 0, 0.2);
-		padding: 1.5rem;
-		border-radius: 1rem;
-	}
-
-	.requirements-list h3 {
+	.lessons-section h3 {
 		margin: 0 0 1rem 0;
-		font-size: 1rem;
+		font-size: 1.2rem;
 		color: rgba(255, 255, 255, 0.9);
-	}
-
-	.requirement-item {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 0.5rem;
-		color: rgba(255, 255, 255, 0.8);
-	}
-
-	.circle-placeholder {
-		width: 16px;
-		height: 16px;
-		border: 2px solid rgba(255, 255, 255, 0.3);
-		border-radius: 50%;
 	}
 
 	.exercises-grid {
@@ -270,13 +229,24 @@
 		border-color: rgba(255, 255, 255, 0.3);
 	}
 
+	.exercise-card.completed {
+		border-color: #4caf50;
+		background: rgba(76, 175, 80, 0.1);
+	}
+
 	.exercise-icon {
 		font-size: 2rem;
+		flex-shrink: 0;
 	}
 
 	.exercise-content h3 {
 		margin: 0 0 0.25rem 0;
 		font-size: 1.1rem;
+	}
+
+	.stars {
+		display: flex;
+		gap: 0.1rem;
 	}
 
 	.play-link {
@@ -287,20 +257,42 @@
 		gap: 0.25rem;
 	}
 
-	.locked-exercises {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.75rem;
+	.quick-links {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		gap: 1rem;
 	}
 
-	.locked-exercise {
-		background: rgba(0, 0, 0, 0.2);
-		padding: 0.5rem 1rem;
-		border-radius: 2rem;
-		font-size: 0.9rem;
-		color: rgba(255, 255, 255, 0.6);
+	.link-card {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 1rem;
+		padding: 1.5rem;
+		text-decoration: none;
+		color: white;
 		display: flex;
-		align-items: center;
+		flex-direction: column;
 		gap: 0.5rem;
+		transition: all 0.2s;
+	}
+
+	.link-card:hover {
+		background: rgba(255, 255, 255, 0.1);
+		transform: translateY(-2px);
+		border-color: rgba(255, 255, 255, 0.2);
+	}
+
+	.link-card h3 {
+		margin: 0;
+		font-size: 1.2rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.link-card p {
+		margin: 0;
+		color: rgba(255, 255, 255, 0.6);
+		font-size: 0.9rem;
 	}
 </style>

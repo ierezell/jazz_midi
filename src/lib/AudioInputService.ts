@@ -1,18 +1,13 @@
-import { BasicPitch } from '@spotify/basic-pitch';
+import type { BasicPitch } from '@spotify/basic-pitch';
 
 export class AudioInputService {
 	private static instance: AudioInputService;
-	private basicPitch: BasicPitch;
+	private basicPitch: BasicPitch | null = null;
 	private audioContext: AudioContext | null = null;
 	private isRecording = false;
-	private listeners: ((note: number, velocity: number, isOn: boolean) => void)[] = [];
+	private listeners: ((event: MIDIMessageEvent) => void)[] = [];
 
-	private constructor() {
-		// Initialize BasicPitch with the model URL
-		this.basicPitch = new BasicPitch(
-			'https://unpkg.com/@spotify/basic-pitch@1.0.1/model/model.json'
-		);
-	}
+	private constructor() {}
 
 	static getInstance(): AudioInputService {
 		if (!AudioInputService.instance) {
@@ -25,10 +20,17 @@ export class AudioInputService {
 		if (this.isRecording) return;
 
 		try {
+			if (!this.basicPitch) {
+				const { BasicPitch } = await import('@spotify/basic-pitch');
+				this.basicPitch = new BasicPitch(
+					'https://unpkg.com/@spotify/basic-pitch@1.0.1/model/model.json'
+				);
+			}
+
 			this.audioContext = new AudioContext();
 			await this.audioContext.resume();
 
-			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			// const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
 			this.isRecording = true;
 
@@ -65,16 +67,23 @@ export class AudioInputService {
 		}
 	}
 
-	addListener(callback: (note: number, velocity: number, isOn: boolean) => void): void {
+	addListener(callback: (event: MIDIMessageEvent) => void): void {
 		this.listeners.push(callback);
 	}
 
-	removeListener(callback: (note: number, velocity: number, isOn: boolean) => void): void {
+	removeListener(callback: (event: MIDIMessageEvent) => void): void {
 		this.listeners = this.listeners.filter((l) => l !== callback);
 	}
 
 	private notifyListeners(note: number, velocity: number, isOn: boolean): void {
-		this.listeners.forEach((listener) => listener(note, velocity, isOn));
+		const status = isOn ? 0x90 : 0x80;
+		const data = new Uint8Array([status, note, velocity]);
+		// Create a simulated MIDI event
+		// Note: MIDIMessageEvent constructor might not be available in all environments (e.g. SSR),
+		// but this runs in browser.
+		const event = new MIDIMessageEvent('midimessage', { data });
+		
+		this.listeners.forEach((listener) => listener(event));
 	}
 }
 

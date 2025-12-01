@@ -18,6 +18,7 @@
 		ScoreProps
 	} from '$lib/types/types';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import { page } from '$app/state';
 
 	const description =
 		'Play the notes of the displayed chord on your MIDI keyboard. Try to match the voicing and inversion shown.';
@@ -40,10 +41,16 @@
 		voicing: propVoicing
 	}: Props = $props();
 
+	// Journey Params
+	const paramRoot = $derived(page.url.searchParams.get('root') as Note);
+	const paramQuality = $derived(page.url.searchParams.get('quality') as ChordType);
+
 	// Pass description to BaseExercise
 	let possibleChordTypes = ['maj7', 'min7', '7', 'dom7', 'half-dim7', 'dim7'] as ChordType[];
-	let chordType: ChordType = $state(
-		propChordType ??
+
+	let chordType: ChordType = $derived(
+		(page.url.searchParams.get('quality') as ChordType) ??
+			propChordType ??
 			(randomMode
 				? possibleChordTypes[Math.floor(Math.random() * possibleChordTypes.length)]
 				: 'maj7')
@@ -57,11 +64,9 @@
 				? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
 				: 'full-right')
 	);
-	let exerciseCompleted = $state(false);
 
-	function handleParentReset(): void {
-		exerciseCompleted = false;
-	}
+	let effectiveRootKey = $derived(paramRoot ?? propKey ?? 'C');
+	let exerciseCompleted = $state(false);
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
 		const rootNote = (selectedNote + DEFAULT_OCTAVE) as NoteFullName;
@@ -180,6 +185,10 @@
 			currentNotes.every((note) => expectedNotes.includes(note))
 		);
 	}
+
+	function handleParentReset(): void {
+		exerciseCompleted = false;
+	}
 </script>
 
 <BaseExercise
@@ -190,7 +199,7 @@
 	{isCompleted}
 	onReset={handleParentReset}
 	{onComplete}
-	initialNote={propKey}
+	initialNote={effectiveRootKey}
 	{description}
 >
 	{#snippet children(api: any)}
@@ -202,7 +211,7 @@
 			{(exerciseCompleted = false)}
 		{/if}
 		<div class="controls">
-			{#if !randomMode}
+			{#if !randomMode && !page.url.searchParams.get('unitId')}
 				<div class="control-group">
 					<label for="chord-type">Chord Type:</label>
 					<select id="chord-type" value={chordType} onchange={handleChordTypeChange}>

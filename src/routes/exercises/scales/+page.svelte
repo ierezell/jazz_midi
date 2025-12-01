@@ -5,6 +5,7 @@
 	import { AllScaleModes, MidiToNote } from '$lib/types/notes.constants';
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import { page } from '$app/state';
 
 	const description =
 		'Play the scale shown, ascending and/or descending, using your MIDI keyboard. Try to follow the correct order.';
@@ -28,14 +29,26 @@
 		rootKey: propKey
 	}: Props = $props();
 
+	// Journey Params
+	const paramRoot = $derived(page.url.searchParams.get('root') as Note);
+	const paramMode = $derived(page.url.searchParams.get('mode') as ScaleMode);
+
 	let sequentialMode: boolean = $state(
 		propSequentialMode ?? (randomMode ? Math.random() > 0.5 : true)
 	);
 	let handMode: boolean = $state(propRightHandMode ?? (randomMode ? Math.random() > 0.5 : true));
-	let scaleMode: ScaleMode = $state(
-		propScaleMode ??
+
+	// Use params if available, otherwise props, otherwise defaults
+	let scaleMode: ScaleMode = $derived(
+		(page.url.searchParams.get('mode') as ScaleMode) ??
+			propScaleMode ??
 			(randomMode ? AllScaleModes[Math.floor(Math.random() * AllScaleModes.length)] : 'Maj')
 	);
+
+	// We need to handle the root key carefully. BaseExercise takes initialNote.
+	// We'll pass the effective root key to BaseExercise.
+	let effectiveRootKey = $derived(paramRoot ?? propKey ?? 'C');
+
 	let playedNotes: Set<MidiNote> = $state(new Set());
 	// For sequential mode we track the actual played order
 	let playedSequence: MidiNote[] = $state([]);
@@ -194,14 +207,14 @@
 	validateNoteEvent={validateScaleNote}
 	isCompleted={isScaleCompleted}
 	onReset={handleParentReset}
-	onComplete={onComplete ?? (() => {})}
-	initialNote={propKey || 'C'}
+	{onComplete}
+	initialNote={effectiveRootKey}
 	{description}
 	exerciseType="scale"
 >
 	{#snippet children(api: any)}
 		<div class="scale-controls">
-			{#if !randomMode}
+			{#if !randomMode && !page.url.searchParams.get('unitId')}
 				<div class="control-group">
 					<label>
 						<input

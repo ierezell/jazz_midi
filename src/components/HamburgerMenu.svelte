@@ -16,6 +16,7 @@
 
 	const links = [
 		{ href: '/', label: 'Home', icon: '🏠' },
+		{ href: '/journey', label: 'Journey', icon: '🗺️' },
 		{ href: '/exercises/random', label: 'Random', icon: '🎲' },
 		{ href: '/exercises/two_five_ones', label: 'II-V-I', icon: '🎹' },
 		{ href: '/exercises/scales', label: 'Scales', icon: '🎼' },

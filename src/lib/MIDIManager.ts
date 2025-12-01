@@ -124,14 +124,8 @@ export class MIDIManager {
 	}
 
 	private setupAudioInput(): void {
-		audioInputService.addListener((note: number, velocity: number, isOn: boolean) => {
+		audioInputService.addListener((event: MIDIMessageEvent) => {
 			if (!this.audioInputEnabled) return;
-
-			// Create a simulated MIDI event
-			const status = isOn ? 0x90 : 0x80;
-			const data = new Uint8Array([status, note, velocity]);
-			const event = new MIDIMessageEvent('midimessage', { data });
-
 			this.handleMIDIMessage(event);
 		});
 	}

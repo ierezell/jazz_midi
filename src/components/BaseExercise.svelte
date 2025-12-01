@@ -17,9 +17,14 @@
 		type ScoreProps
 	} from '$lib/types/types';
 	import { onDestroy, onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { journeyService } from '$lib/JourneyService';
 	import DebugPanel from './DebugPanel.svelte';
 	import Keyboard from './Keyboard.svelte';
+	import Metronome from './Metronome.svelte';
 	import Score from './Score.svelte';
+	import LessonCompleteModal from './LessonCompleteModal.svelte';
 
 	interface BaseExerciseProps {
 		randomMode: boolean;
@@ -75,6 +80,7 @@
 			resetExercise();
 		}
 	});
+
 	let noteEvents: NoteEvent[] = $state([]);
 	let mistakes = $state(0);
 	let collectedNotes: Set<MidiNote> = $state(new Set());
@@ -84,8 +90,25 @@
 	let feedbackMessage = $state('');
 	let showNotesRoles = $state(false);
 
+	// Tempo Mode State
+	let tempoMode = $state(false);
+	let lastTickTime = $state(0);
+	let currentBpm = $state(120);
+	const TEMPO_TOLERANCE_MS = 150; // Tolerance for "on beat"
+
 	// showScore controls whether the Score UI is rendered; default to true
 	let showScoreState = $state(showScore ?? true);
+
+	// Journey integration - detect URL params
+	const unitId = $derived(page.url.searchParams.get('unitId'));
+	const lessonId = $derived(page.url.searchParams.get('lessonId'));
+	const isJourneyMode = $derived(!!unitId && !!lessonId);
+
+	// Modal state for lesson completion
+	let showCompleteModal = $state(false);
+	let completedStars = $state(0);
+	let completedAccuracy = $state(0);
+	let completedXp = $state(0);
 
 	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
 	let expectedNotes = $derived(generateExpectedNotes(selectedNote));
@@ -124,6 +147,7 @@
 		debugMode,
 		feedbackMessage,
 		showNotesRoles,
+		tempoMode,
 		handleNoteSelect,
 		resetExercise,
 		toggleDebug,
@@ -165,6 +189,23 @@
 				`MIDI Note ON: ${note.noteNumber} (${note.noteFullName}) velocity=${note.velocity} channel=${note.channel}`
 			);
 		}
+
+		// Tempo Check
+		if (tempoMode) {
+			const now = Date.now();
+			const interval = (60 / currentBpm) * 1000;
+			const timeSinceLastTick = now - lastTickTime;
+			const timeToNextTick = interval - timeSinceLastTick;
+			const distance = Math.min(timeSinceLastTick, timeToNextTick);
+
+			if (distance > TEMPO_TOLERANCE_MS) {
+				showFeedback('Off beat! Try to play on the beat.', 'error');
+				mistakes++; // Penalize for off-beat?
+				// Maybe don't process the note if it's off beat?
+				// For now, let's just warn.
+			}
+		}
+
 		noteEvents = [...noteEvents, note];
 		const result = validateNoteEvent(selectedNote, note, expectedNotes, currentNotes);
 
@@ -234,6 +275,7 @@
 	}
 
 	function onCompleteExercise(): void {
+		console.log('Exercise Completed!', { exerciseType, mistakes, startTime });
 		completed = true;
 		const timeElapsed = Date.now() - startTime;
 		const accuracy = Math.round(((expectedNotes.length - mistakes) / expectedNotes.length) * 100);
@@ -241,6 +283,7 @@
 		audioManager.playSound?.('success');
 
 		if (exerciseType) {
+			console.log('Recording stats...', { exerciseType, success: true, accuracy, timeElapsed });
 			userStatsService.recordExerciseResult({
 				exerciseId: window.location.pathname,
 				exerciseType,
@@ -251,9 +294,33 @@
 				score: Math.max(0, 100 - mistakes * 10),
 				timestamp: new Date()
 			});
+		} else {
+			console.warn('No exerciseType provided, stats not recorded.');
 		}
 
-		onComplete?.();
+		// Journey mode: calculate stars and show modal
+		if (isJourneyMode && unitId && lessonId) {
+			// Calculate stars: 3 stars = 0 mistakes, 2 stars = 1-2 mistakes, 1 star = 3+ mistakes
+			completedStars = mistakes === 0 ? 3 : mistakes <= 2 ? 2 : 1;
+			completedAccuracy = accuracy;
+			completedXp = Math.max(0, 100 - mistakes * 10);
+
+			journeyService.completeLesson(unitId, lessonId, completedStars);
+			showCompleteModal = true;
+		} else {
+			// Non-journey mode: just call onComplete and reset
+			onComplete?.();
+			resetExercise();
+		}
+	}
+
+	function handleModalContinue() {
+		showCompleteModal = false;
+		goto('/journey');
+	}
+
+	function handleModalRetry() {
+		showCompleteModal = false;
 		resetExercise();
 	}
 
@@ -266,6 +333,14 @@
 		const target = event.target as HTMLSelectElement;
 		const note = target.value as Note;
 		handleNoteSelect(note);
+	}
+
+	function handleTick(timestamp: number) {
+		lastTickTime = timestamp;
+	}
+
+	function toggleTempoMode() {
+		tempoMode = !tempoMode;
 	}
 </script>
 
@@ -287,18 +362,32 @@
 		</div>
 	{/if}
 
-	{#if !randomMode}
-		<div class="exercise-controls">
-			<div class="control-group">
-				<label for="note-select">Key:</label>
-				<select id="note-select" value={selectedNote} onchange={handleNoteSelectEvent}>
-					{#each AllNotes as note}
-						<option value={note}>{note}</option>
-					{/each}
-				</select>
+	<div class="top-controls">
+		{#if !randomMode}
+			<div class="exercise-controls">
+				<div class="control-group">
+					<label for="note-select">Key:</label>
+					<select id="note-select" value={selectedNote} onchange={handleNoteSelectEvent}>
+						{#each AllNotes as note}
+							<option value={note}>{note}</option>
+						{/each}
+					</select>
+				</div>
 			</div>
+		{/if}
+
+		<div class="tempo-controls">
+			<button class="tempo-btn" class:active={tempoMode} onclick={toggleTempoMode}>
+				{tempoMode ? 'Disable' : 'Enable'} Tempo Mode
+			</button>
+			<button onclick={toggleDebug} class="debug-btn">
+				{debugMode ? 'Disable' : 'Enable'} Virtual Keyboard
+			</button>
+			{#if tempoMode}
+				<Metronome onTick={handleTick} />
+			{/if}
 		</div>
-	{/if}
+	</div>
 
 	{#if showScoreState}
 		<div class="score-section">
@@ -356,12 +445,18 @@
 	</div>
 
 	<div class="control-group">
-		<button onclick={toggleDebug} class="debug-btn">
-			{debugMode ? 'Disable' : 'Enable'} Virtual Keyboard
-		</button>
 		<button onclick={resetExercise} class="reset-btn"> Reset Exercise </button>
 	</div>
 </div>
+
+<LessonCompleteModal
+	isOpen={showCompleteModal}
+	stars={completedStars}
+	accuracy={completedAccuracy}
+	xp={completedXp}
+	onContinue={handleModalContinue}
+	onRetry={handleModalRetry}
+/>
 
 <style>
 	.exercise-container {
@@ -371,6 +466,34 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
+	}
+
+	.top-controls {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+
+	.tempo-controls {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.tempo-btn {
+		padding: 0.5rem 1rem;
+		border: 1px solid var(--color-border, #ccc);
+		border-radius: 4px;
+		background: var(--color-bg, white);
+		cursor: pointer;
+	}
+
+	.tempo-btn.active {
+		background: var(--color-primary, #4caf50);
+		color: white;
+		border-color: var(--color-primary-dark, #388e3c);
 	}
 
 	.feedback {

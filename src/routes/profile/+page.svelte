@@ -15,8 +15,6 @@
 	let profile = $state<UserProfile>(userStatsService.getProfile());
 	let statistics = $state<UserStatistics>(userStatsService.getStatistics());
 	let achievements = $state<Achievement[]>(userStatsService.getAchievements());
-	let currentLevel = $state(journeyService.getCurrentLevel());
-	let levelProgress = $derived(journeyService.getLevelProgress(currentLevel));
 
 	let isEditing = $state(false);
 	let showExportDialog = $state(false);
@@ -102,8 +100,6 @@
 			statistics = newStats;
 			profile = userStatsService.getProfile();
 			achievements = userStatsService.getAchievements();
-			currentLevel = journeyService.getCurrentLevel();
-			levelProgress = journeyService.getLevelProgress(currentLevel);
 		});
 		return () => {
 			unsubscribe();
@@ -149,21 +145,12 @@
 					</div>
 				{/if}
 				<div class="profile-meta">
-					<span class="level-tag">Level {currentLevel.id} - {currentLevel.name}</span>
+					<span class="level-tag">Level {profile.level}</span>
 					<span>•</span>
 					<span>{profile.experiencePoints} XP</span>
 					<span>•</span>
 					<span>Joined {formatDate(profile.createdAt)}</span>
 				</div>
-			</div>
-		</div>
-		<div class="level-progress">
-			<div class="progress-header">
-				<span>Current Level Progress</span>
-				<span>{Math.round(levelProgress)}%</span>
-			</div>
-			<div class="progress-bar">
-				<div class="progress-fill" style="width: {levelProgress}%"></div>
 			</div>
 		</div>
 	</header>
@@ -448,14 +435,6 @@
 		height: 100%;
 		background: #4caf50;
 		transition: width 0.5s ease;
-	}
-
-	.progress-header {
-		display: flex;
-		justify-content: space-between;
-		margin-bottom: 0.5rem;
-		font-size: 0.9rem;
-		color: rgba(255, 255, 255, 0.8);
 	}
 
 	.stats-overview {

@@ -329,6 +329,17 @@
 		font-size: 0.8rem;
 		margin-right: 8px;
 	}
+	.status-info {
+		background: rgba(0, 0, 0, 0.3);
+		padding: 10px;
+		border-radius: 4px;
+		color: #ffffff;
+	}
+	.status-info div {
+		margin: 6px 0;
+		color: #ffffff;
+		font-weight: 500;
+	}
 	.status p {
 		margin: 4px 0;
 		display: flex;

@@ -1,1 +1,0 @@
-import{y as u,z as o,H as _,w as t,A as g,C as p,B as i,D as l,E as d,F as E}from"./Dpgs3mFS.js";function v(n,r){let s=null,y=t;var a;if(t){s=E;for(var e=g(document.head);e!==null&&(e.nodeType!==p||e.data!==n);)e=i(e);if(e===null)l(!1);else{var f=i(e);e.remove(),d(f)}}t||(a=document.head.appendChild(u()));try{o(()=>r(a),_)}finally{y&&(l(!0),d(s))}}export{v as h};
