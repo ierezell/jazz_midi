@@ -137,7 +137,7 @@
 	.stat-value {
 		font-size: 1.5rem;
 		font-weight: bold;
-		color: white;
+		color: rgb(0, 0, 0);
 	}
 
 	.modal-actions {
@@ -165,12 +165,12 @@
 
 	.retry-btn {
 		background: rgba(255, 255, 255, 0.1);
-		color: white;
+		color: rgb(0, 0, 0);
 	}
 
 	.continue-btn {
 		background: #4caf50;
-		color: white;
+		color: rgb(0, 0, 0);
 	}
 
 	@keyframes popIn {

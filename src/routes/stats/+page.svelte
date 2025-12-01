@@ -2,6 +2,7 @@
 	import { userStatsService, type UserStatistics, type UserProfile } from '$lib/UserStatsService';
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
+	import StreakCalendar from '../../components/StreakCalendar.svelte';
 
 	let stats = $state<UserStatistics>(userStatsService.getStatistics());
 	let profile = $state<UserProfile>(userStatsService.getProfile());
@@ -24,6 +25,10 @@
 	function formatAccuracy(acc: number): string {
 		return `${Math.round(acc)}%`;
 	}
+
+	// Get calendar data and streaks
+	let calendarData = $derived(userStatsService.getPracticeCalendar(84));
+	let streakInfo = $derived(userStatsService.getPracticeStreak());
 </script>
 
 <svelte:head>
@@ -153,6 +158,15 @@
 				</div>
 			</div>
 		</div>
+	</section>
+
+	<section class="streak-section" in:fade={{ delay: 500 }}>
+		<h2>Practice Streak</h2>
+		<StreakCalendar
+			{calendarData}
+			currentStreak={streakInfo.current}
+			longestStreak={streakInfo.longest}
+		/>
 	</section>
 
 	<section class="recent-activity" in:fade={{ delay: 600 }}>

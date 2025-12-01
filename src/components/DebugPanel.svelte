@@ -30,11 +30,11 @@
 
 	let selectedNote: Note = $state('C');
 	let selectedChordType: ChordType = $state('maj7');
-	let selectedOctave: number = $state(3);
+	let selectedOctave: number = $state(4); // Default octave 4
 
 	// Dynamic keyboard shortcuts using the same mapping function
 	let keyboardShortcuts = $derived.by(() => {
-		const mapping = getKeyboardToMidi(selectedOctave);
+		const mapping = getKeyboardToMidi(selectedOctave, selectedNote);
 		const formatKeyMapping = (keys: string[]) =>
 			keys
 				.map((key) => ({ key: key.toUpperCase(), note: MidiToNote[mapping[key.toLowerCase()]] }))
@@ -46,10 +46,11 @@
 		};
 	});
 
-	// Sync octave changes with virtual MIDI
+	// Sync octave and root note changes with virtual MIDI
 	$effect(() => {
 		if (virtualMidi) {
 			virtualMidi.setOctave(selectedOctave);
+			virtualMidi.setRootNote(selectedNote);
 		}
 	});
 	function playChord() {
@@ -237,7 +238,7 @@
 	}
 	.toggle-btn {
 		background: #007acc;
-		color: white;
+		color: rgb(0, 0, 0);
 		border: none;
 		padding: 6px 12px;
 		border-radius: 4px;
@@ -274,7 +275,7 @@
 	}
 	.control-group select {
 		background: #333;
-		color: white;
+		color: rgb(0, 0, 0);
 		border: 1px solid #555;
 		padding: 4px 8px;
 		border-radius: 3px;
@@ -287,7 +288,7 @@
 	}
 	.action-btn {
 		background: #28a745;
-		color: white;
+		color: rgb(0, 0, 0);
 		border: none;
 		padding: 8px 12px;
 		border-radius: 4px;

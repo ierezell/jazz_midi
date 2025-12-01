@@ -25,7 +25,8 @@
 		{ href: '/exercises/songs', label: 'Songs', icon: '🎤' },
 		{ href: '/exercises/names', label: 'Names', icon: '📝' },
 		{ href: '/exercises/partition', label: 'Partition', icon: '🎼' },
-		{ href: '/exercises/rhythm', label: 'Rhythm', icon: '🥁' },
+		{ href: '/exercises/flashcards', label: 'Flashcards', icon: '🃏' },
+		{ href: '/exercises/dexterity', label: 'Dexterity', icon: '🎯' },
 		{ href: '/stats', label: 'Statistics', icon: '📊' },
 		{ href: '/profile', label: 'Profile', icon: '👤' }
 	];

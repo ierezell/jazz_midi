@@ -5,7 +5,8 @@
 	import { userStatsService } from '$lib/UserStatsService';
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
-	import { Star, Lock, Check, Play, MapPin, Flame, Zap, Trophy } from 'lucide-svelte';
+	import { Star, Lock, Check, Play, MapPin, Flame, Zap, Trophy, Dumbbell } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
 
 	let units = $state(journeyService.getUnits());
 	let profile = $state(userStatsService.getProfile());
@@ -22,6 +23,14 @@
 
 	function getLessonUrl(unit: Unit, lesson: Lesson) {
 		return journeyService.getLessonUrl(unit, lesson);
+	}
+
+	function startPractice(unitId: string) {
+		const practice = journeyService.getPracticeLesson(unitId);
+		if (practice) {
+			const url = journeyService.getLessonUrl(practice.unit, practice.lesson);
+			goto(url);
+		}
 	}
 </script>
 
@@ -68,6 +77,15 @@
 						<p>{unit.description}</p>
 					</div>
 					<div class="unit-status">
+						{#if unit.status !== 'locked'}
+							<button
+								onclick={() => startPractice(unit.id)}
+								class="practice-btn"
+								title="Practice random lesson from this level"
+							>
+								<Dumbbell size={16} />
+							</button>
+						{/if}
 						{#if unit.status === 'completed'}
 							<span class="badge completed">Completed</span>
 						{:else if unit.status === 'locked'}
@@ -95,14 +113,23 @@
 							</div>
 							<div class="lesson-content">
 								<h3>{lesson.title}</h3>
-								<div class="stars">
-									{#each Array(3) as _, i}
-										<Star
-											size={14}
-											class={i < lesson.stars ? 'star-filled' : 'star-empty'}
-											fill={i < lesson.stars ? 'currentColor' : 'none'}
-										/>
-									{/each}
+								<div class="lesson-meta">
+									<div class="stars">
+										{#each Array(3) as _, i}
+											<Star
+												size={14}
+												class={i < lesson.stars ? 'star-filled' : 'star-empty'}
+												fill={i < lesson.stars ? 'currentColor' : 'none'}
+											/>
+										{/each}
+									</div>
+									{#if lesson.requiredPerfectCompletions > 1}
+										<div class="mastery-progress">
+											<span class="mastery-value"
+												>{lesson.perfectCompletions}/{lesson.requiredPerfectCompletions} Perfect</span
+											>
+										</div>
+									{/if}
 								</div>
 							</div>
 						</a>
@@ -124,12 +151,12 @@
 		max-width: 800px;
 		margin: 0 auto;
 		padding: 2rem 1rem;
-		padding-top: 5rem; /* Space for fixed header */
+		padding-top: 10rem; /* Space for main header (60px) + stats header (60px) + margin */
 	}
 
 	.stats-header {
 		position: fixed;
-		top: 0;
+		top: 60px; /* Position below main header */
 		left: 0;
 		right: 0;
 		height: 60px;
@@ -140,7 +167,7 @@
 		justify-content: center;
 		gap: 2rem;
 		align-items: center;
-		z-index: 100;
+		z-index: 40; /* Below main header (z-index: 50) */
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 	}
 
@@ -242,6 +269,31 @@
 		color: rgba(255, 255, 255, 0.6);
 	}
 
+	.unit-status {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.practice-btn {
+		background: rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		color: white;
+		border-radius: 50%;
+		width: 32px;
+		height: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.practice-btn:hover {
+		background: rgba(255, 255, 255, 0.2);
+		transform: scale(1.1);
+	}
+
 	.badge {
 		padding: 0.25rem 0.75rem;
 		border-radius: 1rem;
@@ -277,7 +329,7 @@
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 1rem;
 		text-decoration: none;
-		color: white;
+		color: rgb(0, 0, 0);
 		transition: all 0.2s;
 	}
 
@@ -341,6 +393,21 @@
 
 	.star-empty {
 		opacity: 0.3;
+	}
+
+	.lesson-meta {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 0.25rem;
+	}
+
+	.mastery-progress {
+		font-size: 0.7rem;
+		background: rgba(255, 255, 255, 0.1);
+		padding: 0.1rem 0.4rem;
+		border-radius: 0.5rem;
+		color: rgba(255, 255, 255, 0.8);
 	}
 
 	.path-connector {

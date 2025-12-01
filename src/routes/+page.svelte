@@ -127,7 +127,7 @@
 
 	.subtitle {
 		font-size: 1.2rem;
-		color: rgba(255, 255, 255, 0.7);
+		color: rgba(0, 0, 0, 0.7);
 	}
 
 	.journey-section {
@@ -188,12 +188,12 @@
 		align-items: center;
 		gap: 0.5rem;
 		font-weight: bold;
-		color: white;
+		color: rgb(0, 0, 0);
 	}
 
 	.level-description {
 		font-size: 1.1rem;
-		color: rgba(255, 255, 255, 0.8);
+		color: rgba(0, 0, 0, 0.8);
 		margin-bottom: 2rem;
 		line-height: 1.6;
 	}
@@ -201,7 +201,7 @@
 	.lessons-section h3 {
 		margin: 0 0 1rem 0;
 		font-size: 1.2rem;
-		color: rgba(255, 255, 255, 0.9);
+		color: rgba(0, 0, 0, 0.9);
 	}
 
 	.exercises-grid {
@@ -269,7 +269,7 @@
 		border-radius: 1rem;
 		padding: 1.5rem;
 		text-decoration: none;
-		color: white;
+		color: rgb(0, 0, 0);
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
@@ -292,7 +292,7 @@
 
 	.link-card p {
 		margin: 0;
-		color: rgba(255, 255, 255, 0.6);
+		color: rgba(0, 0, 0, 0.6);
 		font-size: 0.9rem;
 	}
 </style>

@@ -6,14 +6,46 @@ import { NoteToMidi, MidiToNote, SCALE_INTERVALS } from '$lib/types/notes.consta
  * Generate scale MIDI notes for a given root note, scale mode and hand mode.
  * Uses lower octaves (3 for right hand, 2 for left hand) to match the app's UI.
  */
+export type HandMode = 'left' | 'right' | 'both';
+
+/**
+ * Generate scale MIDI notes for a given root note, scale mode and hand mode.
+ * Uses lower octaves (3 for right hand, 2 for left hand) to match the app's UI.
+ */
 export function generateExpectedNotesFor(
 	selectedNote: Note,
 	scaleMode: ScaleMode,
-	handMode: boolean
+	handMode: HandMode | boolean
 ): MidiNote[] {
-	const octave = handMode ? '3' : '1';
-	const rootMidi = NoteToMidi[(selectedNote + octave) as NoteFullName];
-	return SCALE_INTERVALS[scaleMode].map((interval) => (rootMidi + interval) as MidiNote);
+	// Backwards compatibility for boolean
+	let mode: HandMode = 'right';
+	if (typeof handMode === 'boolean') {
+		mode = handMode ? 'right' : 'left';
+	} else {
+		mode = handMode;
+	}
+
+	const intervals = SCALE_INTERVALS[scaleMode];
+	const notes: MidiNote[] = [];
+
+	if (mode === 'left' || mode === 'both') {
+		const rootMidi = NoteToMidi[(selectedNote + '2') as NoteFullName]; // Octave 2 for Left
+		notes.push(...intervals.map((interval) => (rootMidi + interval) as MidiNote));
+	}
+
+	if (mode === 'right' || mode === 'both') {
+		const rootMidi = NoteToMidi[(selectedNote + '3') as NoteFullName]; // Octave 3 for Right
+		notes.push(...intervals.map((interval) => (rootMidi + interval) as MidiNote));
+	}
+	
+	// If both, we might want to interleave them or just have them sequential?
+	// For now, let's sort them by pitch?
+	// Or if we want "C2, C3, D2, D3", we should interleave.
+	if (mode === 'both') {
+		notes.sort((a, b) => a - b);
+	}
+
+	return notes;
 }
 
 /**

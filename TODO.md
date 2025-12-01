@@ -1,3 +1,8 @@
-- a user journey by level, start with this exercice/ exercice type then once mastered go to this one etc...
-- Add timing ? Like play one chord per bar / timer to practice (do it faster than....) / metronome training etc...
 - Add other exercices (ones I got from teacher)
+- Add dexterity exercices (to practices specific notes / hand movements). 
+- Ensure all the user journey flow is ok. 
+- Ensure all the exercices are working and the UI is correct.
+- Improve flashcards.
+- Add missed notes => specific exercices in stats 
+- Implement correct AudioInputService (MidiNotes notes from microphone) (might need averaging or some tweak...)
+- add tests to cover all the code / pages / flow / journey

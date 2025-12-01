@@ -201,7 +201,7 @@
 		{validateNoteEvent}
 		{isCompleted}
 		onReset={handleParentReset}
-		onComplete}
+		onComplete={onComplete ?? (() => {})}
 		initialNote={effectiveRootKey}
 		{description}
 		exerciseType="progression"

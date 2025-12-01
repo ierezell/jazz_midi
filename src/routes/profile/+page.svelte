@@ -8,7 +8,19 @@
 	import StatsWidget from '../../components/StatsWidget.svelte';
 	import type { PageData } from './$types';
 	import { fade, fly } from 'svelte/transition';
-	import { Trophy, Target, Clock, Zap, Edit2, Save, X, Download, Upload } from 'lucide-svelte';
+	import {
+		Trophy,
+		Target,
+		Clock,
+		Zap,
+		Edit2,
+		Save,
+		X,
+		Download,
+		Upload,
+		TrendingUp
+	} from 'lucide-svelte';
+	import NoteHeatmap from '../../components/NoteHeatmap.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -94,6 +106,10 @@
 		navigator.clipboard.writeText(exportData);
 		alert('Data copied to clipboard!');
 	}
+
+	// Get missed notes and recommendations
+	let missedNotes = $derived(userStatsService.getMostMissedNotes(12));
+	let weaknessRecommendations = $derived(userStatsService.getWeaknessRecommendations());
 
 	onMount(() => {
 		const unsubscribe = userStatsService.subscribe((newStats) => {
@@ -190,6 +206,32 @@
 		<section class="main-stats" in:fly={{ y: 20, duration: 500, delay: 200 }}>
 			<h2>Detailed Progress</h2>
 			<StatsWidget showDetailed={true} />
+
+			<!-- Weak Areas & Recommendations -->
+			<div class="weak-areas-section">
+				<h3>📊 Weak Areas & Recommendations</h3>
+
+				<NoteHeatmap {missedNotes} />
+
+				{#if weaknessRecommendations.length > 0}
+					<div class="recommendations">
+						<h4>Recommended Practice</h4>
+						<div class="recommendation-list">
+							{#each weaknessRecommendations as rec}
+								<a href={rec.path} class="recommendation-card">
+									<div class="rec-header">
+										<TrendingUp size={20} />
+										<strong>{rec.weakness}</strong>
+									</div>
+									<div class="rec-exercise">{rec.recommendedExercise}</div>
+								</a>
+							{/each}
+						</div>
+					</div>
+				{:else}
+					<p class="no-weaknesses">🎉 No weaknesses detected! You're doing great!</p>
+				{/if}
+			</div>
 
 			<div class="exercise-breakdown">
 				<h3>Performance by Category</h3>
@@ -712,6 +754,62 @@
 		font-size: 0.8rem;
 		resize: vertical;
 		margin: 1rem 0;
+	}
+
+	.weak-areas-section {
+		margin: 2rem 0;
+	}
+
+	.weak-areas-section h3,
+	.weak-areas-section h4 {
+		margin: 0 0 1rem 0;
+	}
+
+	.recommendations {
+		margin-top: 1.5rem;
+	}
+
+	.recommendation-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		gap: 1rem;
+	}
+
+	.recommendation-card {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 0.75rem;
+		padding: 1rem;
+		text-decoration: none;
+		color: white;
+		transition: all 0.2s;
+		display: block;
+	}
+
+	.recommendation-card:hover {
+		background: rgba(255, 255, 255, 0.1);
+		border-color: rgba(76, 175, 80, 0.5);
+		transform: translateY(-2px);
+	}
+
+	.rec-header {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 0.5rem;
+		color: #ffa726;
+	}
+
+	.rec-exercise {
+		color: rgba(255, 255, 255, 0.7);
+		font-size: 0.9rem;
+	}
+
+	.no-weaknesses {
+		text-align: center;
+		color: rgba(255, 255, 255, 0.6);
+		font-style: italic;
+		padding: 2rem;
 	}
 
 	@media (max-width: 768px) {

@@ -267,7 +267,7 @@
 		font-weight: bold;
 		color: #2c3e50;
 		background: #3498db;
-		color: white;
+		color: rgb(100, 77, 77);
 		padding: 0.25rem 0.75rem;
 		border-radius: 20px;
 	}

@@ -9,7 +9,7 @@
 
 	const description =
 		'Play the scale shown, ascending and/or descending, using your MIDI keyboard. Try to follow the correct order.';
-	import { generateExpectedNotesFor } from '$lib/scaleExercise';
+	import { generateExpectedNotesFor, type HandMode } from '$lib/scaleExercise';
 
 	interface Props {
 		randomMode: boolean;
@@ -17,7 +17,7 @@
 		scaleMode?: ScaleMode;
 		rootKey?: Note;
 		sequentialMode?: boolean;
-		rightHandMode?: boolean;
+		handMode?: HandMode;
 	}
 
 	let {
@@ -25,18 +25,29 @@
 		onComplete,
 		scaleMode: propScaleMode,
 		sequentialMode: propSequentialMode,
-		rightHandMode: propRightHandMode,
+		handMode: propHandMode,
 		rootKey: propKey
 	}: Props = $props();
 
 	// Journey Params
 	const paramRoot = $derived(page.url.searchParams.get('root') as Note);
 	const paramMode = $derived(page.url.searchParams.get('mode') as ScaleMode);
+	const paramHand = $derived(page.url.searchParams.get('hand') as HandMode);
 
 	let sequentialMode: boolean = $state(
 		propSequentialMode ?? (randomMode ? Math.random() > 0.5 : true)
 	);
-	let handMode: boolean = $state(propRightHandMode ?? (randomMode ? Math.random() > 0.5 : true));
+
+	// Default to 'right' if not specified
+	let handMode: HandMode = $state(
+		propHandMode ?? (randomMode ? (Math.random() > 0.5 ? 'right' : 'left') : 'right')
+	);
+
+	$effect(() => {
+		if (paramHand) {
+			handMode = paramHand;
+		}
+	});
 
 	// Use params if available, otherwise props, otherwise defaults
 	let scaleMode: ScaleMode = $derived(
@@ -60,19 +71,26 @@
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
 		const scaleNotes = generateExpectedNotesFor(selectedNote, scaleMode, handMode);
-		const octave = handMode ? '3' : '1';
 		console.debug(
-			`Scale for ${selectedNote}${octave}:`,
+			`Scale for ${selectedNote} (${handMode}):`,
 			scaleNotes.map((note) => MidiToNote[note])
 		);
 		return scaleNotes;
 	}
 
 	function generateScoreProps(selectedNote: Note): ScoreProps {
-		const scaleNotes = generateExpectedNotes(selectedNote);
-		const noteNames = scaleNotes.map((midi) => MidiToNote[midi]);
-		const rightNotes = handMode ? noteNames.map((note) => [note]) : ([] as NoteFullName[][]);
-		const leftNotes = handMode ? ([] as NoteFullName[][]) : noteNames.map((note) => [note]);
+		let leftNotes: NoteFullName[][] = [];
+		let rightNotes: NoteFullName[][] = [];
+
+		if (handMode === 'left' || handMode === 'both') {
+			const leftMidi = generateExpectedNotesFor(selectedNote, scaleMode, 'left');
+			leftNotes = leftMidi.map((n) => [MidiToNote[n]]);
+		}
+		if (handMode === 'right' || handMode === 'both') {
+			const rightMidi = generateExpectedNotesFor(selectedNote, scaleMode, 'right');
+			rightNotes = rightMidi.map((n) => [MidiToNote[n]]);
+		}
+
 		return {
 			selectedNote: selectedNote,
 			leftHand: leftNotes,
@@ -99,6 +117,12 @@
 		currentNotes: MidiNote[]
 	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
 		const nextExpectedIndex = playedSequence.length;
+		// If 'both' hands, we might expect multiple notes at the same step?
+		// But expectedNotes is flat.
+		// If we sorted them, it's C2, C3, D2, D3...
+		// So user must play C2 then C3 (or vice versa if we relax it?)
+
+		// Strict sequential for now:
 		const expectedNote = expectedNotes[nextExpectedIndex];
 
 		let collected: boolean = false;
@@ -109,6 +133,10 @@
 			// Inform BaseExercise to add this note to cumulative progress
 			collected = true;
 		} else {
+			// Check if they played the "other" note in a chord (e.g. C3 instead of C2)?
+			// If we want to support "simultaneous" loosely, we'd need more complex logic.
+			// For now, strict order.
+
 			const expectedNoteName = MidiToNote[expectedNote]?.slice(0, -1) ?? String(expectedNote);
 			playedSequence = [];
 			playedNotes = new Set();
@@ -185,9 +213,9 @@
 		playedSequence = [];
 	}
 
-	function handleHandModeToggle(event: Event): void {
-		const target = event.target as HTMLInputElement;
-		handMode = target.checked;
+	function handleHandModeChange(event: Event): void {
+		const target = event.target as HTMLSelectElement;
+		handMode = target.value as HandMode;
 		playedNotes = new Set();
 		playedSequence = [];
 	}
@@ -207,7 +235,7 @@
 	validateNoteEvent={validateScaleNote}
 	isCompleted={isScaleCompleted}
 	onReset={handleParentReset}
-	{onComplete}
+	onComplete={onComplete ?? (() => {})}
 	initialNote={effectiveRootKey}
 	{description}
 	exerciseType="scale"
@@ -226,10 +254,12 @@
 					</label>
 				</div>
 				<div class="control-group">
-					<label>
-						<input type="checkbox" bind:checked={handMode} onchange={handleHandModeToggle} />
-						Right hand
-					</label>
+					<label for="handMode">Hand:</label>
+					<select id="handMode" value={handMode} onchange={handleHandModeChange}>
+						<option value="right">Right Hand</option>
+						<option value="left">Left Hand</option>
+						<option value="both">Both Hands</option>
+					</select>
 				</div>
 				<div class="control-group">
 					<label for="scaleMode">Scale mode:</label>

@@ -3,14 +3,17 @@ body {
 	margin: 0;
 	padding: 0;
 	background-color: #f0f0f0;
+	color: #1a1a1a;
 	overflow-x: hidden;
 }
+
 h1,
 h2,
 h3 {
-	color: #333;
+	color: #1a1a1a;
 	margin: 0 0 1rem 0;
 }
+
 .container {
 	max-width: 1200px;
 	margin: 0 auto;
@@ -18,53 +21,66 @@ h3 {
 	width: 100%;
 	box-sizing: border-box;
 }
+
 .midi-note {
 	padding: 10px;
 	border: 1px solid #ccc;
 	border-radius: 5px;
 	margin: 5px 0;
 	background-color: #fff;
+	color: #1a1a1a;
 	word-break: break-word;
 }
+
 .error {
 	color: red;
 	font-weight: bold;
 }
+
 @media (max-width: 768px) {
 	.container {
 		padding: 0 0.5rem;
 		max-width: 100%;
 	}
+
 	.midi-note {
 		padding: 8px;
 		margin: 4px 0;
 		font-size: 0.9rem;
 	}
+
 	h1 {
 		font-size: 1.6rem;
 	}
+
 	h2 {
 		font-size: 1.4rem;
 	}
+
 	h3 {
 		font-size: 1.2rem;
 	}
 }
+
 @media (max-width: 480px) {
 	.container {
 		padding: 0 0.25rem;
 	}
+
 	.midi-note {
 		padding: 6px;
 		margin: 3px 0;
 		font-size: 0.85rem;
 	}
+
 	h1 {
 		font-size: 1.4rem;
 	}
+
 	h2 {
 		font-size: 1.2rem;
 	}
+
 	h3 {
 		font-size: 1.1rem;
 	}

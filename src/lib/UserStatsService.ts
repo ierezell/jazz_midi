@@ -20,6 +20,18 @@ export interface NoteProgress {
 	lastPracticed: Date;
 	masteryLevel: 'beginner' | 'intermediate' | 'advanced' | 'mastered';
 }
+export interface MissedNote {
+	count: number;
+	lastMissed: Date;
+	exerciseType: string;
+}
+
+export interface DayStats {
+	date: string; // ISO date string for consistent key format
+	exercisesCompleted: number;
+	practiceTime: number; // in minutes
+}
+
 export interface UserStatistics {
 	totalExercises: number;
 	completedExercises: number;
@@ -29,6 +41,9 @@ export interface UserStatistics {
 	currentStreak: number;
 	longestStreak: number;
 	noteProgress: Map<string, NoteProgress>;
+	missedNotes: Map<string, MissedNote>; // Track missed notes
+	missedChords: Map<string, MissedNote>; // Track missed chords
+	practiceCalendar: Map<string, DayStats>; // Track daily practice
 	chordStats: ExerciseTypeStats;
 	scaleStats: ExerciseTypeStats;
 	progressionStats: ExerciseTypeStats;
@@ -229,6 +244,7 @@ export class UserStatsService {
 		this.updateTypeStats(result);
 		this.updateMastery(result);
 		this.updateStreak(result);
+		this.updateDailyPractice(result);
 		this.checkAchievements();
 		this.profile.lastActivity = new Date();
 		this.profile.experiencePoints += this.calculateExperiencePoints(result);
@@ -392,6 +408,9 @@ export class UserStatsService {
 			currentStreak: 0,
 			longestStreak: 0,
 			noteProgress: new Map<string, NoteProgress>(),
+			missedNotes: new Map<string, MissedNote>(),
+			missedChords: new Map<string, MissedNote>(),
+			practiceCalendar: new Map<string, DayStats>(),
 			chordStats: this.createDefaultTypeStats(),
 			scaleStats: this.createDefaultTypeStats(),
 			progressionStats: this.createDefaultTypeStats(),
@@ -641,6 +660,184 @@ export class UserStatsService {
 				console.error('Error in stats listener:', error);
 			}
 		});
+	}
+
+	// Track missed note
+	trackMissedNote(noteKey: string, exerciseType: string): void {
+		const existing = this.statistics.missedNotes.get(noteKey);
+		if (existing) {
+			existing.count++;
+			existing.lastMissed = new Date();
+		} else {
+			this.statistics.missedNotes.set(noteKey, {
+				count: 1,
+				lastMissed: new Date(),
+				exerciseType
+			});
+		}
+		this.saveStatistics();
+	}
+
+	// Track missed chord
+	trackMissedChord(chordKey: string, exerciseType: string): void {
+		const existing = this.statistics.missedChords.get(chordKey);
+		if (existing) {
+			existing.count++;
+			existing.lastMissed = new Date();
+		} else {
+			this.statistics.missedChords.set(chordKey, {
+				count: 1,
+				lastMissed: new Date(),
+				exerciseType
+			});
+		}
+		this.saveStatistics();
+	}
+
+	// Get most missed notes (top N)
+	getMostMissedNotes(limit: number = 12): Array<{ note: string; count: number; lastMissed: Date }> {
+		// Ensure missedNotes is initialized as a Map for SSR safety
+		if (!(this.statistics.missedNotes instanceof Map)) {
+			this.statistics.missedNotes = new Map<string, MissedNote>();
+		}
+		
+		return Array.from(this.statistics.missedNotes.entries())
+			.map(([note, data]) => ({ note, count: data.count, lastMissed: data.lastMissed }))
+			.sort((a, b) => b.count - a.count)
+			.slice(0, limit);
+	}
+
+	// Get most missed chords (top N)
+	getMostMissedChords(limit: number = 5): Array<{ chord: string; count: number; lastMissed: Date; exerciseType: string }> {
+		// Ensure missedChords is initialized as a Map for SSR safety
+		if (!(this.statistics.missedChords instanceof Map)) {
+			this.statistics.missedChords = new Map<string, MissedNote>();
+		}
+		
+		return Array.from(this.statistics.missedChords.entries())
+			.map(([chord, data]) => ({ chord, count: data.count, lastMissed: data.lastMissed, exerciseType: data.exerciseType }))
+			.sort((a, b) => b.count - a.count)
+			.slice(0, limit);
+	}
+
+	// Get recommendations based on weaknesses
+	getWeaknessRecommendations(): Array<{ weakness: string; recommendedExercise: string; path: string }> {
+		const recommendations: Array<{ weakness: string; recommendedExercise: string; path: string }> = [];
+		const missedNotes = this.getMostMissedNotes(3);
+		const missedChords = this.getMostMissedChords(3);
+
+		// Recommend scale practice for missed notes
+		missedNotes.forEach(({ note }) => {
+			// Extract just the note name (e.g., "C" from "C3")
+			const noteName = note.replace(/[0-9]/g, '');
+			recommendations.push({
+				weakness: `Note: ${note}`,
+				recommendedExercise: `${noteName} Major Scale`,
+				path: `/exercises/scales?root=${noteName}&mode=Maj`
+			});
+		});
+
+		// Recommend chord practice for missed chords
+		missedChords.forEach(({ chord }) => {
+			recommendations.push({
+				weakness: `Chord: ${chord}`,
+				recommendedExercise: `${chord} Practice`,
+				path: `/exercises/chords?root=C&quality=maj7`
+			});
+		});
+
+		return recommendations.slice(0, 5); // Return top 5 recommendations
+	}
+
+	// Update daily practice stats
+	private updateDailyPractice(result: ExerciseResult): void {
+		const today = new Date();
+		const dateKey = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+		
+		const existing = this.statistics.practiceCalendar.get(dateKey);
+		if (existing) {
+			existing.exercisesCompleted++;
+			existing.practiceTime += result.timeElapsed / (1000 * 60); // Convert to minutes
+		} else {
+			this.statistics.practiceCalendar.set(dateKey, {
+				date: dateKey,
+				exercisesCompleted: 1,
+				practiceTime: result.timeElapsed / (1000 * 60)
+			});
+		}
+	}
+
+	// Get practice calendar data for the last N days
+	getPracticeCalendar(days: number = 84): DayStats[] {
+		const result: DayStats[] = [];
+		const today = new Date();
+		
+		// Ensure practiceCalendar is initialized as a Map
+		if (!(this.statistics.practiceCalendar instanceof Map)) {
+			this.statistics.practiceCalendar = new Map<string, DayStats>();
+		}
+		
+		for (let i = days - 1; i >= 0; i--) {
+			const date = new Date(today);
+			date.setDate(date.getDate() - i);
+			const dateKey = date.toISOString().split('T')[0];
+			
+			const dayData = this.statistics.practiceCalendar.get(dateKey);
+			if (dayData) {
+				result.push(dayData);
+			} else {
+				// Add empty day
+				result.push({
+					date: dateKey,
+					exercisesCompleted: 0,
+					practiceTime: 0
+				});
+			}
+		}
+		
+		return result;
+	}
+
+	// Calculate current practice streak
+	getPracticeStreak(): { current: number; longest: number } {
+		const today = new Date();
+		let currentStreak = 0;
+		let longestStreak = 0;
+		let tempStreak = 0;
+		
+		// Check if today has activity
+		const todayKey = today.toISOString().split('T')[0];
+		const hasToday = this.statistics.practiceCalendar.has(todayKey);
+		
+		// Count backwards from today
+		for (let i = 0; i < 365; i++) {
+			const date = new Date(today);
+			date.setDate(date.getDate() - i);
+			const dateKey = date.toISOString().split('T')[0];
+			
+			if (this.statistics.practiceCalendar.has(dateKey)) {
+				if (i === 0 || tempStreak > 0) {
+					tempStreak++;
+					if (currentStreak === 0) {
+						currentStreak = tempStreak;
+					}
+				} else {
+					break;
+				}
+				longestStreak = Math.max(longestStreak, tempStreak);
+			} else if (i === 0) {
+				// If today has no activity, start counting from yesterday
+				continue;
+			} else {
+				// Break in streak
+				if (tempStreak > 0) {
+					longestStreak = Math.max(longestStreak, tempStreak);
+					tempStreak = 0;
+				}
+			}
+		}
+		
+		return { current: currentStreak, longest: Math.max(longestStreak, this.statistics.longestStreak) };
 	}
 }
 export const userStatsService = UserStatsService.getInstance();

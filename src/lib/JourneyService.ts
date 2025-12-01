@@ -9,6 +9,11 @@ export interface Lesson {
 	params?: Record<string, string>;
 	completed: boolean;
 	stars: number; // 0-3
+	
+	// New Mastery Fields
+	perfectCompletions: number;
+	requiredPerfectCompletions: number;
+	bpm?: number; // Optional tempo requirement
 }
 
 export interface Unit {
@@ -23,95 +28,215 @@ export interface Unit {
 export class JourneyService {
 	private static instance: JourneyService;
 
-	// Hardcoded curriculum for now
+	// Updated Curriculum based on User Request
 	private units: Unit[] = [
 		{
-			id: 'basics-scales',
-			title: 'Major Scales',
-			description: 'Start with the building blocks of jazz: The Major Scale.',
+			id: 'level-0',
+			title: 'Level 0: Foundations',
+			description: 'Learn the basics: Reading, Names, Intervals, and Flash Cards.',
 			status: 'active',
 			color: 'bg-blue-500',
 			lessons: [
 				{
-					id: 'c-major-scale',
+					id: 'l0-c-scale',
 					title: 'C Major Scale',
 					type: 'exercise',
 					path: '/exercises/scales',
 					params: { root: 'C', mode: 'Maj' },
 					completed: false,
-					stars: 0
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'g-major-scale',
-					title: 'G Major Scale',
+					id: 'l0-notes',
+					title: 'Note Identification',
 					type: 'exercise',
-					path: '/exercises/scales',
-					params: { root: 'G', mode: 'Maj' },
+					path: '/exercises/flashcards',
 					completed: false,
-					stars: 0
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 5
 				},
 				{
-					id: 'f-major-scale',
-					title: 'F Major Scale',
+					id: 'l0-dexterity',
+					title: 'Finger Dexterity',
 					type: 'exercise',
-					path: '/exercises/scales',
-					params: { root: 'F', mode: 'Maj' },
+					path: '/exercises/dexterity',
 					completed: false,
-					stars: 0
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l0-intervals',
+					title: 'Intervals',
+					type: 'exercise',
+					path: '/exercises/intervals',
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l0-flashcards',
+					title: 'Flash Cards',
+					type: 'exercise',
+					path: '/exercises/flashcards',
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 5
 				}
 			]
 		},
 		{
-			id: 'basics-chords',
-			title: 'Basic Chords',
-			description: 'Learn the fundamental 7th chords.',
+			id: 'level-1',
+			title: 'Level 1: Major Scales (Slow)',
+			description: 'C, G, and F Major Scales at a slow tempo.',
 			status: 'locked',
 			color: 'bg-green-500',
 			lessons: [
 				{
-					id: 'c-maj7',
-					title: 'C Major 7',
+					id: 'l1-c-scale',
+					title: 'C Major Scale (60 BPM)',
 					type: 'exercise',
-					path: '/exercises/chords',
-					params: { root: 'C', quality: 'maj7' },
+					path: '/exercises/scales',
+					params: { root: 'C', mode: 'Maj', bpm: '60' },
 					completed: false,
-					stars: 0
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3,
+					bpm: 60
 				},
 				{
-					id: 'g-dom7',
-					title: 'G Dominant 7',
+					id: 'l1-g-scale',
+					title: 'G Major Scale (60 BPM)',
 					type: 'exercise',
-					path: '/exercises/chords',
-					params: { root: 'G', quality: 'dom7' },
+					path: '/exercises/scales',
+					params: { root: 'G', mode: 'Maj', bpm: '60' },
 					completed: false,
-					stars: 0
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3,
+					bpm: 60
 				},
 				{
-					id: 'd-min7',
-					title: 'D Minor 7',
+					id: 'l1-f-scale',
+					title: 'F Major Scale (60 BPM)',
 					type: 'exercise',
-					path: '/exercises/chords',
-					params: { root: 'D', quality: 'min7' },
+					path: '/exercises/scales',
+					params: { root: 'F', mode: 'Maj', bpm: '60' },
 					completed: false,
-					stars: 0
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3,
+					bpm: 60
 				}
 			]
 		},
 		{
-			id: 'ii-v-i',
-			title: 'II-V-I Progression',
-			description: 'The most important progression in Jazz.',
+			id: 'level-2',
+			title: 'Level 2: Medium Tempo & Chords',
+			description: 'Scales at medium tempo and basic chords.',
 			status: 'locked',
-			color: 'bg-purple-500',
+			color: 'bg-yellow-500',
 			lessons: [
 				{
-					id: 'ii-v-i-c',
+					id: 'l2-c-scale',
+					title: 'C Major Scale (90 BPM)',
+					type: 'exercise',
+					path: '/exercises/scales',
+					params: { root: 'C', mode: 'Maj', bpm: '90' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3,
+					bpm: 90
+				},
+				{
+					id: 'l2-c-chords',
+					title: 'C Major Chords',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'C', quality: 'maj7' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				// Add more G and F scale/chord exercises as needed
+			]
+		},
+		{
+			id: 'level-3',
+			title: 'Level 3: Faster & Split Chords',
+			description: 'Pick up the pace and learn split chord voicings.',
+			status: 'locked',
+			color: 'bg-orange-500',
+			lessons: [
+				{
+					id: 'l3-c-scale-fast',
+					title: 'C Major Scale (120 BPM)',
+					type: 'exercise',
+					path: '/exercises/scales',
+					params: { root: 'C', mode: 'Maj', bpm: '120' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3,
+					bpm: 120
+				},
+				{
+					id: 'l3-split-chords',
+					title: 'Split Chords (1735)',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { voicing: '1735' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				}
+			]
+		},
+		{
+			id: 'level-4',
+			title: 'Level 4: II-V-I',
+			description: 'Master the II-V-I progression.',
+			status: 'locked',
+			color: 'bg-red-500',
+			lessons: [
+				{
+					id: 'l4-ii-v-i-c',
 					title: 'II-V-I in C',
 					type: 'exercise',
 					path: '/exercises/two_five_ones',
 					params: { key: 'C' },
 					completed: false,
-					stars: 0
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				}
+			]
+		},
+		{
+			id: 'level-5',
+			title: 'Level 5: Songs',
+			description: 'Apply your skills to real jazz standards.',
+			status: 'locked',
+			color: 'bg-purple-500',
+			lessons: [
+				{
+					id: 'l5-autumn-leaves',
+					title: 'Autumn Leaves',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'autumn_leaves' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 1
 				}
 			]
 		}
@@ -143,28 +268,34 @@ export class JourneyService {
 		const lesson = unit.lessons.find((l) => l.id === lessonId);
 		if (!lesson) return;
 
-		// If already completed, don't award full XP again, but maybe update stars?
-		const isFirstCompletion = !lesson.completed;
+		// Logic for Mastery:
+		// If 3 stars (perfect), increment perfectCompletions
+		if (stars === 3) {
+			lesson.perfectCompletions = (lesson.perfectCompletions || 0) + 1;
+		}
+
+		// Mark as completed if we hit the requirement
+		// OR if it was already marked completed (don't un-complete it)
+		if (lesson.perfectCompletions >= lesson.requiredPerfectCompletions) {
+			lesson.completed = true;
+		}
 		
-		lesson.completed = true;
 		lesson.stars = Math.max(lesson.stars, stars);
 
 		this.checkUnitCompletion(unit);
 		this.saveProgress();
 
 		// Sync with UserStatsService
-		if (isFirstCompletion) {
-			userStatsService.recordExerciseResult({
-				exerciseId: lessonId,
-				exerciseType: 'scale', // Defaulting to scale for now, should be dynamic based on lesson type
-				success: true,
-				accuracy: 100, // Assumed perfect for journey completion for now
-				score: 100,
-				timeElapsed: 0,
-				mistakes: 0,
-				timestamp: new Date()
-			});
-		}
+		userStatsService.recordExerciseResult({
+			exerciseId: lessonId,
+			exerciseType: 'scale', // Should be dynamic
+			success: true,
+			accuracy: stars === 3 ? 100 : stars === 2 ? 80 : 50,
+			score: stars * 33,
+			timeElapsed: 0,
+			mistakes: stars === 3 ? 0 : 3,
+			timestamp: new Date()
+		});
 	}
 
 	getStats() {
@@ -195,8 +326,6 @@ export class JourneyService {
 		}
 	}
 
-
-
 	// Simple persistence using localStorage for now
 	private saveProgress() {
 		if (!browser || typeof localStorage === 'undefined') return;
@@ -207,17 +336,18 @@ export class JourneyService {
 			lessons: u.lessons.map(l => ({
 				id: l.id,
 				completed: l.completed,
-				stars: l.stars
+				stars: l.stars,
+				perfectCompletions: l.perfectCompletions
 			}))
 		}));
 		
-		localStorage.setItem('journey_progress', JSON.stringify(progress));
+		localStorage.setItem('journey_progress_v2', JSON.stringify(progress));
 	}
 
 	private loadProgress() {
 		if (!browser || typeof localStorage === 'undefined') return;
 
-		const saved = localStorage.getItem('journey_progress');
+		const saved = localStorage.getItem('journey_progress_v2');
 		if (!saved) return;
 
 		try {
@@ -232,6 +362,7 @@ export class JourneyService {
 						if (lesson) {
 							lesson.completed = savedLesson.completed;
 							lesson.stars = savedLesson.stars;
+							lesson.perfectCompletions = savedLesson.perfectCompletions || 0;
 						}
 					});
 				}
@@ -252,6 +383,44 @@ export class JourneyService {
 		params.append('lessonId', lesson.id);
 		
 		return `${lesson.path}?${params.toString()}`;
+	}
+
+	getPracticeLesson(unitId: string): { unit: Unit, lesson: Lesson } | undefined {
+		const unitIndex = this.units.findIndex(u => u.id === unitId);
+		if (unitIndex === -1) return undefined;
+
+		// Consider all units up to this one
+		const availableUnits = this.units.slice(0, unitIndex + 1);
+		
+		// 1. Find unmastered lessons in the current unit
+		const currentUnit = this.units[unitIndex];
+		const currentUnmastered = currentUnit.lessons.filter(l => (l.perfectCompletions || 0) < l.requiredPerfectCompletions);
+		
+		if (currentUnmastered.length > 0) {
+			const randomLesson = currentUnmastered[Math.floor(Math.random() * currentUnmastered.length)];
+			return { unit: currentUnit, lesson: randomLesson };
+		}
+
+		// 2. Find unmastered lessons in previous units
+		const allUnmastered: { unit: Unit, lesson: Lesson }[] = [];
+		availableUnits.forEach(u => {
+			u.lessons.forEach(l => {
+				if ((l.perfectCompletions || 0) < l.requiredPerfectCompletions) {
+					allUnmastered.push({ unit: u, lesson: l });
+				}
+			});
+		});
+
+		if (allUnmastered.length > 0) {
+			return allUnmastered[Math.floor(Math.random() * allUnmastered.length)];
+		}
+
+		// 3. If all mastered, pick a random lesson from any available unit (weighted towards current?)
+		// Let's just pick completely random for now
+		const randomUnit = availableUnits[Math.floor(Math.random() * availableUnits.length)];
+		const randomLesson = randomUnit.lessons[Math.floor(Math.random() * randomUnit.lessons.length)];
+		
+		return { unit: randomUnit, lesson: randomLesson };
 	}
 }
 

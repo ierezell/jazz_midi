@@ -32,11 +32,11 @@ describe('Scale exercise - sequential play', () => {
 		expect(result.message).toMatch(/Perfect scale/i);
 	});
 
-	it('generates correct notes for Left Hand (octave 1)', () => {
+	it('generates correct notes for Left Hand (octave 2)', () => {
 		const expected = generateExpectedNotesFor('C', 'Maj', false);
-		// C1 is 36. Scale: 36, 38, 40, 41, 43, 45, 47, 48
-		expect(expected[0]).toBe(36);
-		expect(expected[expected.length - 1]).toBe(48);
+		// C2 is 48. C Major scale: 48, 50, 52, 53, 55, 57, 59, 60
+		expect(expected[0]).toBe(48);
+		expect(expected[expected.length - 1]).toBe(60);
 		expect(expected.length).toBe(8);
 	});
 });

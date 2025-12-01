@@ -87,7 +87,7 @@
 		justify-content: center;
 		align-items: center;
 		padding: 2rem;
-		color: rgba(255, 255, 255, 0.5);
+		color: rgba(0, 0, 0, 0.5);
 		font-size: 0.9rem;
 	}
 
