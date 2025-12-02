@@ -1,1 +1,0 @@
-import{b as o,i,I as c,E as b,J as d,K as E,L as T,F as p,D as _}from"./ipsVM-65.js";import{B as y}from"./C1oR1Yh5.js";function v(t,f,u=!1){i&&c();var e=new y(t),h=u?b:0;function n(a,r){if(i){const l=d(t)===E;if(a===l){var s=T();p(s),e.anchor=s,_(!1),e.ensure(a,r),_(!0);return}}e.ensure(a,r)}o(()=>{var a=!1;f((r,s=!0)=>{a=!0,n(s,r)}),a||n(!1,null)},h)}export{v as i};

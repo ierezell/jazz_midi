@@ -20,8 +20,8 @@ export interface ScoreProps {
 	selectedNote: Note;
 }
 
-export type ExerciseType = 'chord' | 'scale' | 'II-V-I';
-export const allExerciseType: ExerciseType[] = ['chord', 'scale', 'II-V-I'];
+export type ExerciseType = 'chord' | 'scale' | 'II-V-I' | 'note' | 'interval' | 'partition' | 'progression' | 'rhythm';
+export const allExerciseType: ExerciseType[] = ['chord', 'scale', 'II-V-I', 'note', 'interval', 'partition', 'progression', 'rhythm'];
 export interface KeyboardProps {
 	midiNotes: MidiNote[];
 	middleC: number;

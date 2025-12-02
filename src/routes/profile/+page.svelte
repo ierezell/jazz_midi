@@ -21,6 +21,7 @@
 		TrendingUp
 	} from 'lucide-svelte';
 	import NoteHeatmap from '../../components/NoteHeatmap.svelte';
+	import StreakCalendar from '../../components/StreakCalendar.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -303,6 +304,32 @@
 					</div>
 				</div>
 			</div>
+
+			<section class="streak-section">
+				<h2>Practice Streak</h2>
+				<StreakCalendar
+					calendarData={userStatsService.getPracticeCalendar(84)}
+					currentStreak={statistics.currentStreak}
+					longestStreak={statistics.longestStreak}
+				/>
+			</section>
+
+			<section class="recent-activity">
+				<h2>Recent Sessions</h2>
+				{#if statistics.recentSessions.length === 0}
+					<p class="empty">No recent activity recorded.</p>
+				{:else}
+					<div class="sessions-list">
+						{#each statistics.recentSessions as session}
+							<div class="session-item">
+								<span class="date">{session.date.toLocaleDateString()}</span>
+								<span class="duration">{formatTime(session.duration)}</span>
+								<span class="score">Avg Score: {Math.round(session.averageScore)}</span>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</section>
 		</section>
 
 		<aside class="sidebar" in:fly={{ x: 20, duration: 500, delay: 300 }}>
@@ -798,6 +825,27 @@
 		gap: 0.5rem;
 		margin-bottom: 0.5rem;
 		color: #ffa726;
+	}
+
+	.sessions-list {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.session-item {
+		background: rgba(255, 255, 255, 0.02);
+		padding: 1rem;
+		border-radius: 0.5rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.empty {
+		text-align: center;
+		color: rgba(255, 255, 255, 0.5);
+		font-style: italic;
 	}
 
 	.rec-exercise {

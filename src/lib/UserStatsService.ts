@@ -236,6 +236,21 @@ export class UserStatsService {
 		this.profile = { ...this.profile, ...updates, lastActivity: new Date() };
 		this.saveProfile();
 	}
+
+	createProfile(name: string): void {
+		this.profile = {
+			...this.createDefaultProfile(),
+			id: crypto.randomUUID(),
+			name,
+			createdAt: new Date(),
+			lastActivity: new Date()
+		};
+		this.saveProfile();
+		// Reset statistics for new profile
+		this.statistics = this.createDefaultStatistics();
+		this.saveStatistics();
+		this.notifyListeners();
+	}
 	getStatistics(): UserStatistics {
 		return { ...this.statistics };
 	}

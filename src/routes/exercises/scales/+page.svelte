@@ -18,6 +18,8 @@
 		rootKey?: Note;
 		sequentialMode?: boolean;
 		handMode?: HandMode;
+		progressiveHints?: boolean;
+		prompt?: string;
 	}
 
 	let {
@@ -26,7 +28,9 @@
 		scaleMode: propScaleMode,
 		sequentialMode: propSequentialMode,
 		handMode: propHandMode,
-		rootKey: propKey
+		rootKey: propKey,
+		progressiveHints,
+		prompt
 	}: Props = $props();
 
 	// Journey Params
@@ -239,6 +243,8 @@
 	initialNote={effectiveRootKey}
 	{description}
 	exerciseType="scale"
+	{progressiveHints}
+	{prompt}
 >
 	{#snippet children(api: any)}
 		<div class="scale-controls">

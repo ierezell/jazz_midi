@@ -5,12 +5,19 @@
 	import { fade, fly } from 'svelte/transition';
 	import { ArrowRight, CheckCircle, Star } from 'lucide-svelte';
 	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
 
 	let profile = $state(userStatsService.getProfile());
 	let units = $state(journeyService.getUnits());
 	let activeUnit = $derived(units.find((u) => u.status === 'active') || units[0]);
 
 	onMount(() => {
+		// Redirect to login if using default profile
+		if (profile.name === 'Jazz Student' && profile.experiencePoints === 0) {
+			goto('/login');
+			return;
+		}
+
 		const unsubscribe = userStatsService.subscribe(() => {
 			profile = userStatsService.getProfile();
 			units = journeyService.getUnits();
@@ -38,6 +45,51 @@
 	<section class="hero" in:fade>
 		<h1>Welcome back, {profile.name}</h1>
 		<p class="subtitle">Ready to continue your jazz journey?</p>
+	</section>
+
+	<section class="dashboard-grid" in:fade>
+		<div class="dashboard-card daily">
+			<div class="card-header">
+				<h2>Daily Practice</h2>
+				<span class="badge">Recommended</span>
+			</div>
+			<p>Keep your streak alive! Practice a lesson from your current unit.</p>
+			<button
+				class="action-btn"
+				onclick={() =>
+					goto(
+						journeyService.getLessonUrl(
+							activeUnit,
+							journeyService.getPracticeLesson(activeUnit.id)?.lesson || activeUnit.lessons[0]
+						)
+					)}
+			>
+				Start Daily Practice <ArrowRight size={16} />
+			</button>
+		</div>
+
+		<div class="dashboard-card weakness">
+			<div class="card-header">
+				<h2>Work on Weaknesses</h2>
+				<span class="badge">Improve</span>
+			</div>
+			{#if userStatsService.getWeaknessRecommendations().length > 0}
+				<p>Focus on what needs improvement based on your history.</p>
+				<div class="recommendations-list">
+					{#each userStatsService.getWeaknessRecommendations().slice(0, 2) as rec}
+						<a href={rec.path} class="recommendation-link">
+							<span>{rec.recommendedExercise}</span>
+							<ArrowRight size={14} />
+						</a>
+					{/each}
+				</div>
+			{:else}
+				<p>No specific weaknesses detected yet. Keep practicing!</p>
+				<button class="action-btn secondary" onclick={() => goto('/journey')}>
+					Explore Journey <ArrowRight size={16} />
+				</button>
+			{/if}
+		</div>
 	</section>
 
 	<section class="journey-section">
@@ -294,5 +346,94 @@
 		margin: 0;
 		color: rgba(0, 0, 0, 0.6);
 		font-size: 0.9rem;
+	}
+	.dashboard-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		gap: 1.5rem;
+		margin-bottom: 2rem;
+	}
+
+	.dashboard-card {
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 1.5rem;
+		padding: 1.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		transition: transform 0.2s;
+	}
+
+	.dashboard-card:hover {
+		transform: translateY(-2px);
+		background: rgba(255, 255, 255, 0.08);
+	}
+
+	.dashboard-card.daily {
+		border-left: 4px solid #a5b4fc;
+	}
+
+	.dashboard-card.weakness {
+		border-left: 4px solid #fca5a5;
+	}
+
+	.card-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.card-header h2 {
+		font-size: 1.5rem;
+		margin: 0;
+	}
+
+	.action-btn {
+		margin-top: auto;
+		padding: 0.75rem 1rem;
+		background: white;
+		color: black;
+		border: none;
+		border-radius: 0.5rem;
+		font-weight: bold;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		transition: background 0.2s;
+	}
+
+	.action-btn:hover {
+		background: #f0f0f0;
+	}
+
+	.action-btn.secondary {
+		background: rgba(255, 255, 255, 0.1);
+		color: white;
+	}
+
+	.recommendations-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.recommendation-link {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.5rem;
+		background: rgba(0, 0, 0, 0.2);
+		border-radius: 0.5rem;
+		color: white;
+		text-decoration: none;
+		font-size: 0.9rem;
+		transition: background 0.2s;
+	}
+
+	.recommendation-link:hover {
+		background: rgba(0, 0, 0, 0.3);
 	}
 </style>

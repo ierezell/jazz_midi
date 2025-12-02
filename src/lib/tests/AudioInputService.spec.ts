@@ -4,6 +4,7 @@ import { AudioInputService, audioInputService } from '../AudioInputService';
 // Mock the BasicPitch library
 vi.mock('@spotify/basic-pitch', () => {
 	const MockBasicPitch = vi.fn().mockImplementation(function (this: any, modelUrl: string) {
+		console.log('MockBasicPitch constructor called with:', modelUrl);
 		this.modelUrl = modelUrl;
 		this.evaluateModel = vi.fn();
 		return this;
@@ -19,6 +20,9 @@ describe('AudioInputService', () => {
 
 	beforeEach(() => {
 		service = AudioInputService.getInstance();
+		(service as any).isRecording = false;
+		(service as any).basicPitch = null;
+		(service as any).audioContext = null;
 	});
 
 	it('should be a singleton', () => {
@@ -26,7 +30,17 @@ describe('AudioInputService', () => {
 		expect(service).toBe(instance2);
 	});
 
-	it('should use the correct model URL', () => {
+	it('should use the correct model URL', async () => {
+		// Mock AudioContext
+		vi.stubGlobal('AudioContext', vi.fn(function() {
+			return {
+				resume: vi.fn().mockResolvedValue(undefined),
+				close: vi.fn()
+			};
+		}));
+
+		await service.start();
+
 		// Access the private basicPitch property to verify the URL
 		const basicPitchInstance = (service as any).basicPitch;
 		expect(basicPitchInstance.modelUrl).toBe(
@@ -34,7 +48,17 @@ describe('AudioInputService', () => {
 		);
 	});
 
-	it('should not use the old broken model URL', () => {
+	it('should not use the old broken model URL', async () => {
+		// Mock AudioContext
+		vi.stubGlobal('AudioContext', vi.fn(function() {
+			return {
+				resume: vi.fn().mockResolvedValue(undefined),
+				close: vi.fn()
+			};
+		}));
+
+		await service.start();
+
 		const basicPitchInstance = (service as any).basicPitch;
 		expect(basicPitchInstance.modelUrl).not.toContain('basic-pitch-model');
 	});

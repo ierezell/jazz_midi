@@ -14,7 +14,12 @@ export class MIDIManager {
 	private debugMode = false;
 	private audioInputEnabled = false;
 
-	constructor() {}
+	constructor() {
+		// Subscribe to audio input events
+		audioInputService.addListener((event) => {
+			this.handleMIDIMessage(event);
+		});
+	}
 
 	async initialize(): Promise<boolean> {
 		try {

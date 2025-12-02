@@ -29,6 +29,8 @@
 		inversion?: Inversion;
 		rootKey?: Note;
 		voicing?: ChordVoicing;
+		progressiveHints?: boolean;
+		prompt?: string;
 	}
 
 	let {
@@ -36,7 +38,9 @@
 		onComplete,
 		inversion: propInversion,
 		rootKey: propKey,
-		voicing: propVoicing
+		voicing: propVoicing,
+		progressiveHints,
+		prompt
 	}: Props = $props();
 
 	// Journey Params
@@ -205,6 +209,8 @@
 		initialNote={effectiveRootKey}
 		{description}
 		exerciseType="progression"
+		{progressiveHints}
+		{prompt}
 	>
 		{#snippet children(api: any)}
 			{@const wasCompleted = exerciseCompleted}

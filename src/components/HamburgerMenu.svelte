@@ -14,21 +14,34 @@
 		isOpen = false;
 	}
 
-	const links = [
-		{ href: '/', label: 'Home', icon: '🏠' },
-		{ href: '/journey', label: 'Journey', icon: '🗺️' },
-		{ href: '/exercises/random', label: 'Random', icon: '🎲' },
-		{ href: '/exercises/two_five_ones', label: 'II-V-I', icon: '🎹' },
-		{ href: '/exercises/scales', label: 'Scales', icon: '🎼' },
-		{ href: '/exercises/chords', label: 'Chords', icon: '🎵' },
-		{ href: '/exercises/intervals', label: 'Intervals', icon: '📏' },
-		{ href: '/exercises/songs', label: 'Songs', icon: '🎤' },
-		{ href: '/exercises/names', label: 'Names', icon: '📝' },
-		{ href: '/exercises/partition', label: 'Partition', icon: '🎼' },
-		{ href: '/exercises/flashcards', label: 'Flashcards', icon: '🃏' },
-		{ href: '/exercises/dexterity', label: 'Dexterity', icon: '🎯' },
-		{ href: '/stats', label: 'Statistics', icon: '📊' },
-		{ href: '/profile', label: 'Profile', icon: '👤' }
+	const menuGroups = [
+		{
+			title: 'Main',
+			links: [
+				{ href: '/', label: 'Home', icon: '🏠' },
+				{ href: '/journey', label: 'Journey', icon: '🗺️' },
+				{ href: '/profile', label: 'Profile', icon: '👤' }
+			]
+		},
+		{
+			title: 'Foundations',
+			links: [
+				{ href: '/exercises/names', label: 'Note Names', icon: '📝' },
+				{ href: '/exercises/intervals', label: 'Intervals', icon: '📏' },
+				{ href: '/exercises/flashcards', label: 'Flashcards', icon: '⚡' },
+				{ href: '/exercises/songs', label: 'Songs', icon: '🎵' },
+				{ href: '/exercises/partition', label: 'Sight Reading', icon: '👀' },
+				{ href: '/exercises/rhythm', label: 'Rhythm', icon: '🥁' }
+			]
+		},
+		{
+			title: 'Scales & Chords',
+			links: [
+				{ href: '/exercises/scales', label: 'Scales', icon: '🎼' },
+				{ href: '/exercises/chords', label: 'Chords', icon: '🎵' },
+				{ href: '/exercises/two_five_ones', label: 'II-V-I', icon: '🎹' }
+			]
+		}
 	];
 </script>
 
@@ -57,19 +70,26 @@
 					<X size={24} />
 				</button>
 			</div>
-			<ul>
-				{#each links as link}
-					<li
-						class:active={page.url.pathname === link.href ||
-							(link.href !== '/' && page.url.pathname.startsWith(link.href))}
-					>
-						<a href={resolve(link.href as any)} onclick={closeMenu}>
-							<span class="icon">{link.icon}</span>
-							<span class="label">{link.label}</span>
-						</a>
-					</li>
+			<div class="menu-scroll">
+				{#each menuGroups as group}
+					<div class="menu-group">
+						<h3>{group.title}</h3>
+						<ul>
+							{#each group.links as link}
+								<li
+									class:active={page.url.pathname === link.href ||
+										(link.href !== '/' && page.url.pathname.startsWith(link.href))}
+								>
+									<a href={resolve(link.href as any)} onclick={closeMenu}>
+										<span class="icon">{link.icon}</span>
+										<span class="label">{link.label}</span>
+									</a>
+								</li>
+							{/each}
+						</ul>
+					</div>
 				{/each}
-			</ul>
+			</div>
 		</nav>
 	{/if}
 </div>
@@ -119,21 +139,21 @@
 		box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
 		display: flex;
 		flex-direction: column;
-		padding: 1rem;
 	}
 
 	.menu-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 2rem;
-		padding-bottom: 1rem;
+		padding: 1.5rem 1rem;
 		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		flex-shrink: 0;
 	}
 
 	.menu-header h2 {
 		margin: 0;
 		color: white;
+		font-size: 1.5rem;
 	}
 
 	.close-btn {
@@ -148,13 +168,30 @@
 		color: white;
 	}
 
+	.menu-scroll {
+		flex: 1;
+		overflow-y: auto;
+		padding: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	.menu-group h3 {
+		font-size: 0.8rem;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.5);
+		margin: 0 0 0.5rem 0.5rem;
+		letter-spacing: 0.05em;
+	}
+
 	ul {
 		list-style: none;
 		padding: 0;
 		margin: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.25rem;
 	}
 
 	li a {

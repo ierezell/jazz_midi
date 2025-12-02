@@ -1,8 +1,6 @@
-- Add other exercices (ones I got from teacher)
-- Add dexterity exercices (to practices specific notes / hand movements). 
-- Ensure all the user journey flow is ok. 
-- Ensure all the exercices are working and the UI is correct.
-- Improve flashcards.
-- Add missed notes => specific exercices in stats 
-- Implement correct AudioInputService (MidiNotes notes from microphone) (might need averaging or some tweak...)
 - add tests to cover all the code / pages / flow / journey
+- add velocity to midi notes to know if it was played softly or loudly => more exercices about velocity. 
+- Add strict beat so we HAVE TO play on EACH beat.
+- Add swing to metronome
+- Add dexterity exercices (to practices specific notes / hand movements).
+- Add other exercices (ones I got from teacher)

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { audioManager } from '$lib/AudioManager';
 	import { midiManager } from '$lib/MIDIManager';
+	import { audioInputService } from '$lib/AudioInputService';
 	import { userStatsService } from '$lib/UserStatsService';
 	import { calculateOptimalRange, getNoteRole } from '$lib/MusicTheoryUtils';
 	import {
@@ -16,7 +17,8 @@
 		type NoteEvent,
 		type ScoreProps
 	} from '$lib/types/types';
-	import { onDestroy, onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { journeyService } from '$lib/JourneyService';
@@ -51,7 +53,15 @@
 		 * exercises that don't need a staff (e.g. note-name exercises).
 		 */
 		showScore?: boolean;
-		exerciseType?: 'chord' | 'scale' | 'progression' | 'partition' | 'rhythm';
+		exerciseType?:
+			| 'chord'
+			| 'scale'
+			| 'II-V-I'
+			| 'note'
+			| 'interval'
+			| 'partition'
+			| 'progression'
+			| 'rhythm';
 	}
 
 	let {
@@ -66,10 +76,13 @@
 		showScore,
 		children,
 		description,
-		exerciseType = 'chord'
-	}: BaseExerciseProps & { children?: any } = $props();
+		exerciseType = 'chord',
+		progressiveHints = true,
+		prompt
+	}: BaseExerciseProps & { children?: any; progressiveHints?: boolean; prompt?: string } = $props();
 
-	const KEYBOARD_SHOW_AFTER_MISTAKES = 3;
+	const SCORE_SHOW_AFTER_MISTAKES = 3;
+	const KEYBOARD_SHOW_AFTER_MISTAKES = 5;
 	const EXPECTED_NOTES_SHOW_AFTER_MISTAKES = 5;
 
 	let selectedNote: Note = $state(initialNote ?? 'C');
@@ -96,8 +109,16 @@
 	let currentBpm = $state(120);
 	const TEMPO_TOLERANCE_MS = 150; // Tolerance for "on beat"
 
-	// showScore controls whether the Score UI is rendered; default to true
-	let showScoreState = $state(showScore ?? true);
+	// showScore controls whether the Score UI is rendered
+	// If progressiveHints is true, we hide score until mistakes threshold is reached
+	// If showScore prop is explicitly provided, it overrides default behavior but progressiveHints can still force hide
+	let showScoreState = $derived.by(() => {
+		if (showScore === false) return false; // Explicitly hidden
+		if (progressiveHints) {
+			return mistakes >= SCORE_SHOW_AFTER_MISTAKES;
+		}
+		return showScore ?? true;
+	});
 
 	// Journey integration - detect URL params
 	const unitId = $derived(page.url.searchParams.get('unitId'));
@@ -110,13 +131,16 @@
 	let completedAccuracy = $state(0);
 	let completedXp = $state(0);
 
-	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
-	let expectedNotes = $derived(generateExpectedNotes(selectedNote));
-	let scoreProps = $derived(generateScoreProps(selectedNote));
-	let showKeyboard = $derived(debugMode || mistakes >= KEYBOARD_SHOW_AFTER_MISTAKES);
 	let showExpected = $derived.by(() => {
 		return mistakes >= EXPECTED_NOTES_SHOW_AFTER_MISTAKES;
 	});
+
+	let currentNotes = $derived(noteEvents.map((e) => e.noteNumber));
+	let expectedNotes = $derived(generateExpectedNotes(selectedNote));
+	let scoreProps = $derived(generateScoreProps(selectedNote));
+	let showKeyboard = $derived(
+		debugMode || (progressiveHints && mistakes >= KEYBOARD_SHOW_AFTER_MISTAKES)
+	);
 	let keyboardProps = $derived({
 		...calculateOptimalRange(expectedNotes),
 		midiNotes: currentNotes,
@@ -226,9 +250,17 @@
 		}
 
 		if (exerciseType) {
+			// Map exercise types to the types expected by updateNoteProgress
+			const progressType =
+				exerciseType === 'II-V-I'
+					? 'progression'
+					: exerciseType === 'note' || exerciseType === 'interval'
+						? 'chord'
+						: exerciseType;
+
 			userStatsService.updateNoteProgress(
 				note.noteName,
-				exerciseType,
+				progressType as 'chord' | 'scale' | 'progression' | 'partition' | 'rhythm',
 				undefined,
 				result.isCorrect,
 				0,
@@ -284,9 +316,18 @@
 
 		if (exerciseType) {
 			console.log('Recording stats...', { exerciseType, success: true, accuracy, timeElapsed });
+
+			// Map exercise types to match ExerciseResult type
+			const resultType: 'chord' | 'scale' | 'progression' | 'partition' | 'rhythm' =
+				exerciseType === 'II-V-I'
+					? 'progression'
+					: exerciseType === 'note' || exerciseType === 'interval'
+						? 'chord'
+						: (exerciseType as 'chord' | 'scale' | 'progression' | 'partition' | 'rhythm');
+
 			userStatsService.recordExerciseResult({
 				exerciseId: window.location.pathname,
-				exerciseType,
+				exerciseType: resultType,
 				success: true,
 				accuracy,
 				timeElapsed,
@@ -389,8 +430,14 @@
 		</div>
 	</div>
 
+	{#if prompt && !showScoreState}
+		<div class="prompt-section">
+			<div class="prompt-text">{prompt}</div>
+		</div>
+	{/if}
+
 	{#if showScoreState}
-		<div class="score-section">
+		<div class="score-section" in:fade>
 			<Score {...scoreProps} />
 		</div>
 	{/if}
@@ -707,5 +754,22 @@
 		z-index: 10;
 		min-width: 180px;
 		max-width: 320px;
+	}
+	.prompt-section {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 200px;
+		background: var(--color-bg, white);
+		border: 1px solid var(--color-border, #e1e5e9);
+		border-radius: 8px;
+		padding: 2rem;
+		text-align: center;
+	}
+
+	.prompt-text {
+		font-size: 3rem;
+		font-weight: bold;
+		color: var(--color-text, #333);
 	}
 </style>
