@@ -63,6 +63,7 @@ export interface ExerciseTypeStats {
 	bestScore: number;
 	totalTime: number;
 	masteryLevel: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+	avgDeviationMs?: number;
 }
 export interface ChordMastery {
 	root: Note;
@@ -373,8 +374,22 @@ export class UserStatsService {
 			const stored = storage.getItem(this.storageKey);
 			if (stored) {
 				const parsed = JSON.parse(stored);
+				
+				// Helper to rehydrate Maps from array of entries
+				const hydrateMap = <K, V>(data: any): Map<K, V> => {
+					if (!data) return new Map<K, V>();
+					if (Array.isArray(data)) return new Map<K, V>(data);
+					// Handle cases where might be stored as plain object (legacy/fallback)
+					if (typeof data === 'object') return new Map<K, V>(Object.entries(data) as any);
+					return new Map<K, V>();
+				};
+
 				return {
 					...parsed,
+					noteProgress: hydrateMap(parsed.noteProgress),
+					missedNotes: hydrateMap(parsed.missedNotes),
+					missedChords: hydrateMap(parsed.missedChords),
+					practiceCalendar: hydrateMap(parsed.practiceCalendar),
 					masteredChords:
 						parsed.masteredChords?.map((m: any) => ({
 							...m,
@@ -472,6 +487,13 @@ export class UserStatsService {
 		stats.averageScore = (stats.averageScore * (total - 1) + result.score) / total;
 		stats.bestScore = Math.max(stats.bestScore, result.score);
 		stats.totalTime += result.timeElapsed / (1000 * 60);
+
+		if (result.avgDeviationMs !== undefined) {
+			const deviationCount = stats.completed; // Approximation
+			stats.avgDeviationMs =
+				((stats.avgDeviationMs || 0) * (deviationCount - 1) + result.avgDeviationMs) / deviationCount;
+		}
+
 		stats.masteryLevel = this.calculateMasteryLevel(stats);
 	}
 	private updateMastery(result: ExerciseResult): void {}
@@ -662,7 +684,17 @@ export class UserStatsService {
 	private saveStatistics(): void {
 		try {
 			const storage = UserStatsService.getStorage();
-			storage.setItem(this.storageKey, JSON.stringify(this.statistics));
+			
+			// Convert Maps to arrays for serialization
+			const serializableStats = {
+				...this.statistics,
+				noteProgress: Array.from(this.statistics.noteProgress.entries()),
+				missedNotes: Array.from(this.statistics.missedNotes.entries()),
+				missedChords: Array.from(this.statistics.missedChords.entries()),
+				practiceCalendar: Array.from(this.statistics.practiceCalendar.entries())
+			};
+
+			storage.setItem(this.storageKey, JSON.stringify(serializableStats));
 		} catch (error) {
 			console.warn('Failed to save user statistics:', error);
 		}

@@ -162,11 +162,11 @@
 					</div>
 				{/if}
 				<div class="profile-meta">
-					<span class="level-tag">Level {profile.level}</span>
-					<span>•</span>
-					<span>{profile.experiencePoints} XP</span>
-					<span>•</span>
-					<span>Joined {formatDate(profile.createdAt)}</span>
+					<span class="meta-item level-tag">Level {profile.level}</span>
+					<span class="meta-divider">•</span>
+					<span class="meta-item">{profile.experiencePoints} XP</span>
+					<span class="meta-divider">•</span>
+					<span class="meta-item">Joined {formatDate(profile.createdAt)}</span>
 				</div>
 			</div>
 		</div>
@@ -397,12 +397,13 @@
 	}
 
 	.profile-header {
-		background: rgba(255, 255, 255, 0.05);
-		backdrop-filter: blur(10px);
+		background: var(--color-surface);
+		backdrop-filter: var(--glass-blur);
 		border-radius: 1.5rem;
 		padding: 2rem;
 		margin-bottom: 2rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid var(--color-border);
+		box-shadow: var(--shadow-lg);
 	}
 
 	.avatar-section {
@@ -416,12 +417,12 @@
 		width: 100px;
 		height: 100px;
 		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--color-surface-raised);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		font-size: 3rem;
-		border: 4px solid rgba(255, 255, 255, 0.2);
+		border: 4px solid var(--color-border);
 	}
 
 	.profile-info {
@@ -440,7 +441,7 @@
 		font-size: 2.5rem;
 		font-weight: bold;
 		margin: 0;
-		background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
 		background-clip: text;
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
@@ -448,17 +449,17 @@
 
 	.name-input {
 		font-size: 1.5rem;
-		background: rgba(255, 255, 255, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
 		border-radius: 0.5rem;
 		padding: 0.5rem;
-		color: white;
+		color: var(--color-text);
 	}
 
 	.icon-btn {
-		background: rgba(255, 255, 255, 0.1);
-		border: none;
-		color: white;
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
+		color: var(--color-text);
 		padding: 0.5rem;
 		border-radius: 50%;
 		cursor: pointer;
@@ -475,13 +476,13 @@
 	.profile-meta {
 		display: flex;
 		gap: 1rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--color-text-muted);
 		font-size: 0.9rem;
 		align-items: center;
 	}
 
 	.level-tag {
-		background: #4caf50;
+		background: var(--color-success);
 		color: white;
 		padding: 0.25rem 0.75rem;
 		border-radius: 1rem;
@@ -514,20 +515,22 @@
 	}
 
 	.stat-card {
-		background: rgba(255, 255, 255, 0.05);
-		backdrop-filter: blur(10px);
+		background: var(--color-surface);
 		border-radius: 1rem;
 		padding: 1.5rem;
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		transition: transform 0.2s;
+		border: 1px solid var(--color-border);
+		transition:
+			transform 0.2s,
+			background-color 0.2s;
+		box-shadow: var(--shadow-lg);
 	}
 
 	.stat-card:hover {
 		transform: translateY(-5px);
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--color-surface-raised);
 	}
 
 	.stat-card.highlight {
@@ -548,7 +551,7 @@
 
 	.stat-label {
 		font-size: 0.9rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--color-text-muted);
 	}
 
 	.content-grid {
@@ -565,18 +568,19 @@
 
 	.main-stats,
 	.sidebar section {
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--color-surface);
 		border-radius: 1rem;
 		padding: 1.5rem;
 		margin-bottom: 2rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid var(--color-border);
+		box-shadow: var(--shadow-lg);
 	}
 
 	h2,
 	h3 {
 		margin: 0 0 1.5rem 0;
 		font-size: 1.2rem;
-		color: rgba(255, 255, 255, 0.9);
+		color: var(--color-text);
 	}
 
 	.exercise-grid {
@@ -586,9 +590,10 @@
 	}
 
 	.exercise-card {
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--color-surface-raised);
 		border-radius: 0.75rem;
 		padding: 1rem;
+		border: 1px solid var(--color-border);
 	}
 
 	.exercise-header {
@@ -616,7 +621,7 @@
 		display: flex;
 		justify-content: space-between;
 		font-size: 0.9rem;
-		color: rgba(255, 255, 255, 0.7);
+		color: var(--color-text-muted);
 		margin-bottom: 0.25rem;
 	}
 
@@ -630,9 +635,10 @@
 		display: flex;
 		gap: 1rem;
 		padding: 0.75rem;
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--color-surface-raised);
 		border-radius: 0.5rem;
 		opacity: 0.5;
+		border: 1px solid var(--color-border);
 	}
 
 	.achievement-item.unlocked {
@@ -662,17 +668,17 @@
 		justify-content: center;
 		gap: 0.5rem;
 		padding: 0.75rem;
-		background: rgba(255, 255, 255, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
 		border-radius: 0.5rem;
-		color: white;
+		color: var(--color-text);
 		cursor: pointer;
 		font-size: 0.9rem;
 		transition: all 0.2s;
 	}
 
 	.action-btn:hover {
-		background: rgba(255, 255, 255, 0.2);
+		background: var(--color-surface);
 	}
 
 	.action-btn.primary {
@@ -803,19 +809,19 @@
 	}
 
 	.recommendation-card {
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
 		border-radius: 0.75rem;
 		padding: 1rem;
 		text-decoration: none;
-		color: white;
+		color: var(--color-text);
 		transition: all 0.2s;
 		display: block;
 	}
 
 	.recommendation-card:hover {
-		background: rgba(255, 255, 255, 0.1);
-		border-color: rgba(76, 175, 80, 0.5);
+		background: var(--color-surface);
+		border-color: var(--color-success);
 		transform: translateY(-2px);
 	}
 
@@ -824,7 +830,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		margin-bottom: 0.5rem;
-		color: #ffa726;
+		color: var(--color-warn);
 	}
 
 	.sessions-list {
@@ -834,28 +840,46 @@
 	}
 
 	.session-item {
-		background: rgba(255, 255, 255, 0.02);
+		background: var(--color-surface-raised);
 		padding: 1rem;
 		border-radius: 0.5rem;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+		color: var(--color-text);
+		border: 1px solid var(--color-border);
 	}
 
+	.profile-meta {
+		display: flex;
+		gap: 0.75rem;
+		align-items: center;
+		font-size: 0.95rem;
+		margin-top: 0.5rem;
+	}
+
+	.meta-item {
+		color: var(--color-text-muted); /* Ensure high contrast */
+		font-weight: 500;
+	}
+
+	.meta-divider {
+		color: var(--color-border);
+	}
 	.empty {
 		text-align: center;
-		color: rgba(255, 255, 255, 0.5);
+		color: var(--color-text-muted);
 		font-style: italic;
 	}
 
 	.rec-exercise {
-		color: rgba(255, 255, 255, 0.7);
+		color: var(--color-text-muted);
 		font-size: 0.9rem;
 	}
 
 	.no-weaknesses {
 		text-align: center;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--color-text-muted);
 		font-style: italic;
 		padding: 2rem;
 	}

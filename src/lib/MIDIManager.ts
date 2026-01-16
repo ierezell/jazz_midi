@@ -1,5 +1,6 @@
 import { MidiToNote, NoteToMidi } from './types/notes.constants';
 import type { MIDIEventHandlers, MidiNote, Note, NoteEvent } from './types/types';
+import { writable, type Writable } from 'svelte/store';
 
 import { createVirtualMidiAccess, setupKeyboardInput, type VirtualMidiInput } from './virtualMidi';
 import { audioInputService } from './AudioInputService';
@@ -13,6 +14,11 @@ export class MIDIManager {
 	private errorCallbacks: ((error: Error) => void)[] = [];
 	private debugMode = false;
 	private audioInputEnabled = false;
+
+	public midiState: Writable<{ inputs: MIDIInput[]; outputs: MIDIOutput[] }> = writable({
+		inputs: [],
+		outputs: []
+	});
 
 	constructor() {
 		// Subscribe to audio input events
@@ -45,6 +51,7 @@ export class MIDIManager {
 			);
 
 			console.debug('MIDI Manager: Connected to physical MIDI devices');
+			this.updateMidiState();
 			return true;
 		} catch (error) {
 			this.handleError(error as Error);
@@ -90,6 +97,7 @@ export class MIDIManager {
 			midiAccess.onstatechange = (event) => {
 				const port = event.port!;
 				console.debug(`MIDI port state changed: ${port.name} is now ${port.state}`);
+				this.updateMidiState();
 			};
 		} catch (error) {
 			console.error('Error setting up MIDI callback:', error);
@@ -251,6 +259,15 @@ export class MIDIManager {
 		this.eventHandlers = {};
 		this.errorCallbacks = [];
 		console.debug('MIDI Manager: Cleaned up all connections');
+	}
+
+	private updateMidiState(): void {
+		if (this.midiAccess) {
+			this.midiState.set({
+				inputs: Array.from(this.midiAccess.inputs.values()),
+				outputs: Array.from(this.midiAccess.outputs.values())
+			});
+		}
 	}
 }
 

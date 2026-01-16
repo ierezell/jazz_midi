@@ -156,19 +156,20 @@
 
 	.stats-header {
 		position: fixed;
-		top: 60px; /* Position below main header */
+		top: 71px; /* Match main header height (70px + 1px border) */
 		left: 0;
 		right: 0;
 		height: 60px;
-		background: rgba(20, 20, 30, 0.95);
-		backdrop-filter: blur(10px);
-		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--glass-bg);
+		backdrop-filter: var(--glass-blur);
+		-webkit-backdrop-filter: var(--glass-blur);
+		border-bottom: 1px solid var(--color-border);
 		display: flex;
 		justify-content: center;
 		gap: 2rem;
 		align-items: center;
-		z-index: 40; /* Below main header (z-index: 50) */
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+		z-index: 90; /* Below main header (z-index: 100) */
+		box-shadow: var(--shadow-lg);
 	}
 
 	.stat-item {
@@ -176,9 +177,9 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.5rem 1rem;
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--color-surface-raised);
 		border-radius: 2rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid var(--color-border);
 	}
 
 	.stat-info {
@@ -189,7 +190,7 @@
 
 	.stat-label {
 		font-size: 0.7rem;
-		color: rgba(255, 255, 255, 0.5);
+		color: var(--color-text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
@@ -197,17 +198,17 @@
 	.stat-value {
 		font-weight: bold;
 		font-size: 0.9rem;
-		color: white;
+		color: var(--color-text);
 	}
 
 	.text-yellow-400 {
-		color: #facc15;
+		color: var(--color-warn);
 	}
 	.text-blue-400 {
-		color: #60a5fa;
+		color: var(--color-primary);
 	}
 	.text-orange-400 {
-		color: #fb923c;
+		color: var(--color-rh); /* Using RH/Orange for streak fire */
 	}
 
 	.journey-header {
@@ -218,10 +219,12 @@
 	h1 {
 		font-size: 2.5rem;
 		margin-bottom: 0.5rem;
-		background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+		background: var(--header-gradient);
 		background-clip: text;
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
+		/* Ensure fallback visibility */
+		color: var(--color-primary);
 	}
 
 	.path-container {
@@ -231,21 +234,19 @@
 	}
 
 	.unit-section {
-		background: rgba(255, 255, 255, 0.03);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
 		border-radius: 1.5rem;
 		padding: 2rem;
 		position: relative;
 		z-index: 1;
-		transition:
-			transform 0.3s ease,
-			box-shadow 0.3s ease;
+		transition: all 0.3s ease;
 	}
 
 	.unit-section:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-		border-color: rgba(255, 255, 255, 0.15);
+		transform: translateY(-4px);
+		box-shadow: var(--shadow-lg);
+		border-color: var(--color-primary);
 	}
 
 	.unit-header {
@@ -266,7 +267,7 @@
 
 	.unit-info p {
 		margin: 0;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--color-text-muted);
 	}
 
 	.unit-status {
@@ -276,9 +277,9 @@
 	}
 
 	.practice-btn {
-		background: rgba(255, 255, 255, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		color: white;
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
+		color: var(--color-text);
 		border-radius: 50%;
 		width: 32px;
 		height: 32px;
@@ -290,8 +291,9 @@
 	}
 
 	.practice-btn:hover {
-		background: rgba(255, 255, 255, 0.2);
+		background: var(--color-surface-raised);
 		transform: scale(1.1);
+		border-color: var(--color-primary);
 	}
 
 	.badge {
@@ -305,13 +307,15 @@
 	}
 
 	.badge.completed {
-		background: rgba(76, 175, 80, 0.2);
-		color: #4caf50;
+		background: rgba(34, 197, 94, 0.1);
+		color: var(--color-success);
+		border: 1px solid var(--color-success);
 	}
 
 	.badge.locked {
-		background: rgba(255, 255, 255, 0.1);
-		color: rgba(255, 255, 255, 0.5);
+		background: var(--color-surface-raised);
+		color: var(--color-text-muted);
+		border: 1px solid var(--color-border);
 	}
 
 	.lessons-grid {
@@ -325,24 +329,23 @@
 		align-items: center;
 		gap: 1rem;
 		padding: 1rem;
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
 		border-radius: 1rem;
 		text-decoration: none;
-		color: rgb(0, 0, 0);
+		color: var(--color-text);
 		transition: all 0.2s;
 	}
 
 	.lesson-card:not(.locked):hover {
 		transform: translateY(-2px);
-		background: rgba(255, 255, 255, 0.1);
-		border-color: rgba(255, 255, 255, 0.2);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+		border-color: var(--color-primary);
+		box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
 	}
 
 	.lesson-card.completed {
-		border-color: #4caf50;
-		background: rgba(76, 175, 80, 0.1);
+		border-color: var(--color-success);
+		background: rgba(34, 197, 94, 0.05);
 	}
 
 	.lesson-card.locked {
@@ -355,12 +358,13 @@
 		width: 40px;
 		height: 40px;
 		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--color-surface);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
 		transition: transform 0.2s ease;
+		border: 1px solid var(--color-border);
 	}
 
 	.lesson-card:not(.locked):hover .lesson-icon {
@@ -368,8 +372,10 @@
 	}
 
 	.lesson-card.completed .lesson-icon {
-		background: #4caf50;
-		color: white;
+		background: var(--color-success);
+		color: #fff;
+		border-color: var(--color-success);
+		box-shadow: 0 0 10px var(--color-success);
 	}
 
 	.lesson-content {
@@ -404,10 +410,11 @@
 
 	.mastery-progress {
 		font-size: 0.7rem;
-		background: rgba(255, 255, 255, 0.1);
-		padding: 0.1rem 0.4rem;
+		background: var(--color-surface);
+		padding: 0.15rem 0.5rem;
 		border-radius: 0.5rem;
-		color: rgba(255, 255, 255, 0.8);
+		color: var(--color-text-muted);
+		border: 1px solid var(--color-border);
 	}
 
 	.path-connector {
@@ -421,19 +428,29 @@
 	.line {
 		width: 2px;
 		height: 100%;
-		background: rgba(255, 255, 255, 0.1);
-		border-left: 2px dashed rgba(255, 255, 255, 0.3);
+		background: var(--color-border);
+		border-left: 2px dashed var(--color-border);
 	}
 
 	/* Tailwind-like utility classes for colors */
+	/* Tailwind-like utility classes for colors */
 	.bg-blue-500 {
-		color: #60a5fa;
+		color: var(--color-level-0);
 	}
 	.bg-green-500 {
-		color: #4ade80;
+		color: var(--color-level-1);
+	}
+	.bg-yellow-500 {
+		color: var(--color-level-2);
+	}
+	.bg-orange-500 {
+		color: var(--color-level-3);
+	}
+	.bg-red-500 {
+		color: var(--color-level-4);
 	}
 	.bg-purple-500 {
-		color: #c084fc;
+		color: var(--color-level-5);
 	}
 
 	@media (max-width: 600px) {

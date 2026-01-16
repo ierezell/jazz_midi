@@ -153,6 +153,9 @@
 		handMode = target.checked;
 		playedNotes = new Set();
 	}
+
+	// Generate prompt from current state
+	let computedPrompt = $derived(`${INTERVAL_NAMES[intervalType]} from ${propKey || 'C'}`);
 </script>
 
 <BaseExercise
@@ -165,6 +168,7 @@
 	onComplete={() => {}}
 	initialNote={propKey || 'C'}
 	{description}
+	prompt={computedPrompt}
 >
 	{#snippet children(api: any)}
 		{@const wasCompleted = exerciseCompleted}

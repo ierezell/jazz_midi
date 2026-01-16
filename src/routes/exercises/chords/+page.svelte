@@ -193,6 +193,10 @@
 	function handleParentReset(): void {
 		exerciseCompleted = false;
 	}
+
+	// Generate prompt from current state
+	let computedPrompt = $derived(`${effectiveRootKey} ${chordType}`);
+	let effectivePrompt = $derived(prompt ?? computedPrompt);
 </script>
 
 <BaseExercise
@@ -206,7 +210,7 @@
 	initialNote={effectiveRootKey}
 	{description}
 	{progressiveHints}
-	{prompt}
+	prompt={effectivePrompt}
 >
 	{#snippet children(api: any)}
 		{@const wasCompleted = exerciseCompleted}

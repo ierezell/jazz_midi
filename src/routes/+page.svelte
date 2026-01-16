@@ -169,17 +169,18 @@
 	}
 
 	h1 {
-		font-size: 3rem;
+		font-size: clamp(2rem, 8vw, 3.5rem);
 		margin-bottom: 0.5rem;
-		background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
 		background-clip: text;
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
+		font-weight: 800;
 	}
 
 	.subtitle {
 		font-size: 1.2rem;
-		color: rgba(0, 0, 0, 0.7);
+		color: var(--color-text-muted);
 	}
 
 	.journey-section {
@@ -189,21 +190,16 @@
 	}
 
 	.level-card {
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
 		border-radius: 1.5rem;
-		padding: 2rem;
-		backdrop-filter: blur(10px);
+		padding: 2.5rem;
+		box-shadow: var(--shadow-lg);
 	}
 
 	.level-card.current {
-		background: linear-gradient(
-			145deg,
-			rgba(255, 255, 255, 0.1) 0%,
-			rgba(255, 255, 255, 0.05) 100%
-		);
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+		background: linear-gradient(145deg, var(--color-surface) 0%, var(--color-surface-raised) 100%);
+		border: 2px solid var(--color-primary);
 	}
 
 	.level-header {
@@ -240,20 +236,21 @@
 		align-items: center;
 		gap: 0.5rem;
 		font-weight: bold;
-		color: rgb(0, 0, 0);
+		color: var(--color-text);
 	}
 
 	.level-description {
 		font-size: 1.1rem;
-		color: rgba(0, 0, 0, 0.8);
+		color: var(--color-text);
 		margin-bottom: 2rem;
 		line-height: 1.6;
+		opacity: 0.9;
 	}
 
 	.lessons-section h3 {
 		margin: 0 0 1rem 0;
 		font-size: 1.2rem;
-		color: rgba(0, 0, 0, 0.9);
+		color: var(--color-text);
 	}
 
 	.exercises-grid {
@@ -263,27 +260,27 @@
 	}
 
 	.exercise-card {
-		background: rgba(255, 255, 255, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
 		border-radius: 1rem;
 		padding: 1.5rem;
 		display: flex;
 		align-items: center;
 		gap: 1rem;
 		text-decoration: none;
-		color: white;
+		color: var(--color-text);
 		transition: all 0.2s;
 	}
 
 	.exercise-card:hover {
-		background: rgba(255, 255, 255, 0.15);
-		transform: translateY(-2px);
-		border-color: rgba(255, 255, 255, 0.3);
+		transform: translateY(-4px);
+		border-color: var(--color-primary);
+		box-shadow: 0 8px 20px -8px var(--color-primary);
 	}
 
 	.exercise-card.completed {
-		border-color: #4caf50;
-		background: rgba(76, 175, 80, 0.1);
+		border-color: var(--color-success);
+		background: rgba(34, 197, 94, 0.05);
 	}
 
 	.exercise-icon {
@@ -316,12 +313,12 @@
 	}
 
 	.link-card {
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
 		border-radius: 1rem;
 		padding: 1.5rem;
 		text-decoration: none;
-		color: rgb(0, 0, 0);
+		color: var(--color-text);
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
@@ -329,9 +326,9 @@
 	}
 
 	.link-card:hover {
-		background: rgba(255, 255, 255, 0.1);
 		transform: translateY(-2px);
-		border-color: rgba(255, 255, 255, 0.2);
+		border-color: var(--color-secondary);
+		box-shadow: 0 8px 20px -8px var(--color-secondary);
 	}
 
 	.link-card h3 {
@@ -340,11 +337,12 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+		color: var(--color-text);
 	}
 
 	.link-card p {
 		margin: 0;
-		color: rgba(0, 0, 0, 0.6);
+		color: var(--color-text-muted);
 		font-size: 0.9rem;
 	}
 	.dashboard-grid {
@@ -355,19 +353,21 @@
 	}
 
 	.dashboard-card {
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
 		border-radius: 1.5rem;
 		padding: 1.5rem;
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
-		transition: transform 0.2s;
+		transition:
+			transform 0.2s,
+			background-color 0.2s;
 	}
 
 	.dashboard-card:hover {
 		transform: translateY(-2px);
-		background: rgba(255, 255, 255, 0.08);
+		background: var(--color-surface-raised);
 	}
 
 	.dashboard-card.daily {
@@ -391,49 +391,48 @@
 
 	.action-btn {
 		margin-top: auto;
-		padding: 0.75rem 1rem;
-		background: white;
-		color: black;
+		padding: 0.85rem 1rem;
+		background: var(--color-primary);
+		color: #fff;
 		border: none;
-		border-radius: 0.5rem;
-		font-weight: bold;
+		border-radius: 8px;
+		font-weight: 700;
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
-		transition: background 0.2s;
+		transition: all 0.2s;
 	}
 
 	.action-btn:hover {
-		background: #f0f0f0;
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+		filter: brightness(1.1);
 	}
 
 	.action-btn.secondary {
-		background: rgba(255, 255, 255, 0.1);
-		color: white;
-	}
-
-	.recommendations-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
+		color: var(--color-text);
 	}
 
 	.recommendation-link {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 0.5rem;
-		background: rgba(0, 0, 0, 0.2);
-		border-radius: 0.5rem;
-		color: white;
+		padding: 0.75rem 1rem;
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
+		border-radius: 8px;
+		color: var(--color-text);
 		text-decoration: none;
 		font-size: 0.9rem;
-		transition: background 0.2s;
+		transition: all 0.2s;
 	}
 
 	.recommendation-link:hover {
-		background: rgba(0, 0, 0, 0.3);
+		border-color: var(--color-secondary);
+		background: rgba(192, 132, 252, 0.05);
 	}
 </style>

@@ -51,6 +51,7 @@ export interface ExerciseResult {
 	mistakes: number;
 	score: number;
 	timestamp: Date;
+	avgDeviationMs?: number;
 }
 
 export interface MIDIEventHandlers {

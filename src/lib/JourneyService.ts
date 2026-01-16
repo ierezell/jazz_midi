@@ -52,7 +52,7 @@ export class JourneyService {
 					id: 'l0-notes',
 					title: 'Note Identification',
 					type: 'exercise',
-					path: '/exercises/flashcards',
+					path: '/exercises/names',
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
@@ -386,41 +386,27 @@ export class JourneyService {
 	}
 
 	getPracticeLesson(unitId: string): { unit: Unit, lesson: Lesson } | undefined {
-		const unitIndex = this.units.findIndex(u => u.id === unitId);
-		if (unitIndex === -1) return undefined;
+		const unit = this.units.find(u => u.id === unitId);
+		if (!unit) return undefined;
 
-		// Consider all units up to this one
-		const availableUnits = this.units.slice(0, unitIndex + 1);
+		// User expects "Practice random exercise from THIS level"
+		// So we strictly scope to the target unit.
+
+		// 1. Find unmastered lessons in the target unit
+		const unmastered = unit.lessons.filter(l => (l.perfectCompletions || 0) < l.requiredPerfectCompletions);
 		
-		// 1. Find unmastered lessons in the current unit
-		const currentUnit = this.units[unitIndex];
-		const currentUnmastered = currentUnit.lessons.filter(l => (l.perfectCompletions || 0) < l.requiredPerfectCompletions);
-		
-		if (currentUnmastered.length > 0) {
-			const randomLesson = currentUnmastered[Math.floor(Math.random() * currentUnmastered.length)];
-			return { unit: currentUnit, lesson: randomLesson };
+		if (unmastered.length > 0) {
+			const randomIndex = Math.floor(Math.random() * unmastered.length);
+			return { unit, lesson: unmastered[randomIndex] };
 		}
 
-		// 2. Find unmastered lessons in previous units
-		const allUnmastered: { unit: Unit, lesson: Lesson }[] = [];
-		availableUnits.forEach(u => {
-			u.lessons.forEach(l => {
-				if ((l.perfectCompletions || 0) < l.requiredPerfectCompletions) {
-					allUnmastered.push({ unit: u, lesson: l });
-				}
-			});
-		});
-
-		if (allUnmastered.length > 0) {
-			return allUnmastered[Math.floor(Math.random() * allUnmastered.length)];
+		// 2. If all mastered, just pick any random lesson from this unit
+		if (unit.lessons.length > 0) {
+			const randomLesson = unit.lessons[Math.floor(Math.random() * unit.lessons.length)];
+			return { unit, lesson: randomLesson };
 		}
 
-		// 3. If all mastered, pick a random lesson from any available unit (weighted towards current?)
-		// Let's just pick completely random for now
-		const randomUnit = availableUnits[Math.floor(Math.random() * availableUnits.length)];
-		const randomLesson = randomUnit.lessons[Math.floor(Math.random() * randomUnit.lessons.length)];
-		
-		return { unit: randomUnit, lesson: randomLesson };
+		return undefined;
 	}
 }
 

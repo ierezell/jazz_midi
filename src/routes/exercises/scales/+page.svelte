@@ -230,6 +230,13 @@
 		playedNotes = new Set();
 		playedSequence = [];
 	}
+	// Generate a descriptive prompt for the current scale
+	let computedPrompt = $derived(
+		`${effectiveRootKey} ${scaleMode === 'Maj' ? 'Major' : 'Minor'} Scale`
+	);
+
+	// Use provided prompt (from flashcards) or computed one
+	let effectivePrompt = $derived(prompt ?? computedPrompt);
 </script>
 
 <BaseExercise
@@ -244,7 +251,7 @@
 	{description}
 	exerciseType="scale"
 	{progressiveHints}
-	{prompt}
+	prompt={effectivePrompt}
 >
 	{#snippet children(api: any)}
 		<div class="scale-controls">

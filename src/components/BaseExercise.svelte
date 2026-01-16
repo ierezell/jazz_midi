@@ -15,7 +15,8 @@
 		type MidiNote,
 		type Note,
 		type NoteEvent,
-		type ScoreProps
+		type ScoreProps,
+		type ExerciseResult
 	} from '$lib/types/types';
 	import { onMount, onDestroy } from 'svelte';
 	import { fade } from 'svelte/transition';
@@ -81,9 +82,9 @@
 		prompt
 	}: BaseExerciseProps & { children?: any; progressiveHints?: boolean; prompt?: string } = $props();
 
-	const SCORE_SHOW_AFTER_MISTAKES = 3;
-	const KEYBOARD_SHOW_AFTER_MISTAKES = 5;
-	const EXPECTED_NOTES_SHOW_AFTER_MISTAKES = 5;
+	const SCORE_SHOW_AFTER_MISTAKES = 1; // Show score after 1 mistake
+	const KEYBOARD_SHOW_AFTER_MISTAKES = 3; // Show keyboard after 3 mistakes
+	const EXPECTED_NOTES_SHOW_AFTER_MISTAKES = 3;
 
 	let selectedNote: Note = $state(initialNote ?? 'C');
 
@@ -103,7 +104,7 @@
 	let feedbackMessage = $state('');
 	let showNotesRoles = $state(false);
 
-	// Tempo Mode State
+	let stopOnMistake = $state(false);
 	let tempoMode = $state(false);
 	let lastTickTime = $state(0);
 	let currentBpm = $state(120);
@@ -114,6 +115,7 @@
 	// If showScore prop is explicitly provided, it overrides default behavior but progressiveHints can still force hide
 	let showScoreState = $derived.by(() => {
 		if (showScore === false) return false; // Explicitly hidden
+		if (exerciseType === 'partition') return true; // Always show for sight reading
 		if (progressiveHints) {
 			return mistakes >= SCORE_SHOW_AFTER_MISTAKES;
 		}
@@ -161,6 +163,30 @@
 		return Math.round((collectedNotes.size / uniqueExpected.length) * 100);
 	});
 
+	let helpMessage = $derived.by(() => {
+		if (!progressiveHints || completed) return '';
+		if (exerciseType === 'partition') return ''; // Score is visible, no hint needed
+
+		if (mistakes < SCORE_SHOW_AFTER_MISTAKES) {
+			let description = `correct ${exerciseType || 'note'}`;
+			if (prompt) {
+				const typeLabel =
+					exerciseType === 'II-V-I'
+						? 'progression'
+						: exerciseType === 'note'
+							? 'note'
+							: exerciseType;
+				description = `${prompt} ${typeLabel}`;
+			}
+
+			return `Play the ${description}. After ${SCORE_SHOW_AFTER_MISTAKES - mistakes} more mistake${SCORE_SHOW_AFTER_MISTAKES - mistakes === 1 ? '' : 's'} the score will appear.`;
+		}
+		if (mistakes < KEYBOARD_SHOW_AFTER_MISTAKES) {
+			return `Reference keyboard will appear after ${KEYBOARD_SHOW_AFTER_MISTAKES - mistakes} more mistake${KEYBOARD_SHOW_AFTER_MISTAKES - mistakes === 1 ? '' : 's'}.`;
+		}
+		return 'Adaptive help is active. Use the score and keyboard for reference.';
+	});
+
 	let exposedAPI = $derived({
 		selectedNote,
 		currentNotes,
@@ -172,10 +198,11 @@
 		feedbackMessage,
 		showNotesRoles,
 		tempoMode,
-		handleNoteSelect,
-		resetExercise,
 		toggleDebug,
-		showFeedback
+		showFeedback,
+		toggleTempoMode,
+		handleTick,
+		completeExercise: (extra?: Partial<ExerciseResult>) => onCompleteExercise(extra)
 	});
 
 	onDestroy(() => {
@@ -247,6 +274,12 @@
 			mistakes++;
 			showFeedback(result.message, 'error');
 			audioManager.playError();
+
+			if (stopOnMistake) {
+				// Stop processing or handle "stop/skip" behavior
+				feedbackMessage = 'error : Mistake! Take your time...';
+				return;
+			}
 		}
 
 		if (exerciseType) {
@@ -306,7 +339,7 @@
 		}, 5000);
 	}
 
-	function onCompleteExercise(): void {
+	function onCompleteExercise(extra?: Partial<ExerciseResult>): void {
 		console.log('Exercise Completed!', { exerciseType, mistakes, startTime });
 		completed = true;
 		const timeElapsed = Date.now() - startTime;
@@ -333,7 +366,8 @@
 				timeElapsed,
 				mistakes,
 				score: Math.max(0, 100 - mistakes * 10),
-				timestamp: new Date()
+				timestamp: new Date(),
+				...extra
 			});
 		} else {
 			console.warn('No exerciseType provided, stats not recorded.');
@@ -385,115 +419,151 @@
 	}
 </script>
 
-<div class="exercise-container">
-	{#if description}
-		<div class="exercise-description">
-			<span class="info-icon">
-				&#9432;
-				<span class="desc-tooltip"
-					>{description +
-						'if you make more than 3 mistakes, a piano will be shown, and then the correct notes.'}</span
-				>
-			</span>
+<div class="exercise-layout">
+	<!-- Sidebar for Controls -->
+	<aside class="sidebar glass">
+		<div class="sidebar-header">
+			<h3>Exercise Controls</h3>
 		</div>
-	{/if}
-	{#if feedbackMessage}
-		<div class="feedback" role="alert">
-			{feedbackMessage}
-		</div>
-	{/if}
 
-	<div class="top-controls">
-		{#if !randomMode}
-			<div class="exercise-controls">
+		<div class="sidebar-content">
+			{#if !randomMode}
 				<div class="control-group">
-					<label for="note-select">Key:</label>
+					<label for="note-select">Root Key</label>
 					<select id="note-select" value={selectedNote} onchange={handleNoteSelectEvent}>
 						{#each AllNotes as note}
 							<option value={note}>{note}</option>
 						{/each}
 					</select>
 				</div>
+			{/if}
+
+			<div class="control-group">
+				<label for="tempo-toggle">Tempo Mode</label>
+				<button
+					id="tempo-toggle"
+					class="toggle-btn"
+					class:active={tempoMode}
+					onclick={toggleTempoMode}
+				>
+					{tempoMode ? 'Enabled' : 'Disabled'}
+				</button>
+			</div>
+
+			{#if tempoMode}
+				<div class="control-group">
+					<Metronome onTick={handleTick} />
+				</div>
+			{/if}
+
+			<div class="control-group">
+				<label>Training Mode</label>
+				<button
+					onclick={() => (stopOnMistake = !stopOnMistake)}
+					class="toggle-btn"
+					class:active={stopOnMistake}
+					title="If enabled, mistakes will stop the lesson until you correct it"
+				>
+					{stopOnMistake ? 'Stop on Mistake' : 'Free Play'}
+				</button>
+			</div>
+
+			<div class="control-group">
+				<label for="debug-toggle">Virtual Keyboard</label>
+				<button id="debug-toggle" onclick={toggleDebug} class="toggle-btn" class:active={debugMode}>
+					{debugMode ? 'Visible' : 'Hidden'}
+				</button>
+			</div>
+
+			<div class="sidebar-spacer"></div>
+
+			<button onclick={resetExercise} class="reset-btn"> Reset Session </button>
+		</div>
+	</aside>
+
+	<!-- Main Exercise Area -->
+	<main class="exercise-main">
+		<!-- Header / Feedback Strip -->
+		<header class="exercise-header">
+			<div class="info-group">
+				{#if description}
+					<div class="exercise-description">
+						<span class="info-icon">
+							?
+							<span class="desc-tooltip">{description}</span>
+						</span>
+					</div>
+				{/if}
+				<h1>{exerciseType?.toUpperCase() || 'PRACTICE'}</h1>
+			</div>
+
+			<div class="performance-strip">
+				<div class="stat-pill" class:neutral={mistakes === 0} class:warn={mistakes > 0}>
+					<span class="label">Mistakes:</span>
+					<span class="value">{mistakes}</span>
+				</div>
+				<div class="stat-pill success">
+					<span class="label">Progress:</span>
+					<span class="value">{progressPercentage}%</span>
+				</div>
+			</div>
+		</header>
+
+		{#if feedbackMessage}
+			<div class="feedback-toast" transition:fade>
+				{feedbackMessage}
 			</div>
 		{/if}
 
-		<div class="tempo-controls">
-			<button class="tempo-btn" class:active={tempoMode} onclick={toggleTempoMode}>
-				{tempoMode ? 'Disable' : 'Enable'} Tempo Mode
-			</button>
-			<button onclick={toggleDebug} class="debug-btn">
-				{debugMode ? 'Disable' : 'Enable'} Virtual Keyboard
-			</button>
-			{#if tempoMode}
-				<Metronome onTick={handleTick} />
-			{/if}
-		</div>
-	</div>
-
-	{#if prompt && !showScoreState}
-		<div class="prompt-section">
-			<div class="prompt-text">{prompt}</div>
-		</div>
-	{/if}
-
-	{#if showScoreState}
-		<div class="score-section" in:fade>
-			<Score {...scoreProps} />
-		</div>
-	{/if}
-
-	<div class="keyboard-section" class:hidden={!showKeyboard}>
-		<Keyboard {...keyboardProps} />
-	</div>
-
-	{#if debugMode}
-		<div class="debug-section">
-			<DebugPanel
-				{noteEvents}
-				{expectedNotes}
-				{currentNotes}
-				{debugMode}
-				onToggleDebugMode={toggleDebug}
-				virtualMidi={midiManager.getVirtualMidi() ?? undefined}
-			/>
-		</div>
-	{/if}
-
-	<div class="exercise-content">
-		{@render children?.(exposedAPI)}
-	</div>
-
-	{#if showNotesRoles}
-		<div class="color-legend">
-			{#each Object.entries(DEFAULT_NOTE_ROLE_COLORS) as [role, color]}
-				<div class="legend-item">
-					<div class="color-dot" style="background-color: {color}"></div>
-					<span>{role.charAt(0).toUpperCase() + role.slice(1)}</span>
+		<div class="focus-area">
+			{#if prompt && !showScoreState}
+				<div class="prompt-card card-premium">
+					<div class="prompt-text">{prompt}</div>
 				</div>
-			{/each}
-		</div>
-	{/if}
-	{#if debugMode}
-		<div class="debug-info">
-			<p><strong>Debug Mode Active</strong></p>
-			<p>Use computer keyboard to simulate MIDI input</p>
-			<p>Active notes: {currentNotes.length > 0 ? currentNotes.join(', ') : 'None'}</p>
-		</div>
-	{/if}
+			{/if}
 
-	<div class="progress-info">
-		<div class="progress-bar">
-			<div class="progress-fill" style="width: {progressPercentage}%"></div>
-		</div>
-		<div class="progress-stats">
-			<span>Progress: {progressPercentage}%</span>
-			<span>Errors: {mistakes}</span>
-		</div>
-	</div>
+			{#if showScoreState}
+				<div class="score-container card-premium" in:fade>
+					<Score {...scoreProps} />
+				</div>
+			{/if}
 
-	<div class="control-group">
-		<button onclick={resetExercise} class="reset-btn"> Reset Exercise </button>
-	</div>
+			{#if helpMessage}
+				<div class="adaptive-help-text">
+					{helpMessage}
+				</div>
+			{/if}
+
+			<div class="keyboard-container" class:hidden={!showKeyboard}>
+				<Keyboard {...keyboardProps} />
+			</div>
+
+			<div class="exercise-custom-content">
+				{@render children?.(exposedAPI)}
+			</div>
+		</div>
+
+		<!-- Debug Overlay -->
+		{#if debugMode}
+			<div class="debug-panel-wrapper">
+				<DebugPanel
+					{noteEvents}
+					{expectedNotes}
+					{currentNotes}
+					{debugMode}
+					onToggleDebugMode={toggleDebug}
+					virtualMidi={midiManager.getVirtualMidi() ?? undefined}
+				/>
+			</div>
+		{/if}
+
+		<!-- Progress Bar at bottom -->
+		<footer class="exercise-footer">
+			<div class="progress-track">
+				<div class="progress-fill" style="width: {progressPercentage}%"></div>
+			</div>
+		</footer>
+	</main>
 </div>
 
 <LessonCompleteModal
@@ -506,270 +576,264 @@
 />
 
 <style>
-	.exercise-container {
-		max-width: 1200px;
-		margin: 0 auto;
+	:global(.exercise-layout) {
+		display: flex;
+		height: calc(100vh - 80px); /* Adjust based on main layout header */
+		overflow: hidden;
+		gap: 1rem;
 		padding: 1rem;
+		background: var(--color-bg);
+	}
+
+	.sidebar {
+		width: 280px;
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		background: var(--glass-bg);
+		backdrop-filter: var(--glass-blur);
+		-webkit-backdrop-filter: var(--glass-blur);
+		border: 1px solid var(--color-border);
+		border-radius: 16px;
+		padding: 1.5rem;
+		flex-shrink: 0;
 	}
 
-	.top-controls {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: 1rem;
-	}
-
-	.tempo-controls {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.tempo-btn {
-		padding: 0.5rem 1rem;
-		border: 1px solid var(--color-border, #ccc);
-		border-radius: 4px;
-		background: var(--color-bg, white);
-		cursor: pointer;
-	}
-
-	.tempo-btn.active {
-		background: var(--color-primary, #4caf50);
-		color: white;
-		border-color: var(--color-primary-dark, #388e3c);
-	}
-
-	.feedback {
-		padding: 1rem;
-		margin: 1rem 0;
-		border-radius: 0.5rem;
-		text-align: center;
-		font-weight: 500;
-		background-color: #e8f5e8;
-		color: #2d5d2d;
-		border: 1px solid #a8d8a8;
-	}
-
-	.exercise-controls {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		align-items: center;
-		gap: 1rem;
-		padding: 1rem;
+	.sidebar-header h3 {
+		font-size: 1.1rem;
+		color: var(--color-text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		margin-bottom: 2rem;
 	}
 
 	.control-group {
 		display: flex;
-		align-items: center;
-		gap: 0.5rem;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-bottom: 2rem;
 	}
 
 	.control-group label {
-		font-weight: 500;
-		color: var(--color-text, #333);
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
 	}
 
-	select {
-		padding: 0.5rem;
-		border: 1px solid var(--color-border, #ccc);
-		border-radius: 4px;
-		background: white;
+	select,
+	.toggle-btn {
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
+		color: var(--color-text);
+		padding: 0.75rem;
+		border-radius: 8px;
 		font-size: 1rem;
-	}
-
-	button {
-		padding: 0.5rem 1rem;
-		border: 1px solid var(--color-border, #ccc);
-		border-radius: 4px;
-		background: var(--color-bg, white);
-		color: var(--color-text, #333);
+		width: 100%;
 		cursor: pointer;
-		font-size: 1rem;
-		transition: all 0.2s ease;
 	}
 
-	button:hover {
-		background: var(--color-bg-hover, #f0f0f0);
-		border-color: var(--color-border-hover, #999);
-	}
-
-	.debug-btn {
-		background: var(--color-debug, #e3f2fd);
-		border-color: var(--color-debug-border, #2196f3);
+	.toggle-btn.active {
+		border-color: var(--color-primary);
+		background: rgba(88, 166, 255, 0.1);
+		color: var(--color-primary);
 	}
 
 	.reset-btn {
-		background: var(--color-warning, #fff3e0);
-		border-color: var(--color-warning-border, #ff9800);
+		margin-top: auto;
+		background: rgba(248, 81, 73, 0.1);
+		border: 1px solid var(--color-error);
+		color: var(--color-error);
+		padding: 0.75rem;
+		border-radius: 8px;
+		font-weight: 600;
+		cursor: pointer;
 	}
 
-	.progress-info {
+	.exercise-main {
+		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 1rem;
+		overflow-y: auto;
+		padding-right: 0.5rem;
 	}
 
-	.progress-bar {
-		width: 100%;
-		height: 8px;
-		background: var(--color-bg-secondary, #e0e0e0);
-		border-radius: 4px;
+	.exercise-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 1rem 0;
+	}
+
+	.info-group {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.info-group h1 {
+		margin: 0;
+		font-size: 1.5rem;
+		color: var(--color-primary);
+	}
+
+	.performance-strip {
+		display: flex;
+		gap: 1rem;
+	}
+
+	.stat-pill {
+		display: flex;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		border-radius: 20px;
+		font-size: 0.9rem;
+		font-weight: 600;
+	}
+
+	.stat-pill.warn {
+		color: var(--color-warn);
+		border-color: var(--color-warn);
+	}
+	.stat-pill.success {
+		color: var(--color-success);
+		border-color: var(--color-success);
+	}
+
+	.feedback-toast {
+		position: fixed;
+		top: 100px;
+		left: 50%;
+		transform: translateX(-50%);
+		padding: 1rem 2rem;
+		border-radius: 12px;
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
+		box-shadow: var(--shadow-lg);
+		z-index: 1000;
+		font-weight: 600;
+	}
+
+	.focus-area {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+		flex: 1;
+		justify-content: center;
+	}
+
+	.prompt-card {
+		text-align: center;
+		padding: 4rem;
+	}
+
+	.prompt-text {
+		font-size: 4rem;
+		font-weight: 800;
+		background: linear-gradient(to bottom, var(--color-text), var(--color-text-muted));
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	.score-container {
+		min-height: 250px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.keyboard-container {
+		transition: opacity 0.3s;
+	}
+
+	.keyboard-container.hidden {
+		display: none;
+	}
+
+	.exercise-footer {
+		padding: 1rem 0;
+	}
+
+	.progress-track {
+		height: 6px;
+		background: var(--color-surface);
+		border-radius: 3px;
 		overflow: hidden;
 	}
 
 	.progress-fill {
 		height: 100%;
-		background: linear-gradient(
-			90deg,
-			var(--color-success, #4caf50),
-			var(--color-success-light, #8bc34a)
-		);
-		transition: width 0.3s ease;
+		background: var(--color-primary);
+		transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
-	.progress-stats {
+	.exercise-description {
+		position: relative;
+	}
+
+	.info-icon {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
-		font-size: 0.9rem;
-		color: var(--color-text-secondary, #666);
-	}
-
-	.score-section {
-		min-height: 280px;
-		display: flex;
 		justify-content: center;
-		align-items: center;
-		background: var(--color-bg, white);
-		border: 1px solid var(--color-border, #e1e5e9);
-		border-radius: 8px;
+		width: 24px;
+		height: 24px;
+		border: 1px solid var(--color-border);
+		border-radius: 50%;
+		cursor: help;
+		font-size: 0.8rem;
+		font-weight: 700;
+	}
+
+	.desc-tooltip {
+		position: absolute;
+		top: 120%; /* Move to bottom to avoid header overlap */
+		right: 0;
+		left: auto; /* Align to right since icon is usually on right side of title? No, it's left of title */
+		left: -10px; /* Slight offset */
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
 		padding: 1rem;
-	}
-
-	.keyboard-section {
-		transition: all 0.3s ease;
-	}
-
-	.keyboard-section.hidden {
-		display: none;
-	}
-
-	.debug-section {
-		background: var(--color-debug-bg, #f3e5f5);
-		border: 1px solid var(--color-debug-border, #9c27b0);
 		border-radius: 8px;
-		padding: 1rem;
+		width: 300px;
+		font-size: 0.9rem;
+		line-height: 1.4;
+		opacity: 0;
+		visibility: hidden;
+		transition: all 0.2s;
+		z-index: 9999;
+		color: var(--color-text);
+		box-shadow: var(--shadow-lg);
+		pointer-events: none;
 	}
 
-	.exercise-content {
-		flex: 1;
+	.info-icon:hover .desc-tooltip,
+	.info-icon:focus .desc-tooltip,
+	.info-icon:active .desc-tooltip {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(5px);
+		pointer-events: auto;
 	}
 
-	@media (max-width: 768px) {
-		.exercise-container {
-			padding: 0.5rem;
-			gap: 0.5rem;
+	@media (max-width: 1024px) {
+		:global(.exercise-layout) {
+			flex-direction: column;
+			height: auto;
 		}
 
-		.exercise-controls {
-			flex-direction: column;
-			gap: 0.75rem;
-			padding: 0.75rem;
+		.sidebar {
+			width: 100%;
+			flex-direction: row;
+			flex-wrap: wrap;
+			gap: 1rem;
 		}
 
 		.control-group {
-			width: 100%;
-			justify-content: center;
-			flex-wrap: wrap;
-			gap: 0.5rem;
+			flex: 1;
+			min-width: 150px;
+			margin-bottom: 0;
 		}
-
-		.control-group label {
-			min-width: 60px;
-			text-align: center;
-		}
-
-		select,
-		button {
-			min-height: 44px;
-			font-size: 1rem;
-		}
-
-		.progress-stats {
-			flex-direction: column;
-			text-align: center;
-			gap: 0.25rem;
-		}
-
-		.score-section {
-			min-height: 220px;
-			padding: 0.5rem;
-		}
-	}
-	.exercise-description {
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		margin-bottom: 0.25rem;
-		font-size: 1rem;
-	}
-	.info-icon {
-		position: relative;
-		display: inline-block;
-		width: 1.5em;
-		height: 1.5em;
-		border-radius: 50%;
-		background: #e0e0e0;
-		color: #333;
-		text-align: center;
-		line-height: 1.5em;
-		font-weight: bold;
-		cursor: pointer;
-		font-size: 1.2em;
-	}
-	.info-icon:focus .desc-tooltip,
-	.info-icon:hover .desc-tooltip {
-		opacity: 1;
-		pointer-events: auto;
-	}
-	.desc-tooltip {
-		position: absolute;
-		left: 110%;
-		top: 50%;
-		transform: translateY(-50%);
-		background: #222;
-		color: #fff;
-		padding: 0.5em 1em;
-		border-radius: 0.5em;
-		font-size: 0.95em;
-		white-space: pre-line;
-		opacity: 0;
-		pointer-events: none;
-		transition: opacity 0.2s;
-		z-index: 10;
-		min-width: 180px;
-		max-width: 320px;
-	}
-	.prompt-section {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		min-height: 200px;
-		background: var(--color-bg, white);
-		border: 1px solid var(--color-border, #e1e5e9);
-		border-radius: 8px;
-		padding: 2rem;
-		text-align: center;
-	}
-
-	.prompt-text {
-		font-size: 3rem;
-		font-weight: bold;
-		color: var(--color-text, #333);
 	}
 </style>
