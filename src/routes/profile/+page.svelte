@@ -4,6 +4,7 @@
 	import type { Achievement, UserProfile, UserStatistics } from '$lib/UserStatsService';
 	import { userStatsService } from '$lib/UserStatsService';
 	import { journeyService } from '$lib/JourneyService';
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import StatsWidget from '../../components/StatsWidget.svelte';
 	import type { PageData } from './$types';
@@ -219,7 +220,7 @@
 						<h4>Recommended Practice</h4>
 						<div class="recommendation-list">
 							{#each weaknessRecommendations as rec}
-								<a href={rec.path} class="recommendation-card">
+								<a href={resolve(rec.path)} class="recommendation-card">
 									<div class="rec-header">
 										<TrendingUp size={20} />
 										<strong>{rec.weakness}</strong>

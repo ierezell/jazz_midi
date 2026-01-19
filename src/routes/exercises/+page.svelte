@@ -1,60 +1,61 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { Dumbbell, Music, Zap, Ruler, BookOpen, Mic2, Grid, Key } from 'lucide-svelte';
 
 	const exercises = [
 		{
 			title: 'Rhythm',
 			description: 'Master timing and two-handed coordination.',
-			href: '/exercises/rhythm',
+			href: resolve('/exercises/rhythm'),
 			icon: Dumbbell,
 			color: 'var(--color-primary)'
 		},
 		{
 			title: 'Note Names',
 			description: 'Learn to identify notes on the staff quickly.',
-			href: '/exercises/names',
+			href: resolve('/exercises/names'),
 			icon: Music,
 			color: 'var(--color-secondary)'
 		},
 		{
 			title: 'Intervals',
 			description: 'Train your ear to recognize distances between notes.',
-			href: '/exercises/intervals',
+			href: resolve('/exercises/intervals'),
 			icon: Ruler,
 			color: 'var(--color-success)'
 		},
 		{
 			title: 'Chords',
 			description: 'Build your harmony vocabulary.',
-			href: '/exercises/chords',
+			href: resolve('/exercises/chords'),
 			icon: Grid,
 			color: 'var(--color-warn)'
 		},
 		{
 			title: 'Scales',
 			description: 'Practice major, minor, and mode scales.',
-			href: '/exercises/scales',
+			href: resolve('/exercises/scales'),
 			icon: Key,
 			color: 'var(--color-primary)'
 		},
 		{
 			title: 'Flashcards',
 			description: 'Rapid-fire theory drills.',
-			href: '/exercises/flashcards',
+			href: resolve('/exercises/flashcards'),
 			icon: Zap,
 			color: 'var(--color-error)'
 		},
 		{
 			title: 'Sight Reading',
 			description: 'Read sheet music in real-time.',
-			href: '/exercises/partition',
+			href: resolve('/exercises/partition'),
 			icon: BookOpen,
 			color: 'var(--color-text)'
 		},
 		{
 			title: 'Songs',
 			description: 'Apply your skills to real tunes.',
-			href: '/exercises/songs',
+			href: resolve('/exercises/songs'),
 			icon: Mic2,
 			color: 'var(--color-rh)'
 		}

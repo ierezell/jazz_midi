@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { journeyService } from '$lib/JourneyService';
+	import { journeyService, type Unit, type Lesson } from '$lib/JourneyService';
 	import { userStatsService } from '$lib/UserStatsService';
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
@@ -31,9 +31,11 @@
 		return name.charAt(0).toUpperCase() + name.slice(1).replace(/_/g, ' ');
 	}
 
-	function getLessonUrl(lessonPath: string): string {
-		// For home page, just link directly to exercises
-		return lessonPath;
+	function getLessonUrl(unit: Unit, lesson: Lesson): string {
+		const url = journeyService.getLessonUrl(unit, lesson);
+		// Split the path and query params
+		const [path, query] = url.split('?');
+		return query ? `${resolve(path)}?${query}` : resolve(path);
 	}
 </script>
 
@@ -58,7 +60,7 @@
 				class="action-btn"
 				onclick={() =>
 					goto(
-						journeyService.getLessonUrl(
+						getLessonUrl(
 							activeUnit,
 							journeyService.getPracticeLesson(activeUnit.id)?.lesson || activeUnit.lessons[0]
 						)
@@ -77,7 +79,7 @@
 				<p>Focus on what needs improvement based on your history.</p>
 				<div class="recommendations-list">
 					{#each userStatsService.getWeaknessRecommendations().slice(0, 2) as rec}
-						<a href={rec.path} class="recommendation-link">
+						<a href={resolve(rec.path)} class="recommendation-link">
 							<span>{rec.recommendedExercise}</span>
 							<ArrowRight size={14} />
 						</a>
@@ -113,7 +115,7 @@
 				<div class="exercises-grid">
 					{#each activeUnit.lessons as lesson}
 						<a
-							href={journeyService.getLessonUrl(activeUnit, lesson)}
+							href={getLessonUrl(activeUnit, lesson)}
 							class="exercise-card"
 							class:completed={lesson.completed}
 						>
