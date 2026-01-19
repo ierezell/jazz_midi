@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { userStatsService } from '$lib/UserStatsService';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { fade } from 'svelte/transition';
 
 	let name = $state('');
@@ -13,7 +14,7 @@
 		}
 
 		userStatsService.createProfile(name);
-		goto('/');
+		goto(resolve('/'));
 	}
 
 	function handleKeydown(e: KeyboardEvent) {

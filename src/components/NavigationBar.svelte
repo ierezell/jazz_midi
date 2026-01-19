@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { Map, Dumbbell, User } from 'lucide-svelte';
 
 	const navItems = [
-		{ href: '/journey', icon: Map, label: 'Journey' },
-		{ href: '/exercises', icon: Dumbbell, label: 'Gym' }, // Main Hub
-		{ href: '/profile', icon: User, label: 'Profile' }
+		{ href: resolve('/journey'), icon: Map, label: 'Journey' },
+		{ href: resolve('/exercises'), icon: Dumbbell, label: 'Gym' },
+		{ href: resolve('/profile'), icon: User, label: 'Profile' }
 	];
 
 	function isActive(href: string) {

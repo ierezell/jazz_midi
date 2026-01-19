@@ -7,6 +7,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import { Star, Lock, Check, Play, MapPin, Flame, Zap, Trophy, Dumbbell } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
 	let units = $state(journeyService.getUnits());
 	let profile = $state(userStatsService.getProfile());
@@ -22,13 +23,16 @@
 	});
 
 	function getLessonUrl(unit: Unit, lesson: Lesson) {
-		return journeyService.getLessonUrl(unit, lesson);
+		const url = journeyService.getLessonUrl(unit, lesson);
+		// Split the path and query params
+		const [path, query] = url.split('?');
+		return query ? `${resolve(path)}?${query}` : resolve(path);
 	}
 
 	function startPractice(unitId: string) {
 		const practice = journeyService.getPracticeLesson(unitId);
 		if (practice) {
-			const url = journeyService.getLessonUrl(practice.unit, practice.lesson);
+			const url = getLessonUrl(practice.unit, practice.lesson);
 			goto(url);
 		}
 	}

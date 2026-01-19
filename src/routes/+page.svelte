@@ -14,7 +14,7 @@
 	onMount(() => {
 		// Redirect to login if using default profile
 		if (profile.name === 'Jazz Student' && profile.experiencePoints === 0) {
-			goto('/login');
+			goto(resolve('/login'));
 			return;
 		}
 
@@ -85,7 +85,7 @@
 				</div>
 			{:else}
 				<p>No specific weaknesses detected yet. Keep practicing!</p>
-				<button class="action-btn secondary" onclick={() => goto('/journey')}>
+				<button class="action-btn secondary" onclick={() => goto(resolve('/journey'))}>
 					Explore Journey <ArrowRight size={16} />
 				</button>
 			{/if}
@@ -143,12 +143,12 @@
 		</div>
 
 		<div class="quick-links" in:fly={{ y: 20, duration: 500, delay: 200 }}>
-			<a href="/journey" class="link-card">
+			<a href={resolve('/journey')} class="link-card">
 				<h3>View Full Journey Map</h3>
 				<p>See all units and track your progress</p>
 				<ArrowRight size={20} />
 			</a>
-			<a href="/profile" class="link-card">
+			<a href={resolve('/profile')} class="link-card">
 				<h3>Your Profile</h3>
 				<p>Check stats and achievements</p>
 				<ArrowRight size={20} />

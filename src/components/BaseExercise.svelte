@@ -22,6 +22,7 @@
 	import { fade } from 'svelte/transition';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { journeyService } from '$lib/JourneyService';
 	import DebugPanel from './DebugPanel.svelte';
 	import Keyboard from './Keyboard.svelte';
@@ -391,7 +392,7 @@
 
 	function handleModalContinue() {
 		showCompleteModal = false;
-		goto('/journey');
+		goto(resolve('/journey'));
 	}
 
 	function handleModalRetry() {
