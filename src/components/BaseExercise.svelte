@@ -457,8 +457,9 @@
 			{/if}
 
 			<div class="control-group">
-				<label>Training Mode</label>
+				<label for="training-mode-toggle">Training Mode</label>
 				<button
+					id="training-mode-toggle"
 					onclick={() => (stopOnMistake = !stopOnMistake)}
 					class="toggle-btn"
 					class:active={stopOnMistake}

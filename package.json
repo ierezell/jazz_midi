@@ -57,7 +57,6 @@
 		"@spotify/basic-pitch": "^1.0.1",
 		"@sveltejs/adapter-static": "3.0.10",
 		"@tailwindcss/vite": "^4.1.16",
-		"@tensorflow/tfjs-node": "^4.22.0",
 		"@types/node": "24.7.1",
 		"lucide-svelte": "^0.555.0",
 		"tailwindcss": "^4.1.16",

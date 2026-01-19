@@ -1,5 +1,3 @@
-import { BasicPitch } from '@spotify/basic-pitch';
-
 export class AudioInputService {
 	private static instance: AudioInputService;
 	private basicPitch: BasicPitch | null = null;
@@ -19,7 +17,7 @@ export class AudioInputService {
 	private readonly SILENCE_THRESHOLD = 5; // Frames to confirm silence
 	private silenceCounter = 0;
 
-	private constructor() {}
+	private constructor() { }
 
 	static getInstance(): AudioInputService {
 		if (!AudioInputService.instance) {
@@ -74,12 +72,12 @@ export class AudioInputService {
 		if (!this.isRecording) return;
 
 		this.isRecording = false;
-		
+
 		if (this.processorNode) {
 			this.processorNode.disconnect();
 			this.processorNode = null;
 		}
-		
+
 		if (this.sourceNode) {
 			this.sourceNode.disconnect();
 			this.sourceNode = null;
@@ -94,7 +92,7 @@ export class AudioInputService {
 			this.audioContext.close();
 			this.audioContext = null;
 		}
-		
+
 		// Reset state
 		this.currentNote = null;
 		this.noteConfidence = 0;
@@ -176,7 +174,7 @@ export class AudioInputService {
 
 	private handleDetectedNote(pitch: number) {
 		const midiNote = Math.round(pitch);
-		
+
 		// Smoothing Logic
 		if (midiNote === this.currentNote) {
 			this.noteConfidence++;
@@ -205,7 +203,7 @@ export class AudioInputService {
 			this.sendNoteOn(midiNote);
 		}
 	}
-	
+
 	// Track what is currently "sounding" to the outside world
 	private activeNote: number | null = null;
 
@@ -222,7 +220,7 @@ export class AudioInputService {
 
 	private sendNoteOff(note: number) {
 		if (this.activeNote !== note) return;
-		
+
 		this.activeNote = null;
 		this.notifyListeners(note, 0, false);
 	}
@@ -231,12 +229,12 @@ export class AudioInputService {
 	// Since evaluateModel returns notes, if it returns NOTHING, we need to increment silence counter.
 	// But `evaluateModel` calls the callback `onNote`. 
 	// We can wrap the call to know if any note was detected.
-	
+
 	private notifyListeners(note: number, velocity: number, isOn: boolean): void {
 		const status = isOn ? 0x90 : 0x80;
 		const data = new Uint8Array([status, note, velocity]);
 		const event = new MIDIMessageEvent('midimessage', { data });
-		
+
 		this.listeners.forEach((listener) => listener(event));
 	}
 }

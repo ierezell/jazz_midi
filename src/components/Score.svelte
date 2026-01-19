@@ -2,9 +2,17 @@
 	import type { NoteFullName } from '$lib/types/notes';
 	import type { ScoreProps } from '$lib/types/types';
 	import { onMount } from 'svelte';
-	import { Factory, Renderer, Voice } from 'vexflow';
 
 	let { leftHand, rightHand, selectedNote }: ScoreProps = $props();
+
+	// Dynamically import VexFlow to reduce initial bundle size
+	let VexFlow: typeof import('vexflow') | null = null;
+	let isVexFlowLoaded = $state(false);
+
+	onMount(async () => {
+		VexFlow = await import('vexflow');
+		isVexFlowLoaded = true;
+	});
 
 	// VexFlow expects scientific pitch where middle C is C4 and prefers accidentals
 	// consistent with the key signature. Our app maps MIDI 60 to 'C3', so convert
@@ -69,6 +77,10 @@
 	let stringLeftHand = $derived(fmt(leftHand));
 
 	function renderScore(width: number) {
+		if (!VexFlow || !isVexFlowLoaded) return;
+
+		const { Factory, Renderer, Voice } = VexFlow;
+
 		const isMobile = width < 768;
 		const isSmallMobile = width < 480;
 		const isVerySmallMobile = width < 360;
@@ -182,6 +194,9 @@
 		}
 	}
 	$effect(() => {
+		// Wait for VexFlow to load before rendering
+		if (!isVexFlowLoaded) return;
+
 		// This effect will re-run whenever leftHand, rightHand, or selectedNote changes
 		console.debug('Score $effect triggered with props:', { leftHand, rightHand, selectedNote });
 		// Add a small delay to ensure DOM is ready
