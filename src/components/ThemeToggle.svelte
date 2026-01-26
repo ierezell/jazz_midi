@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { themeService } from '$lib/ThemeService.svelte';
+	import { themeService } from '$lib/ThemeService';
 	import { Sun, Moon } from 'lucide-svelte';
 	import { fade } from 'svelte/transition';
 </script>

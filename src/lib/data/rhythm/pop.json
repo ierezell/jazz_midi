@@ -1,0 +1,37 @@
+{
+    "id": "pop",
+    "name": "Pop Groove",
+    "description": "LH: Whole-note octaves. RH: Syncopated quarter-note feel (1, 2, 2.5, 4).",
+    "suggestedBpm": 100,
+    "timeSignature": "4/4",
+    "defaultChords": [
+        "F",
+        "Am",
+        "G",
+        "Dm"
+    ],
+    "isProgression": true,
+    "measures": 1,
+    "hits": [
+        {
+            "beat": 1.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 1.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 2.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 2.5,
+            "hand": "RH"
+        },
+        {
+            "beat": 4.0,
+            "hand": "RH"
+        }
+    ]
+}

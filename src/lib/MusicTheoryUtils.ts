@@ -286,11 +286,26 @@ export function calculateOptimalRange(
 	}
 	const minNote = Math.min(...notes);
 	const maxNote = Math.max(...notes);
-	const minC = Math.floor((minNote - 12) / 12) * 12 + 12;
-	const maxC = Math.ceil((maxNote + 12) / 12) * 12;
-	const totalRange = maxC - minC;
-	const octaves = Math.max(minOctaves, Math.min(maxOctaves, Math.ceil(totalRange / 12)));
-	const middleC = minC + Math.floor((octaves * 12) / 2) - 6;
+
+	const range = maxNote - minNote;
+	// Ensure minimal buffer around the notes (at least 1 octave total span if single note)
+	// Add 1 octave of padding generally
+	const octavesNeeded = Math.ceil(range / 12) + 1;
+	const octaves = Math.max(minOctaves, Math.min(maxOctaves, octavesNeeded));
+
+	const center = (minNote + maxNote) / 2;
+
+	// Keyboard logic: start = middleC - floor(octaves/2)*12
+	// We want start to be roughly center - totalSpan/2
+	// So proposedStart = center - (octaves * 12) / 2
+	const proposedStart = center - (octaves * 12) / 2;
+
+	// Snap start to nearest C <= proposedStart to make the keyboard look standard
+	const snappedStart = Math.floor(proposedStart / 12) * 12;
+
+	// Reverse calculate the middleC that results in this start
+	const middleC = snappedStart + Math.floor(octaves / 2) * 12;
+
 	return {
 		middleC: Math.max(24, middleC),
 		octaves

@@ -1,3 +1,4 @@
+
 export class AudioInputService {
 	private static instance: AudioInputService;
 	private basicPitch: BasicPitch | null = null;
@@ -26,9 +27,12 @@ export class AudioInputService {
 		return AudioInputService.instance;
 	}
 
-	async start(): Promise<void> {
-		if (this.isRecording) return;
+	private isStarting = false;
 
+	async start(): Promise<void> {
+		if (this.isRecording || this.isStarting) return;
+
+		this.isStarting = true;
 		try {
 			if (!this.basicPitch) {
 				// Dynamic import to avoid SSR issues
@@ -39,10 +43,21 @@ export class AudioInputService {
 			}
 
 			// Force 22050Hz as preferred by BasicPitch to avoid resampling overhead if possible
-			this.audioContext = new AudioContext({ sampleRate: 22050 });
-			await this.audioContext.resume();
+			const context = new AudioContext({ sampleRate: 22050 });
+			await context.resume();
 
-			this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+			// Race condition check: If stop() was called while awaiting above
+			if (!this.isStarting) {
+				console.debug('AudioInputService: start() aborted');
+				stream.getTracks().forEach(track => track.stop());
+				context.close();
+				return;
+			}
+
+			this.audioContext = context;
+			this.stream = stream;
 			this.sourceNode = this.audioContext.createMediaStreamSource(this.stream);
 
 			// Use ScriptProcessor for capturing raw audio (Buffer size 4096 ~ 185ms at 22050Hz)
@@ -65,10 +80,15 @@ export class AudioInputService {
 			console.error('Error starting audio input:', error);
 			this.stop();
 			throw error;
+		} finally {
+			this.isStarting = false;
 		}
 	}
 
 	stop(): void {
+		// Signal any pending start to abort
+		this.isStarting = false;
+
 		if (!this.isRecording) return;
 
 		this.isRecording = false;

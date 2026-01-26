@@ -1,0 +1,41 @@
+{
+    "id": "blues-shells",
+    "name": "Blues Shells",
+    "description": "LH: Root-Fifth walking. RH: Root-3-7 Shell voicings on beats 2 and 4.",
+    "suggestedBpm": 80,
+    "timeSignature": "4/4",
+    "defaultChords": [
+        "G7",
+        "C7",
+        "G7",
+        "D7"
+    ],
+    "isProgression": true,
+    "measures": 1,
+    "hits": [
+        {
+            "beat": 1.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 2.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 2.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 3.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 4.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 4.0,
+            "hand": "RH"
+        }
+    ]
+}

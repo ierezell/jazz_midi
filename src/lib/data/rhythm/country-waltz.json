@@ -1,0 +1,40 @@
+{
+    "id": "country-waltz",
+    "name": "Country Waltz",
+    "description": "Boom-chick-chick feel in 6/8. LH alternates Root and Fifth.",
+    "suggestedBpm": 110,
+    "timeSignature": "6/8",
+    "defaultChords": [
+        "F",
+        "C/E",
+        "D7"
+    ],
+    "isProgression": true,
+    "measures": 1,
+    "hits": [
+        {
+            "beat": 1.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 2.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 3.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 4.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 5.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 6.0,
+            "hand": "RH"
+        }
+    ]
+}

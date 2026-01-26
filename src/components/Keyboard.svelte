@@ -19,14 +19,16 @@
 	let clientHeight = $state(10);
 
 	// Validate octaves to prevent RangeError
-	const safeOctaves = Math.max(1, Math.min(10, octaves || 2));
-	const safeMiddleC = Math.max(24, Math.min(108, middleC || 60));
+	let safeOctaves = $derived(Math.max(1, Math.min(10, octaves || 2)));
+	let safeMiddleC = $derived(Math.max(24, Math.min(108, middleC || 60)));
 
-	let keys = [...Array(safeOctaves * 12 + 1).keys()].map(
-		(i) => i + (safeMiddleC - Math.floor(safeOctaves / 2) * 12)
+	let keys = $derived(
+		[...Array(safeOctaves * 12 + 1).keys()].map(
+			(i) => i + (safeMiddleC - Math.floor(safeOctaves / 2) * 12)
+		)
 	);
 
-	const totalKeys = 12 * safeOctaves;
+	let totalKeys = $derived(keys.filter((k) => ![1, 3, 6, 8, 10].includes(k % 12)).length);
 </script>
 
 <div class="keyboard" bind:clientWidth bind:clientHeight>

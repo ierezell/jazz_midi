@@ -30,76 +30,28 @@
 		handMode: propHandMode,
 		rootKey: propKey,
 		progressiveHints,
-		prompt
-	}: Props = $props();
+		prompt,
+		strictMode = true
+	}: Props & { strictMode?: boolean } = $props();
 
-	// Journey Params
-	const paramRoot = $derived(page.url.searchParams.get('root') as Note);
-	const paramMode = $derived(page.url.searchParams.get('mode') as ScaleMode);
-	const paramHand = $derived(page.url.searchParams.get('hand') as HandMode);
+	// State
+	let sequentialMode = $state(propSequentialMode ?? false);
+	let handMode = $state(propHandMode ?? 'right');
+	let scaleMode = $state(propScaleMode ?? 'Maj');
+	let effectiveRootKey = $derived(propKey ?? 'C');
 
-	let sequentialMode: boolean = $state(
-		propSequentialMode ?? (randomMode ? Math.random() > 0.5 : true)
-	);
-
-	// Default to 'right' if not specified
-	let handMode: HandMode = $state(
-		propHandMode ?? (randomMode ? (Math.random() > 0.5 ? 'right' : 'left') : 'right')
-	);
-
-	$effect(() => {
-		if (paramHand) {
-			handMode = paramHand;
-		}
-	});
-
-	// Use params if available, otherwise props, otherwise defaults
-	let scaleMode: ScaleMode = $derived(
-		(page.url.searchParams.get('mode') as ScaleMode) ??
-			propScaleMode ??
-			(randomMode ? AllScaleModes[Math.floor(Math.random() * AllScaleModes.length)] : 'Maj')
-	);
-
-	// We need to handle the root key carefully. BaseExercise takes initialNote.
-	// We'll pass the effective root key to BaseExercise.
-	let effectiveRootKey = $derived(paramRoot ?? propKey ?? 'C');
-
-	let playedNotes: Set<MidiNote> = $state(new Set());
-	// For sequential mode we track the actual played order
 	let playedSequence: MidiNote[] = $state([]);
+	let playedNotes: Set<MidiNote> = $state(new Set());
+
+	// Derived
+	let computedPrompt = $derived(
+		`${effectiveRootKey} ${scaleMode === 'Maj' ? 'Major' : 'Minor'} Scale`
+	);
+	let effectivePrompt = $derived(prompt ?? computedPrompt);
 
 	function handleParentReset(): void {
-		playedNotes = new Set();
 		playedSequence = [];
-	}
-
-	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
-		const scaleNotes = generateExpectedNotesFor(selectedNote, scaleMode, handMode);
-		console.debug(
-			`Scale for ${selectedNote} (${handMode}):`,
-			scaleNotes.map((note) => MidiToNote[note])
-		);
-		return scaleNotes;
-	}
-
-	function generateScoreProps(selectedNote: Note): ScoreProps {
-		let leftNotes: NoteFullName[][] = [];
-		let rightNotes: NoteFullName[][] = [];
-
-		if (handMode === 'left' || handMode === 'both') {
-			const leftMidi = generateExpectedNotesFor(selectedNote, scaleMode, 'left');
-			leftNotes = leftMidi.map((n) => [MidiToNote[n]]);
-		}
-		if (handMode === 'right' || handMode === 'both') {
-			const rightMidi = generateExpectedNotesFor(selectedNote, scaleMode, 'right');
-			rightNotes = rightMidi.map((n) => [MidiToNote[n]]);
-		}
-
-		return {
-			selectedNote: selectedNote,
-			leftHand: leftNotes,
-			rightHand: rightNotes
-		};
+		playedNotes = new Set();
 	}
 
 	function validateScaleNote(
@@ -107,12 +59,27 @@
 		event: NoteEvent,
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+	) {
 		if (sequentialMode) {
 			return validateSequential(event, expectedNotes, currentNotes);
 		} else {
 			return validateAnyOrder(event, expectedNotes, currentNotes);
 		}
+	}
+
+	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
+		// Use local state effectiveRootKey
+		return generateExpectedNotesFor(effectiveRootKey, scaleMode, handMode);
+	}
+
+	function generateScoreProps(selectedNote: Note): ScoreProps {
+		const expectedNotes = generateExpectedNotes(selectedNote);
+		const notes = expectedNotes.map((n) => MidiToNote[n]);
+		return {
+			selectedNote: effectiveRootKey,
+			leftHand: handMode === 'left' || handMode === 'both' ? [notes] : [],
+			rightHand: handMode === 'right' || handMode === 'both' ? [notes] : []
+		} as ScoreProps;
 	}
 
 	function validateSequential(
@@ -121,32 +88,26 @@
 		currentNotes: MidiNote[]
 	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
 		const nextExpectedIndex = playedSequence.length;
-		// If 'both' hands, we might expect multiple notes at the same step?
-		// But expectedNotes is flat.
-		// If we sorted them, it's C2, C3, D2, D3...
-		// So user must play C2 then C3 (or vice versa if we relax it?)
-
-		// Strict sequential for now:
 		const expectedNote = expectedNotes[nextExpectedIndex];
 
 		let collected: boolean = false;
-		if (event.noteNumber === expectedNote) {
+		// strictMode check
+		const matches = strictMode
+			? event.noteNumber === expectedNote
+			: event.noteNumber % 12 === expectedNote % 12;
+
+		if (matches) {
+			// Track what was actively played for sequence logic
 			playedSequence = [...playedSequence, event.noteNumber];
-			// Create a new Set instance so Svelte detects the change
 			playedNotes = new Set([...playedNotes, event.noteNumber]);
-			// Inform BaseExercise to add this note to cumulative progress
 			collected = true;
 		} else {
-			// Check if they played the "other" note in a chord (e.g. C3 instead of C2)?
-			// If we want to support "simultaneous" loosely, we'd need more complex logic.
-			// For now, strict order.
-
 			const expectedNoteName = MidiToNote[expectedNote]?.slice(0, -1) ?? String(expectedNote);
 			playedSequence = [];
 			playedNotes = new Set();
 			return {
 				isCorrect: false,
-				message: `Wrong note! Expected ${expectedNoteName} (note ${nextExpectedIndex + 1})`,
+				message: `Wrong note! Expected ${expectedNoteName} ${strictMode ? '' : '(any octave)'}`,
 				collected: false,
 				resetCollected: true
 			};
@@ -174,21 +135,40 @@
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
 	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
-		if (expectedNotes.includes(event.noteNumber)) {
+		const expectedClasses = expectedNotes.map((n) => n % 12);
+		const playedClass = event.noteNumber % 12;
+
+		const isExpected = strictMode
+			? expectedNotes.includes(event.noteNumber)
+			: expectedClasses.includes(playedClass);
+
+		if (isExpected) {
 			// Use a fresh Set to ensure reactivity when notes are added
 			playedNotes = new Set([...playedNotes, event.noteNumber]);
-			if (playedNotes.size === expectedNotes.length) {
+
+			// Check completion based on strict/lenient
+			let isComplete = false;
+			if (strictMode) {
+				isComplete = playedNotes.size === expectedNotes.length;
+			} else {
+				// In lenient mode, check if we have collected all REQUIRED PITCH CLASSES
+				const collectedClasses = new Set([...playedNotes].map((n) => n % 12));
+				const requiredClasses = new Set(expectedClasses);
+				isComplete = collectedClasses.size === requiredClasses.size;
+			}
+
+			if (isComplete) {
 				return {
 					isCorrect: true,
 					message: 'Perfect scale! 🎵',
-					collected: playedNotes.has(event.noteNumber),
+					collected: true, // simplified logic, effectively we collected it
 					resetCollected: false
 				};
 			} else {
 				return {
 					isCorrect: true,
 					message: `Good! ${playedNotes.size}/${expectedNotes.length} notes`,
-					collected: playedNotes.has(event.noteNumber),
+					collected: true,
 					resetCollected: false
 				};
 			}
@@ -202,11 +182,21 @@
 		if (sequentialMode) {
 			return (
 				playedSequence.length === expectedNotes.length &&
-				playedSequence.every((note, index) => note === expectedNotes[index])
+				playedSequence.every((note, index) => {
+					return strictMode
+						? note === expectedNotes[index]
+						: note % 12 === expectedNotes[index] % 12;
+				})
 			);
 		} else {
-			const uniqueExpectedNotes = [...new Set(expectedNotes)];
-			return playedNotes.size === uniqueExpectedNotes.length;
+			if (strictMode) {
+				const uniqueExpectedNotes = [...new Set(expectedNotes)];
+				return playedNotes.size === uniqueExpectedNotes.length;
+			} else {
+				const collectedClasses = new Set([...playedNotes].map((n) => n % 12));
+				const requiredClasses = new Set(expectedNotes.map((n) => n % 12));
+				return collectedClasses.size === requiredClasses.size;
+			}
 		}
 	}
 
@@ -230,13 +220,7 @@
 		playedNotes = new Set();
 		playedSequence = [];
 	}
-	// Generate a descriptive prompt for the current scale
-	let computedPrompt = $derived(
-		`${effectiveRootKey} ${scaleMode === 'Maj' ? 'Major' : 'Minor'} Scale`
-	);
-
-	// Use provided prompt (from flashcards) or computed one
-	let effectivePrompt = $derived(prompt ?? computedPrompt);
+	// Prompt logic moved to top derived state
 </script>
 
 <BaseExercise

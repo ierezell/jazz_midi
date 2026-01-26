@@ -129,7 +129,13 @@
 		event: NoteEvent,
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+	): {
+		isCorrect: boolean;
+		message: string;
+		collected: boolean;
+		resetCollected: boolean;
+		resetMistakes?: boolean;
+	} {
 		if (expectedNotes.includes(event.noteNumber)) {
 			playedCorrectly = true;
 			const sourceNotation = englishToLatin ? 'English' : 'Latin';
@@ -147,7 +153,8 @@
 				isCorrect: true,
 				message: `Perfect! ${currentDisplayNote} (${sourceNotation}) = ${correctAnswer} (${targetNotation}) 🎵✨`,
 				collected: true,
-				resetCollected: true
+				resetCollected: true,
+				resetMistakes: true
 			};
 		} else {
 			const playedNoteName = MidiToNote[event.noteNumber]?.slice(0, -1) as Note;
@@ -209,6 +216,8 @@
 	showScore={false}
 	initialNote={propKey || 'C'}
 	{description}
+	showTempoControl={false}
+	showTrainingControl={false}
 >
 	{#snippet children(api: any)}
 		{@const wasCompleted = exerciseCompleted}
@@ -266,10 +275,13 @@
 							English → Latin
 						</label>
 					</div>
-
 					{#if playedCorrectly}
 						<button class="next-note-btn" onclick={handleNextNote}> Next Note </button>
 					{/if}
+				</div>
+			{:else if playedCorrectly}
+				<div class="note-controls">
+					<button class="next-note-btn" onclick={handleNextNote}> Next Note </button>
 				</div>
 			{/if}
 		</div>
@@ -324,7 +336,8 @@
 
 	.note-card.correct {
 		border-color: var(--color-success, #4caf50);
-		background: var(--color-success-light, #e8f5e8);
+		background: var(--color-surface, #e8f5e8);
+		color: var(--color-text);
 		animation: bounce 0.6s ease;
 	}
 
@@ -337,7 +350,7 @@
 
 	.notation-type {
 		font-size: 0.9rem;
-		color: var(--color-text-secondary, #666);
+		color: var(--color-text-muted, #666);
 		text-transform: uppercase;
 		letter-spacing: 0.1em;
 	}

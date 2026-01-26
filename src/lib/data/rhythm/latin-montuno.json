@@ -1,0 +1,65 @@
+{
+    "id": "latin-montuno",
+    "name": "Latin (Montuno)",
+    "description": "Highly syncopated Montuno pattern focusing on off-beats.",
+    "suggestedBpm": 120,
+    "timeSignature": "4/4",
+    "defaultChords": [
+        "Cm",
+        "Ebaug",
+        "Eb",
+        "Ebaug"
+    ],
+    "isProgression": true,
+    "measures": 2,
+    "hits": [
+        {
+            "beat": 1.5,
+            "hand": "RH"
+        },
+        {
+            "beat": 2.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 2.5,
+            "hand": "RH"
+        },
+        {
+            "beat": 3.5,
+            "hand": "RH"
+        },
+        {
+            "beat": 4.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 4.5,
+            "hand": "RH"
+        },
+        {
+            "beat": 5.5,
+            "hand": "RH"
+        },
+        {
+            "beat": 6.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 6.5,
+            "hand": "RH"
+        },
+        {
+            "beat": 7.5,
+            "hand": "RH"
+        },
+        {
+            "beat": 8.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 8.5,
+            "hand": "RH"
+        }
+    ]
+}

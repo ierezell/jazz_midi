@@ -1,0 +1,28 @@
+{
+    "id": "jazz-charleston",
+    "name": "Jazz (Charleston)",
+    "description": "The classic Charleston rhythm. RH hits on 1 and the \"and\" of 2.",
+    "suggestedBpm": 140,
+    "timeSignature": "4/4",
+    "defaultChords": [
+        "Dm7",
+        "G7",
+        "Cmaj7"
+    ],
+    "isProgression": true,
+    "measures": 1,
+    "hits": [
+        {
+            "beat": 1.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 1.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 2.5,
+            "hand": "RH"
+        }
+    ]
+}

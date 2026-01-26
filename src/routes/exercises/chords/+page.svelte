@@ -7,7 +7,8 @@
 		AllChordTypes,
 		AllChordVoicings,
 		NoteToMidi,
-		DEFAULT_OCTAVE
+		DEFAULT_OCTAVE,
+		AllNotes
 	} from '$lib/types/notes.constants';
 	import type {
 		ChordType,
@@ -45,39 +46,85 @@
 		prompt
 	}: Props = $props();
 
-	// Journey Params
-	const paramRoot = $derived(page.url.searchParams.get('root') as Note);
-	const paramQuality = $derived(page.url.searchParams.get('quality') as ChordType);
-
-	// Pass description to BaseExercise
 	let possibleChordTypes = ['maj7', 'min7', '7', 'dom7', 'half-dim7', 'dim7'] as ChordType[];
 
-	let chordType: ChordType = $derived(
+	// Local State - read URL params directly to avoid state_referenced_locally warning
+	let currentRoot: Note = $state(
+		(page.url.searchParams.get('root') as Note) ??
+			propKey ??
+			(randomMode ? AllNotes[Math.floor(Math.random() * AllNotes.length)] : 'C')
+	);
+	let currentChordType: ChordType = $state(
 		(page.url.searchParams.get('quality') as ChordType) ??
 			propChordType ??
 			(randomMode
 				? possibleChordTypes[Math.floor(Math.random() * possibleChordTypes.length)]
 				: 'maj7')
 	);
-	let inversion: Inversion = $state(
+	let currentInversion: Inversion = $state(
 		propInversion ?? (randomMode ? (Math.floor(Math.random() * 4) as Inversion) : 0)
 	);
-	let voicing: ChordVoicing = $state(
+	let currentVoicing: ChordVoicing = $state(
 		propVoicing ??
 			(randomMode
 				? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
 				: 'full-right')
 	);
-
-	let effectiveRootKey = $derived(paramRoot ?? propKey ?? 'C');
 	let exerciseCompleted = $state(false);
 
-	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
-		const rootNote = (selectedNote + DEFAULT_OCTAVE) as NoteFullName;
-		const rootMidi = NoteToMidi[rootNote];
-		const currentChord = chords(rootMidi, chordType, inversion);
+	function generateNewChallenge() {
+		const randomRoot = AllNotes[Math.floor(Math.random() * AllNotes.length)];
+		const randomType = possibleChordTypes[Math.floor(Math.random() * possibleChordTypes.length)];
 
-		return getVoicedChordNotes(currentChord, voicing);
+		// Optional: also randomize inversion/voicing?
+		// User asked for "new random note and a new random chord type".
+		// We'll stick to that for now, preserving inversion/voicing unless we want to randomize them too.
+		// Let's randomize all for a better drill experience if in randomMode.
+		const randomInv = Math.floor(Math.random() * 4) as Inversion;
+
+		currentRoot = randomRoot;
+		currentChordType = randomType;
+		currentInversion = randomInv;
+		// Keep voicing consistent potentially? Or randomize. Let's keep voicing user-controlled or as is for now to avoid confusion.
+	}
+
+	function handleComplete() {
+		generateNewChallenge();
+		onComplete?.();
+	}
+
+	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
+		// Calculate optimal octave to keep chords centered
+		// If root is high (G, A, B), drop to octave 3. Otherwise use octave 4.
+		// This keeps roots roughly between G3 and F4.
+		const notes = [
+			'C',
+			'C#',
+			'Db',
+			'D',
+			'D#',
+			'Eb',
+			'E',
+			'F',
+			'F#',
+			'Gb',
+			'G',
+			'G#',
+			'Ab',
+			'A',
+			'A#',
+			'Bb',
+			'B'
+		];
+		const noteIndex = notes.indexOf(currentRoot);
+		// G is index 10. G, G#, A... B are high.
+		const octave = noteIndex >= 10 ? '3' : DEFAULT_OCTAVE;
+
+		const rootNote = (currentRoot + octave) as NoteFullName;
+		const rootMidi = NoteToMidi[rootNote];
+		const currentChord = chords(rootMidi, currentChordType, currentInversion);
+
+		return getVoicedChordNotes(currentChord, currentVoicing);
 	}
 
 	function validateNoteEvent(
@@ -85,17 +132,10 @@
 		event: NoteEvent,
 		expectedNotes: MidiNote[]
 	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
-		// For rootless, we might want to be lenient about octaves if we didn't calculate them perfectly
-		// But BaseExercise expects exact matches usually.
-		// Let's check if the note class matches any expected note class
-
 		const expectedClasses = expectedNotes.map((n) => n % 12);
 		const playedClass = event.noteNumber % 12;
 
 		if (expectedClasses.includes(playedClass)) {
-			// It's a correct note class.
-			// Now check if it's the exact note if we are strict, or just allow it.
-			// Let's try to be exact first.
 			if (expectedNotes.includes(event.noteNumber)) {
 				return {
 					isCorrect: true,
@@ -104,8 +144,7 @@
 					resetCollected: false
 				};
 			}
-			// If we are in rootless mode, maybe allow any octave?
-			if (voicing.startsWith('rootless')) {
+			if (currentVoicing.startsWith('rootless')) {
 				return {
 					isCorrect: true,
 					message: 'Correct chord tone (octave ignored)!',
@@ -125,42 +164,47 @@
 
 	function handleChordTypeChange(event: Event): void {
 		const target = event.target as HTMLSelectElement;
-		chordType = target.value as ChordType;
+		currentChordType = target.value as ChordType;
 	}
 
 	function handleInversionChange(event: Event): void {
 		const target = event.target as HTMLSelectElement;
-		inversion = parseInt(target.value) as Inversion;
+		currentInversion = parseInt(target.value) as Inversion;
 	}
 
 	function handleVoicingChange(event: Event): void {
 		const target = event.target as HTMLSelectElement;
-		voicing = target.value as typeof voicing;
+		currentVoicing = target.value as typeof currentVoicing;
 	}
 
 	// Derived values for display and score
 	let chordInfo = $derived.by(() => {
 		return {
-			name: `${chordType}`,
-			voicing: voicing,
-			inversion: inversion
+			name: `${currentChordType}`,
+			voicing: currentVoicing,
+			inversion: currentInversion
 		};
 	});
 
 	function generateScoreProps(selectedNote: Note): ScoreProps {
 		try {
-			const scoreData = generateChordNotesData(selectedNote, chordType, inversion, voicing);
+			const scoreData = generateChordNotesData(
+				currentRoot,
+				currentChordType,
+				currentInversion,
+				currentVoicing
+			);
 			console.debug('Generated score data:', {
-				selectedNote,
-				chordType,
-				voicing,
-				inversion,
+				currentRoot,
+				chordType: currentChordType,
+				voicing: currentVoicing,
+				inversion: currentInversion,
 				scoreData
 			});
 			return {
 				leftHand: scoreData.leftHand,
 				rightHand: scoreData.rightHand,
-				selectedNote
+				selectedNote: currentRoot
 			};
 		} catch (error) {
 			console.error('Error generating score data:', error);
@@ -175,7 +219,7 @@
 
 	function isCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
 		// If rootless, check if we have 4 unique note classes that match expected
-		if (voicing.startsWith('rootless')) {
+		if (currentVoicing.startsWith('rootless')) {
 			const currentClasses = new Set(currentNotes.map((n) => n % 12));
 			const expectedClasses = new Set(expectedNotes.map((n) => n % 12));
 			return (
@@ -195,7 +239,7 @@
 	}
 
 	// Generate prompt from current state
-	let computedPrompt = $derived(`${effectiveRootKey} ${chordType}`);
+	let computedPrompt = $derived(`${currentRoot} ${currentChordType}`);
 	let effectivePrompt = $derived(prompt ?? computedPrompt);
 </script>
 
@@ -206,8 +250,8 @@
 	{validateNoteEvent}
 	{isCompleted}
 	onReset={handleParentReset}
-	{onComplete}
-	initialNote={effectiveRootKey}
+	onComplete={handleComplete}
+	initialNote={currentRoot}
 	{description}
 	{progressiveHints}
 	prompt={effectivePrompt}
@@ -220,11 +264,12 @@
 		{:else if !isNowCompleted && wasCompleted}
 			{(exerciseCompleted = false)}
 		{/if}
-		<div class="controls">
-			{#if !randomMode && !page.url.searchParams.get('unitId')}
+
+		{#if !randomMode && !page.url.searchParams.get('unitId')}
+			<div class="controls">
 				<div class="control-group">
-					<label for="chord-type">Chord Type:</label>
-					<select id="chord-type" value={chordType} onchange={handleChordTypeChange}>
+					<label for="chord-type">Chord Type</label>
+					<select id="chord-type" value={currentChordType} onchange={handleChordTypeChange}>
 						{#each AllChordTypes as type}
 							<option value={type}>{type}</option>
 						{/each}
@@ -232,8 +277,8 @@
 				</div>
 
 				<div class="control-group">
-					<label for="inversion">Inversion:</label>
-					<select id="inversion" value={inversion} onchange={handleInversionChange}>
+					<label for="inversion">Inversion</label>
+					<select id="inversion" value={currentInversion} onchange={handleInversionChange}>
 						<option value={0}>Root</option>
 						<option value={1}>1st</option>
 						<option value={2}>2nd</option>
@@ -242,8 +287,8 @@
 				</div>
 
 				<div class="control-group">
-					<label for="voicing">Voicing:</label>
-					<select id="voicing" value={voicing} onchange={handleVoicingChange}>
+					<label for="voicing">Voicing</label>
+					<select id="voicing" value={currentVoicing} onchange={handleVoicingChange}>
 						<option value="full-right">Full Right Hand</option>
 						<option value="full-left">Full Left Hand</option>
 						<option value="1735">1 & 7 Left / 3 & 5 Right</option>
@@ -252,8 +297,8 @@
 						<option value="rootless-b">Rootless B (7-9-3-5)</option>
 					</select>
 				</div>
-			{/if}
-		</div>
+			</div>
+		{/if}
 	{/snippet}
 </BaseExercise>
 
@@ -265,8 +310,9 @@
 		justify-content: center;
 		margin: 2rem 0;
 		padding: 1rem;
-		background-color: #f8f9fa;
+		background-color: var(--color-surface);
 		border-radius: 0.5rem;
+		border: 1px solid var(--color-border);
 	}
 
 	.control-group {
@@ -278,7 +324,7 @@
 
 	.control-group label {
 		font-weight: 500;
-		color: #495057;
+		color: var(--color-text-muted);
 	}
 
 	@media (max-width: 768px) {

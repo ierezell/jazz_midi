@@ -1,7 +1,13 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import { MidiToNote, AllIntervals, INTERVAL_NAMES, NoteToMidi } from '$lib/types/notes.constants';
+	import {
+		MidiToNote,
+		AllIntervals,
+		INTERVAL_NAMES,
+		NoteToMidi,
+		AllNotes
+	} from '$lib/types/notes.constants';
 	import type {
 		MidiNote,
 		Note,
@@ -28,6 +34,9 @@
 			(randomMode ? AllIntervals[Math.floor(Math.random() * AllIntervals.length)] : 'major3rd')
 	);
 	let handMode: boolean = $state(propRightHandMode ?? (randomMode ? Math.random() > 0.5 : true));
+	let currentRoot: Note = $state(
+		propKey ?? (randomMode ? AllNotes[Math.floor(Math.random() * AllNotes.length)] : 'C')
+	);
 	let playedNotes: Set<MidiNote> = $state(new Set());
 	let exerciseCompleted = $state(false);
 
@@ -42,15 +51,45 @@
 		}
 	});
 
-	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
+	function generateNewChallenge() {
+		const randomRoot = AllNotes[Math.floor(Math.random() * AllNotes.length)];
+		const randomInterval = AllIntervals[Math.floor(Math.random() * AllIntervals.length)];
+
+		currentRoot = randomRoot;
+		intervalType = randomInterval;
+		playedNotes = new Set();
+		exerciseCompleted = false;
+	}
+
+	function getOptimalOctave(note: Note, isRightHand: boolean): string {
+		// Center around C3 (Right Hand) or C2 (Left Hand) - Lowered by request
+		// If Note is High (G, A, B), drop octave
+		const isHighNote = ['G', 'A', 'B'].includes(note);
+
+		if (isRightHand) {
+			// Target C3.
+			// If C..F -> 3. If G..B -> 2.
+			return isHighNote ? '2' : '3';
+		} else {
+			// Target C2.
+			// If C..F -> 2. If G..B -> 1.
+			return isHighNote ? '1' : '2';
+		}
+	}
+
+	function generateExpectedNotes(_selectedNote: Note): MidiNote[] {
+		// Ignore selectedNote from BaseExercise, use local currentRoot
 		try {
-			const octave = handMode ? '3' : '4';
-			const expectedNoteValue = calculateInterval(selectedNote, intervalType, octave);
-			const rootMidi = NoteToMidi[(selectedNote + octave) as NoteFullName];
-			const expectedMidi = NoteToMidi[(expectedNoteValue + octave) as NoteFullName];
+			// Adjustment for centering
+			const octave = getOptimalOctave(currentRoot, handMode);
+			const expectedNoteValue = calculateInterval(currentRoot, intervalType, octave);
+			const rootMidi = NoteToMidi[(currentRoot + octave) as NoteFullName];
+
+			// expectedNoteValue is already a MidiNote, no need to look it up again
+			const expectedMidi = expectedNoteValue;
 
 			console.debug(
-				`Interval ${INTERVAL_NAMES[intervalType]} from ${selectedNote}${octave} to ${expectedNoteValue}${octave}:`,
+				`Interval ${INTERVAL_NAMES[intervalType]} from ${currentRoot}${octave} to ${expectedMidi}:`,
 				`Root MIDI: ${rootMidi}, Expected MIDI: ${expectedMidi}`
 			);
 			// Always return both notes for validation
@@ -64,22 +103,26 @@
 		}
 	}
 
-	function generateScoreProps(selectedNote: Note): ScoreProps {
+	function generateScoreProps(_selectedNote: Note): ScoreProps {
 		try {
-			const expectedNote = calculateInterval(selectedNote, intervalType, '4');
-			const rootNote = (selectedNote + '4') as NoteFullName;
+			// Sync octave with generateExpectedNotes
+			const octave = getOptimalOctave(currentRoot, handMode);
+			const expectedNote = calculateInterval(currentRoot, intervalType, octave);
+			const rootNote = (currentRoot + octave) as NoteFullName;
 			const intervalNote = MidiToNote[expectedNote];
 
 			let leftHand: NoteFullName[][] = [];
 			let rightHand: NoteFullName[][] = [];
 			if (handMode) {
+				// Right Hand
 				rightHand = [[rootNote, intervalNote]];
 			} else {
+				// Left Hand
 				leftHand = [[rootNote, intervalNote]];
 			}
 
 			return {
-				selectedNote: selectedNote,
+				selectedNote: currentRoot,
 				leftHand,
 				rightHand
 			};
@@ -87,18 +130,24 @@
 			console.error('Error generating score props:', error);
 			// Return default fallback
 			return {
-				selectedNote: selectedNote,
+				selectedNote: currentRoot,
 				leftHand: [],
 				rightHand: [['C4', 'E4']]
 			};
 		}
 	}
 	function validateIntervalNote(
-		selectedNote: Note,
+		_selectedNote: Note,
 		event: NoteEvent,
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+	): {
+		isCorrect: boolean;
+		message: string;
+		collected: boolean;
+		resetCollected: boolean;
+		resetMistakes?: boolean;
+	} {
 		const [rootMidi, intervalMidi] = expectedNotes;
 		const intervalName = INTERVAL_NAMES[intervalType];
 
@@ -108,11 +157,17 @@
 
 			// Check if we have both notes
 			if (playedNotes.size === 2) {
+				// Auto-advance
+				setTimeout(() => {
+					generateNewChallenge();
+				}, 1500);
+
 				return {
 					isCorrect: true,
 					message: `Perfect ${intervalName}! 🎵✨`,
 					collected: true,
-					resetCollected: false
+					resetCollected: true,
+					resetMistakes: true
 				};
 			} else {
 				// Determine which note was played
@@ -130,7 +185,7 @@
 			const playedNoteName = MidiToNote[event.noteNumber]?.slice(0, -1) as Note;
 			return {
 				isCorrect: false,
-				message: `Wrong! You played ${playedNoteName}. Play ${intervalName} from ${selectedNote}`,
+				message: `Wrong! You played ${playedNoteName}. Play ${intervalName} from ${currentRoot}`,
 				collected: false,
 				resetCollected: true
 			};
@@ -138,8 +193,8 @@
 	}
 
 	function isIntervalCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
-		const uniqueExpectedNotes = [...new Set(expectedNotes)];
-		return playedNotes.size === uniqueExpectedNotes.length;
+		// Continuous practice
+		return false;
 	}
 
 	function handleIntervalTypeChange(event: Event): void {
@@ -155,7 +210,7 @@
 	}
 
 	// Generate prompt from current state
-	let computedPrompt = $derived(`${INTERVAL_NAMES[intervalType]} from ${propKey || 'C'}`);
+	let computedPrompt = $derived(`${INTERVAL_NAMES[intervalType]} from ${currentRoot}`);
 </script>
 
 <BaseExercise
@@ -166,9 +221,11 @@
 	isCompleted={isIntervalCompleted}
 	onReset={handleParentReset}
 	onComplete={() => {}}
-	initialNote={propKey || 'C'}
+	initialNote={currentRoot}
 	{description}
 	prompt={computedPrompt}
+	showTempoControl={false}
+	showTrainingControl={false}
 >
 	{#snippet children(api: any)}
 		{@const wasCompleted = exerciseCompleted}
@@ -178,10 +235,11 @@
 		{:else if !isNowCompleted && wasCompleted}
 			{(exerciseCompleted = false)}
 		{/if}
-		<div class="controls">
-			{#if !randomMode}
+
+		{#if !randomMode}
+			<div class="controls-area">
 				<div class="control-group">
-					<label for="intervalType">Interval Type:</label>
+					<label for="intervalType">Interval Type</label>
 					<select id="intervalType" value={intervalType} onchange={handleIntervalTypeChange}>
 						{#each AllIntervals as interval}
 							<option value={interval}>{INTERVAL_NAMES[interval]}</option>
@@ -191,42 +249,27 @@
 				<div class="control-group">
 					<label>
 						<input type="checkbox" bind:checked={handMode} onchange={handleHandModeToggle} />
-						Right hand
+						Right hand mode
 					</label>
 				</div>
-			{/if}
-		</div>
+			</div>
+		{/if}
 	{/snippet}
 </BaseExercise>
 
 <style>
+	.controls-area {
+		display: flex;
+		gap: 2rem;
+		justify-content: center;
+		padding: 1rem;
+		background: var(--color-surface);
+		border-radius: 8px;
+		margin-bottom: 1rem;
+	}
 	.control-group {
 		display: flex;
-		gap: 1rem;
+		gap: 0.5rem;
 		align-items: center;
-	}
-
-	select {
-		padding: 0.3rem 0.6rem;
-		border: 1px solid #ddd;
-		border-radius: 0.3rem;
-		background: white;
-		font-size: 0.9rem;
-	}
-
-	@keyframes bounce {
-		0%,
-		20%,
-		50%,
-		80%,
-		100% {
-			transform: translateY(0);
-		}
-		40% {
-			transform: translateY(-10px);
-		}
-		60% {
-			transform: translateY(-5px);
-		}
 	}
 </style>

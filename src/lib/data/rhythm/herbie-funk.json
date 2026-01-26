@@ -1,0 +1,56 @@
+{
+    "id": "herbie-funk",
+    "name": "Herbie Hancock Funk",
+    "description": "G minor funk blues. Syncopated LH bassline and RH hits on the \"and\" of 1.",
+    "suggestedBpm": 105,
+    "timeSignature": "4/4",
+    "defaultChords": [
+        "Gm7",
+        "C7",
+        "D7"
+    ],
+    "isProgression": true,
+    "measures": 2,
+    "hits": [
+        {
+            "beat": 1.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 1.5,
+            "hand": "RH"
+        },
+        {
+            "beat": 2.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 2.5,
+            "hand": "LH"
+        },
+        {
+            "beat": 3.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 4.5,
+            "hand": "RH"
+        },
+        {
+            "beat": 5.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 6.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 7.5,
+            "hand": "RH"
+        },
+        {
+            "beat": 8.0,
+            "hand": "LH"
+        }
+    ]
+}

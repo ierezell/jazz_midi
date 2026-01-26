@@ -1,0 +1,43 @@
+{
+    "id": "funk-basic",
+    "name": "Funk Stabs",
+    "description": "Syncopated RH \"chanks\" on 16th-note off-beats.",
+    "suggestedBpm": 95,
+    "timeSignature": "4/4",
+    "defaultChords": [
+        "Cm7",
+        "F9"
+    ],
+    "isProgression": true,
+    "measures": 1,
+    "hits": [
+        {
+            "beat": 1.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 1.25,
+            "hand": "RH"
+        },
+        {
+            "beat": 2.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 2.75,
+            "hand": "RH"
+        },
+        {
+            "beat": 3.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 4.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 4.5,
+            "hand": "RH"
+        }
+    ]
+}

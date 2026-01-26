@@ -60,3 +60,20 @@ export interface MIDIEventHandlers {
 	onControlChange: (control: number, value: number) => void;
 	onError: (error: Error) => void;
 }
+
+export interface RhythmHit {
+	beat: number; // 1-indexed beat position (e.g., 1.0, 1.5, 2.0, 2.25)
+	hand: 'LH' | 'RH';
+}
+
+export interface RhythmPattern {
+	id: string;
+	name: string;
+	description: string;
+	suggestedBpm: number;
+	timeSignature: '4/4' | '6/8' | '3/4';
+	defaultChords: string[]; // e.g., ["Cmaj7", "Fmaj7"]
+	hits: RhythmHit[];
+	isProgression: boolean;
+	measures: number; // Duration of the pattern in measures
+}

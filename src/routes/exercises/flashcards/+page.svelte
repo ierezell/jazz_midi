@@ -1,25 +1,21 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import { page } from '$app/state';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 	import type { MidiNote, Note, ExerciseType, NoteEvent } from '$lib/types/types';
 	import type { ChordType, ScaleMode, ChordVoicing, Inversion } from '$lib/types/notes';
 	import {
-		AllNotes,
 		NoteToMidi,
 		MidiToNote,
 		DEFAULT_OCTAVE,
 		INTERVAL_SEMITONES,
-		AllChordTypes,
 		AllScaleModes,
-		AllChordVoicings,
-		AllInversions
+		AllChordVoicings
 	} from '$lib/types/notes.constants';
-	import { chords, calculateInterval } from '$lib/MusicTheoryUtils';
+	import { calculateInterval } from '$lib/MusicTheoryUtils';
 	import { onDestroy, onMount } from 'svelte';
 
-	import { generateRandomCard, type FlashCard, type FlashCardType } from '$lib/FlashcardUtils';
+	import { type FlashCard, type FlashCardType } from '$lib/FlashcardUtils';
 	import ConfigPopup from '../../../components/ConfigPopup.svelte';
 	import ChordsPage from '../chords/+page.svelte';
 	import ScalesPage from '../scales/+page.svelte';
@@ -116,16 +112,13 @@
 	}
 
 	function handleExerciseComplete() {
-		isCompleted = true;
+		// Just wait a bit and move to next card
+		// BaseExercise already shows a success toast
 		cardsCompleted++;
 
-		countdown = 3;
-		countdownInterval = setInterval(() => {
-			countdown--;
-			if (countdown <= 0) {
-				if (countdownInterval) clearInterval(countdownInterval);
-				generateNewCard();
-			}
+		if (completionTimeout) clearTimeout(completionTimeout);
+		completionTimeout = setTimeout(() => {
+			generateNewCard();
 		}, 1000);
 	}
 
@@ -135,7 +128,6 @@
 
 	onDestroy(() => {
 		if (completionTimeout) clearTimeout(completionTimeout);
-		if (countdownInterval) clearInterval(countdownInterval);
 	});
 
 	// Helper for simple Note/Interval validation
@@ -225,16 +217,6 @@
 		}}
 	/>
 
-	{#if isCompleted}
-		<div class="completion-overlay">
-			<div class="completion-message">
-				<h2>🎉 Correct!</h2>
-				<p>Next card in {countdown}...</p>
-				<button onclick={generateNewCard} class="skip-btn">Skip</button>
-			</div>
-		</div>
-	{/if}
-
 	{#if currentCard}
 		{#key exerciseKey}
 			{#if currentCard.type === 'chord'}
@@ -282,7 +264,7 @@
 					onComplete={handleExerciseComplete}
 					initialNote={currentCard.prompt.split(' ')[0] as Note}
 					description={currentCard.subtext ?? ''}
-					exerciseType="chord"
+					exerciseType={currentCard.type === 'note' ? 'note' : 'interval'}
 					progressiveHints={true}
 					onReset={() => {}}
 					prompt={currentCard.prompt}
@@ -348,42 +330,6 @@
 
 	.new-btn:hover {
 		background: #43a047;
-	}
-
-	.completion-overlay {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: rgba(0, 0, 0, 0.7);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 1000;
-	}
-
-	.completion-message {
-		background: white;
-		padding: 2rem;
-		border-radius: 12px;
-		text-align: center;
-		animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-	}
-
-	.completion-message h2 {
-		color: #4caf50;
-		margin: 0 0 1rem 0;
-	}
-
-	.skip-btn {
-		margin-top: 1rem;
-		padding: 0.5rem 1.5rem;
-		background: #2196f3;
-		color: white;
-		border: none;
-		border-radius: 4px;
-		cursor: pointer;
 	}
 
 	@keyframes popIn {

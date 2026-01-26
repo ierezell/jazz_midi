@@ -1,0 +1,65 @@
+{
+    "id": "rock",
+    "name": "Rock Driving",
+    "description": "LH: Driving eighth-note octaves. RH: Steady chords.",
+    "suggestedBpm": 120,
+    "timeSignature": "4/4",
+    "defaultChords": [
+        "C",
+        "F",
+        "Bb",
+        "Eb"
+    ],
+    "isProgression": true,
+    "measures": 1,
+    "hits": [
+        {
+            "beat": 1.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 1.5,
+            "hand": "LH"
+        },
+        {
+            "beat": 2.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 2.5,
+            "hand": "LH"
+        },
+        {
+            "beat": 3.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 3.5,
+            "hand": "LH"
+        },
+        {
+            "beat": 4.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 4.5,
+            "hand": "LH"
+        },
+        {
+            "beat": 1.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 2.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 3.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 4.0,
+            "hand": "RH"
+        }
+    ]
+}

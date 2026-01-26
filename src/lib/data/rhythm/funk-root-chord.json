@@ -1,0 +1,39 @@
+{
+    "id": "funk-root-chord",
+    "name": "Funk Root-Chord",
+    "description": "LH: Punchy roots on 1 and 3. RH: 16th-note chord stabs on the \"e\" and \"a\".",
+    "suggestedBpm": 90,
+    "timeSignature": "4/4",
+    "defaultChords": [
+        "E9",
+        "A13"
+    ],
+    "isProgression": true,
+    "measures": 1,
+    "hits": [
+        {
+            "beat": 1.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 1.25,
+            "hand": "RH"
+        },
+        {
+            "beat": 1.75,
+            "hand": "RH"
+        },
+        {
+            "beat": 3.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 3.25,
+            "hand": "RH"
+        },
+        {
+            "beat": 3.75,
+            "hand": "RH"
+        }
+    ]
+}

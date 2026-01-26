@@ -7,15 +7,15 @@ describe('User Journey Integration', () => {
 		// Reset services and storage before each test
 		localStorage.clear();
 		vi.clearAllMocks();
-		
+
 		// Reset service states (assuming they have reset methods or we can re-instantiate if they weren't singletons, 
 		// but they are singletons. We rely on them reading from localStorage on init or having a way to reset).
 		// Since they are singletons, we might need to manually reset their internal state if they don't expose a reset.
 		// UserStatsService has createProfile which resets stats.
 		// JourneyService loads from storage.
-		
+
 		// Force reload from empty storage
-		userStatsService['loadProfile'](); 
+		userStatsService['loadProfile']();
 		userStatsService['loadStatistics']();
 		journeyService['loadProgress']();
 	});
@@ -45,15 +45,15 @@ describe('User Journey Integration', () => {
 		// 4. User starts a lesson (Daily Practice)
 		const lessonToPractice = journeyService.getPracticeLesson(activeUnit!.id);
 		expect(lessonToPractice).toBeDefined();
-		
+
 		// 5. User completes the lesson (BaseExercise component logic)
 		// The component calls:
 		// a. userStatsService.recordExerciseResult
 		// b. journeyService.completeLesson
-		
+
 		const lessonId = lessonToPractice!.lesson.id;
 		const exerciseType = 'scale'; // Example
-		
+
 		userStatsService.recordExerciseResult({
 			exerciseId: lessonId,
 			exerciseType,
@@ -68,7 +68,7 @@ describe('User Journey Integration', () => {
 		journeyService.completeLesson(activeUnit!.id, lessonId, 3); // 3 stars
 
 		// 6. Verify Progress Updates
-		
+
 		// Stats should update
 		const updatedProfile = userStatsService.getProfile();
 		expect(updatedProfile.experiencePoints).toBeGreaterThan(0);
@@ -79,7 +79,7 @@ describe('User Journey Integration', () => {
 		const updatedLesson = updatedUnits.find(u => u.id === activeUnit!.id)?.lessons.find(l => l.id === lessonId);
 		expect(updatedLesson?.stars).toBe(3);
 		expect(updatedLesson?.perfectCompletions).toBe(1);
-		
+
 		// If it was the last lesson, next unit might unlock (depending on logic)
 		// But for this test, we just verify the single lesson progress.
 	});
@@ -96,7 +96,7 @@ describe('User Journey Integration', () => {
 
 		// 3. Get Recommendations
 		const recommendations = userStatsService.getWeaknessRecommendations();
-		
+
 		// 4. Verify recommendations exist
 		expect(recommendations.length).toBeGreaterThan(0);
 		// Should recommend based on Cmaj7 or D note

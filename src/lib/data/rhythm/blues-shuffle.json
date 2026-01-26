@@ -1,0 +1,60 @@
+{
+    "id": "blues-shuffle",
+    "name": "Blues Shuffle",
+    "description": "Loping triplet feel. LH plays a walking shuffle pattern.",
+    "suggestedBpm": 90,
+    "timeSignature": "4/4",
+    "defaultChords": [
+        "G7",
+        "C7",
+        "D7"
+    ],
+    "isProgression": true,
+    "measures": 1,
+    "hits": [
+        {
+            "beat": 1.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 1.66,
+            "hand": "LH"
+        },
+        {
+            "beat": 2.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 2.66,
+            "hand": "LH"
+        },
+        {
+            "beat": 3.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 3.66,
+            "hand": "LH"
+        },
+        {
+            "beat": 4.0,
+            "hand": "LH"
+        },
+        {
+            "beat": 4.66,
+            "hand": "LH"
+        },
+        {
+            "beat": 1.0,
+            "hand": "RH"
+        },
+        {
+            "beat": 2.66,
+            "hand": "RH"
+        },
+        {
+            "beat": 4.0,
+            "hand": "RH"
+        }
+    ]
+}

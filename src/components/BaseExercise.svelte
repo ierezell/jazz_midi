@@ -1,15 +1,9 @@
 <script lang="ts">
 	import { audioManager } from '$lib/AudioManager';
 	import { midiManager } from '$lib/MIDIManager';
-	import { audioInputService } from '$lib/AudioInputService';
 	import { userStatsService } from '$lib/UserStatsService';
 	import { calculateOptimalRange, getNoteRole } from '$lib/MusicTheoryUtils';
-	import {
-		AllNotes,
-		DEFAULT_NOTE_ROLE_COLORS,
-		NoteToMidi,
-		DEFAULT_OCTAVE
-	} from '$lib/types/notes.constants';
+	import { AllNotes, NoteToMidi, DEFAULT_OCTAVE } from '$lib/types/notes.constants';
 	import {
 		type KeyboardProps,
 		type MidiNote,
@@ -80,8 +74,16 @@
 		description,
 		exerciseType = 'chord',
 		progressiveHints = true,
-		prompt
-	}: BaseExerciseProps & { children?: any; progressiveHints?: boolean; prompt?: string } = $props();
+		prompt,
+		showTempoControl = true,
+		showTrainingControl = true
+	}: BaseExerciseProps & {
+		children?: any;
+		progressiveHints?: boolean;
+		prompt?: string;
+		showTempoControl?: boolean;
+		showTrainingControl?: boolean;
+	} = $props();
 
 	const SCORE_SHOW_AFTER_MISTAKES = 1; // Show score after 1 mistake
 	const KEYBOARD_SHOW_AFTER_MISTAKES = 3; // Show keyboard after 3 mistakes
@@ -242,6 +244,8 @@
 			);
 		}
 
+		let isOffBeat = false;
+
 		// Tempo Check
 		if (tempoMode) {
 			const now = Date.now();
@@ -252,9 +256,9 @@
 
 			if (distance > TEMPO_TOLERANCE_MS) {
 				showFeedback('Off beat! Try to play on the beat.', 'error');
-				mistakes++; // Penalize for off-beat?
-				// Maybe don't process the note if it's off beat?
-				// For now, let's just warn.
+				mistakes++;
+				isOffBeat = true;
+				audioManager.playError();
 			}
 		}
 
@@ -265,16 +269,35 @@
 			collectedNotes = new Set();
 		}
 
-		if (result.collected) {
+		// @ts-ignore - resetMistakes is a new optional return property
+		if (result.resetMistakes) {
+			mistakes = 0;
+		}
+
+		// Only collect and show success if on beat (or if tempo mode is off)
+		if (result.collected && !isOffBeat) {
 			collectedNotes.add(note.noteNumber);
 		}
 
 		if (result.isCorrect) {
-			showFeedback(result.message, 'success');
+			if (!isOffBeat) {
+				showFeedback(result.message, 'success');
+			}
+			// If isCorrect but isOffBeat, we already showed "Off beat" error and played error sound above.
+			// We do NOT show success message/sound.
 		} else {
-			mistakes++;
-			showFeedback(result.message, 'error');
-			audioManager.playError();
+			// If note matches pitch but is off beat, we already counted mistake above.
+			// If note is WRONG pitch, we count another mistake here?
+			// Ideally we don't double penalize if they just missed the beat but hit the wrong note?
+			// But sticking to simple logic: Wrong Note = Mistake. Off Beat = Mistake.
+			if (!isOffBeat) {
+				mistakes++;
+				showFeedback(result.message, 'error');
+				audioManager.playError();
+			}
+			// If it was already off beat, we already showed error/played sound.
+			// But the message might need to say "Wrong note AND Off beat"?
+			// For now, "Off beat" is the priority feedback if tempo mode is on.
 
 			if (stopOnMistake) {
 				// Stop processing or handle "stop/skip" behavior
@@ -439,36 +462,40 @@
 				</div>
 			{/if}
 
-			<div class="control-group">
-				<label for="tempo-toggle">Tempo Mode</label>
-				<button
-					id="tempo-toggle"
-					class="toggle-btn"
-					class:active={tempoMode}
-					onclick={toggleTempoMode}
-				>
-					{tempoMode ? 'Enabled' : 'Disabled'}
-				</button>
-			</div>
-
-			{#if tempoMode}
+			{#if showTempoControl}
 				<div class="control-group">
-					<Metronome onTick={handleTick} />
+					<label for="tempo-toggle">Tempo Mode</label>
+					<button
+						id="tempo-toggle"
+						class="toggle-btn"
+						class:active={tempoMode}
+						onclick={toggleTempoMode}
+					>
+						{tempoMode ? 'Enabled' : 'Disabled'}
+					</button>
 				</div>
+
+				{#if tempoMode}
+					<div class="control-group">
+						<Metronome onTick={handleTick} />
+					</div>
+				{/if}
 			{/if}
 
-			<div class="control-group">
-				<label for="training-mode-toggle">Training Mode</label>
-				<button
-					id="training-mode-toggle"
-					onclick={() => (stopOnMistake = !stopOnMistake)}
-					class="toggle-btn"
-					class:active={stopOnMistake}
-					title="If enabled, mistakes will stop the lesson until you correct it"
-				>
-					{stopOnMistake ? 'Stop on Mistake' : 'Free Play'}
-				</button>
-			</div>
+			{#if showTrainingControl}
+				<div class="control-group">
+					<label for="training-mode-toggle">Training Mode</label>
+					<button
+						id="training-mode-toggle"
+						onclick={() => (stopOnMistake = !stopOnMistake)}
+						class="toggle-btn"
+						class:active={stopOnMistake}
+						title="If enabled, mistakes will stop the lesson until you correct it"
+					>
+						{stopOnMistake ? 'Stop on Mistake' : 'Free Play'}
+					</button>
+				</div>
+			{/if}
 
 			<div class="control-group">
 				<label for="debug-toggle">Virtual Keyboard</label>
