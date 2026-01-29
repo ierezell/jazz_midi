@@ -1,0 +1,25 @@
+{
+	"id": "latin-montuno-bass",
+	"name": "Latin Montuno Bass",
+	"description": "Traditional Latin montuno bass pattern for left hand.",
+	"category": "latin",
+	"hand": "left",
+	"difficulty": "intermediate",
+	"suggestedBpm": 110,
+	"notes": [
+		"C2",
+		"G2",
+		"C3",
+		"Bb2",
+		"C3",
+		"G2",
+		"F2",
+		"G2"
+	],
+	"tags": [
+		"latin",
+		"montuno",
+		"salsa",
+		"rhythmic"
+	]
+}

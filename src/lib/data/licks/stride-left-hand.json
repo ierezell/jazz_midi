@@ -1,0 +1,24 @@
+{
+	"id": "stride-left-hand",
+	"name": "Stride Piano Left Hand",
+	"description": "Classic stride piano alternating bass with mid-range chords.",
+	"category": "jazz",
+	"hand": "left",
+	"difficulty": "intermediate",
+	"suggestedBpm": 110,
+	"notes": [
+		"C2",
+		"G3",
+		"E3",
+		"C2",
+		"G3",
+		"E3",
+		"C2",
+		"G3"
+	],
+	"tags": [
+		"stride",
+		"jazz",
+		"alternating"
+	]
+}

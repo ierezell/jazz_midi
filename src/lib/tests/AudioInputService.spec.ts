@@ -32,12 +32,32 @@ describe('AudioInputService', () => {
 
 	it('should use the correct model URL', async () => {
 		// Mock AudioContext
-		vi.stubGlobal('AudioContext', vi.fn(function() {
+		vi.stubGlobal('AudioContext', vi.fn(function () {
 			return {
 				resume: vi.fn().mockResolvedValue(undefined),
-				close: vi.fn()
+				close: vi.fn(),
+				createMediaStreamSource: vi.fn().mockReturnValue({
+					connect: vi.fn(),
+					disconnect: vi.fn()
+				}),
+				createScriptProcessor: vi.fn().mockReturnValue({
+					connect: vi.fn(),
+					disconnect: vi.fn(),
+					addEventListener: vi.fn(),
+					removeEventListener: vi.fn()
+				})
 			};
 		}));
+
+		// Mock navigator.mediaDevices
+		vi.stubGlobal('navigator', {
+			mediaDevices: {
+				getUserMedia: vi.fn().mockResolvedValue({
+					getTracks: () => [],
+					getAudioTracks: () => []
+				})
+			}
+		});
 
 		await service.start();
 
@@ -50,12 +70,32 @@ describe('AudioInputService', () => {
 
 	it('should not use the old broken model URL', async () => {
 		// Mock AudioContext
-		vi.stubGlobal('AudioContext', vi.fn(function() {
+		vi.stubGlobal('AudioContext', vi.fn(function () {
 			return {
 				resume: vi.fn().mockResolvedValue(undefined),
-				close: vi.fn()
+				close: vi.fn(),
+				createMediaStreamSource: vi.fn().mockReturnValue({
+					connect: vi.fn(),
+					disconnect: vi.fn()
+				}),
+				createScriptProcessor: vi.fn().mockReturnValue({
+					connect: vi.fn(),
+					disconnect: vi.fn(),
+					addEventListener: vi.fn(),
+					removeEventListener: vi.fn()
+				})
 			};
 		}));
+
+		// Mock navigator.mediaDevices
+		vi.stubGlobal('navigator', {
+			mediaDevices: {
+				getUserMedia: vi.fn().mockResolvedValue({
+					getTracks: () => [],
+					getAudioTracks: () => []
+				})
+			}
+		});
 
 		await service.start();
 

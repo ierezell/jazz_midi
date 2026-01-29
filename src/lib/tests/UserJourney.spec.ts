@@ -40,30 +40,16 @@ describe('User Journey Integration', () => {
 		const units = journeyService.getUnits();
 		const activeUnit = units.find(u => u.status === 'active');
 		expect(activeUnit).toBeDefined();
-		expect(activeUnit?.id).toBe('unit-1'); // Assuming unit-1 is first
+		expect(activeUnit?.id).toBe('level-0'); // First unit is level-0
 
 		// 4. User starts a lesson (Daily Practice)
 		const lessonToPractice = journeyService.getPracticeLesson(activeUnit!.id);
 		expect(lessonToPractice).toBeDefined();
 
 		// 5. User completes the lesson (BaseExercise component logic)
-		// The component calls:
-		// a. userStatsService.recordExerciseResult
-		// b. journeyService.completeLesson
+		// The journeyService.completeLesson calls userStatsService.recordExerciseResult internally
 
 		const lessonId = lessonToPractice!.lesson.id;
-		const exerciseType = 'scale'; // Example
-
-		userStatsService.recordExerciseResult({
-			exerciseId: lessonId,
-			exerciseType,
-			success: true,
-			accuracy: 95,
-			timeElapsed: 10000,
-			mistakes: 1,
-			score: 90,
-			timestamp: new Date()
-		});
 
 		journeyService.completeLesson(activeUnit!.id, lessonId, 3); // 3 stars
 
@@ -89,10 +75,10 @@ describe('User Journey Integration', () => {
 		userStatsService.createProfile('Weakness Tester');
 
 		// 2. Simulate failing some chords/notes
-		// The app calls updateNoteProgress
-		userStatsService.updateNoteProgress('C', 'chord', 'maj7', false, 1, 0);
-		userStatsService.updateNoteProgress('C', 'chord', 'maj7', false, 1, 0);
-		userStatsService.updateNoteProgress('D', 'partition', undefined, false, 1, 0);
+		// The app tracks missed items using trackMissedNote and trackMissedChord
+		userStatsService.trackMissedChord('Cmaj7', 'chord');
+		userStatsService.trackMissedChord('Cmaj7', 'chord');
+		userStatsService.trackMissedNote('D', 'partition');
 
 		// 3. Get Recommendations
 		const recommendations = userStatsService.getWeaknessRecommendations();

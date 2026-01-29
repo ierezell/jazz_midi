@@ -1,0 +1,24 @@
+{
+	"id": "funk-sixteenth-bass",
+	"name": "Funk Sixteenth Bass",
+	"description": "Syncopated funk bass line with sixteenth notes.",
+	"category": "funk",
+	"hand": "left",
+	"difficulty": "advanced",
+	"suggestedBpm": 95,
+	"notes": [
+		"C2",
+		"C2",
+		"Eb2",
+		"C2",
+		"G2",
+		"C2",
+		"Bb2",
+		"C2"
+	],
+	"tags": [
+		"funk",
+		"syncopation",
+		"sixteenth"
+	]
+}

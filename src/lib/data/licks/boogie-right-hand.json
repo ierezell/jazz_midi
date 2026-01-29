@@ -1,0 +1,24 @@
+{
+	"id": "boogie-right-hand",
+	"name": "Boogie Woogie Right Hand",
+	"description": "Classic boogie-woogie right hand pattern with triplet feel.",
+	"category": "boogie",
+	"hand": "right",
+	"difficulty": "beginner",
+	"suggestedBpm": 120,
+	"notes": [
+		"C5",
+		"E5",
+		"G5",
+		"A5",
+		"G5",
+		"E5",
+		"C5",
+		"E5"
+	],
+	"tags": [
+		"boogie",
+		"triplet",
+		"shuffle"
+	]
+}

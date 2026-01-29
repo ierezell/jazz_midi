@@ -220,7 +220,7 @@
 						<h4>Recommended Practice</h4>
 						<div class="recommendation-list">
 							{#each weaknessRecommendations as rec}
-								<a href={resolve(rec.path)} class="recommendation-card">
+								<a href={resolve(rec.path as any)} class="recommendation-card">
 									<div class="rec-header">
 										<TrendingUp size={20} />
 										<strong>{rec.weakness}</strong>

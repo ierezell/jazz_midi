@@ -77,3 +77,15 @@ export interface RhythmPattern {
 	isProgression: boolean;
 	measures: number; // Duration of the pattern in measures
 }
+
+export interface Lick {
+	id: string;
+	name: string;
+	description: string;
+	category: 'blues' | 'bebop' | 'latin' | 'rock' | 'country' | 'funk' | 'boogie' | 'jazz';
+	hand: 'left' | 'right' | 'both';
+	difficulty: 'beginner' | 'intermediate' | 'advanced';
+	suggestedBpm: number;
+	notes: NoteFullName[]; // Sequence of notes to play
+	tags?: string[]; // e.g., ["walking-bass", "shuffle", "chromatic"]
+}

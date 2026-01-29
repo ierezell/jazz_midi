@@ -1,0 +1,24 @@
+{
+	"id": "blues-walking-bass",
+	"name": "Blues Walking Bass",
+	"description": "Classic blues walking bass line in C. Root-3rd-5th-6th pattern.",
+	"category": "blues",
+	"hand": "left",
+	"difficulty": "beginner",
+	"suggestedBpm": 100,
+	"notes": [
+		"C2",
+		"E2",
+		"G2",
+		"A2",
+		"C3",
+		"A2",
+		"G2",
+		"E2"
+	],
+	"tags": [
+		"walking-bass",
+		"blues",
+		"swing"
+	]
+}

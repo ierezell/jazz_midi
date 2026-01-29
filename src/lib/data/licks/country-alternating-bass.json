@@ -1,0 +1,24 @@
+{
+	"id": "country-alternating-bass",
+	"name": "Country Alternating Bass",
+	"description": "Traditional country/stride alternating bass pattern.",
+	"category": "country",
+	"hand": "left",
+	"difficulty": "beginner",
+	"suggestedBpm": 120,
+	"notes": [
+		"C2",
+		"G2",
+		"C2",
+		"G2",
+		"C2",
+		"G2",
+		"C2",
+		"G2"
+	],
+	"tags": [
+		"country",
+		"stride",
+		"alternating-bass"
+	]
+}

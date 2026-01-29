@@ -35,7 +35,7 @@
 		const url = journeyService.getLessonUrl(unit, lesson);
 		// Split the path and query params
 		const [path, query] = url.split('?');
-		return query ? `${resolve(path)}?${query}` : resolve(path);
+		return query ? `${resolve(path as any)}?${query}` : resolve(path as any);
 	}
 </script>
 
@@ -79,7 +79,7 @@
 				<p>Focus on what needs improvement based on your history.</p>
 				<div class="recommendations-list">
 					{#each userStatsService.getWeaknessRecommendations().slice(0, 2) as rec}
-						<a href={resolve(rec.path)} class="recommendation-link">
+						<a href={resolve(rec.path as any)} class="recommendation-link">
 							<span>{rec.recommendedExercise}</span>
 							<ArrowRight size={14} />
 						</a>

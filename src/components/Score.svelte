@@ -103,7 +103,7 @@
 
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-		const f: Factory = new Factory({
+		const f = new Factory({
 			renderer: {
 				elementId: 'output',
 				backend: Renderer.Backends.CANVAS,

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { Dumbbell, Music, Zap, Ruler, BookOpen, Mic2, Grid, Key } from 'lucide-svelte';
+	import { Dumbbell, Music, Zap, Ruler, BookOpen, Mic2, Grid, Key, Guitar } from 'lucide-svelte';
 
 	const exercises = [
 		{
@@ -37,6 +37,13 @@
 			href: resolve('/exercises/scales'),
 			icon: Key,
 			color: 'var(--color-primary)'
+		},
+		{
+			title: 'Licks',
+			description: 'Master jazz vocabulary and finger mechanics.',
+			href: resolve('/exercises/licks'),
+			icon: Guitar,
+			color: '#9b59b6'
 		},
 		{
 			title: 'Flashcards',

@@ -1,0 +1,25 @@
+{
+	"id": "bebop-enclosure",
+	"name": "Bebop Enclosure",
+	"description": "Chromatic enclosure approaching the target note from above and below.",
+	"category": "bebop",
+	"hand": "right",
+	"difficulty": "advanced",
+	"suggestedBpm": 150,
+	"notes": [
+		"D4",
+		"Db4",
+		"E4",
+		"D4",
+		"C4",
+		"E4",
+		"Eb4",
+		"F4",
+		"E4"
+	],
+	"tags": [
+		"bebop",
+		"chromatic",
+		"enclosure"
+	]
+}

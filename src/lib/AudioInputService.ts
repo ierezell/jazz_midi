@@ -1,7 +1,7 @@
 
 export class AudioInputService {
 	private static instance: AudioInputService;
-	private basicPitch: BasicPitch | null = null;
+	private basicPitch: any | null = null;
 	private audioContext: AudioContext | null = null;
 	private isRecording = false;
 	private listeners: ((event: MIDIMessageEvent) => void)[] = [];

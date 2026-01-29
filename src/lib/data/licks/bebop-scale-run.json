@@ -1,0 +1,25 @@
+{
+	"id": "bebop-scale-run",
+	"name": "Bebop Scale Run",
+	"description": "Classic bebop dominant scale with chromatic passing tone.",
+	"category": "bebop",
+	"hand": "right",
+	"difficulty": "intermediate",
+	"suggestedBpm": 140,
+	"notes": [
+		"C4",
+		"D4",
+		"E4",
+		"F4",
+		"G4",
+		"A4",
+		"Bb4",
+		"B4",
+		"C5"
+	],
+	"tags": [
+		"bebop",
+		"chromatic",
+		"dominant"
+	]
+}

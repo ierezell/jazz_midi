@@ -1,0 +1,24 @@
+{
+	"id": "blues-shuffle-right",
+	"name": "Blues Shuffle Lick",
+	"description": "Classic blues shuffle pattern with double-stops.",
+	"category": "blues",
+	"hand": "right",
+	"difficulty": "beginner",
+	"suggestedBpm": 90,
+	"notes": [
+		"C4",
+		"E4",
+		"F4",
+		"F#4",
+		"G4",
+		"F#4",
+		"F4",
+		"E4"
+	],
+	"tags": [
+		"blues",
+		"shuffle",
+		"chromatic"
+	]
+}

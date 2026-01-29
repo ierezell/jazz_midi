@@ -39,7 +39,8 @@
 			links: [
 				{ href: '/exercises/scales', label: 'Scales', icon: '🎼' },
 				{ href: '/exercises/chords', label: 'Chords', icon: '🎵' },
-				{ href: '/exercises/two_five_ones', label: 'II-V-I', icon: '🎹' }
+				{ href: '/exercises/two_five_ones', label: 'II-V-I', icon: '🎹' },
+				{ href: '/exercises/licks', label: 'Licks', icon: '🎸' }
 			]
 		}
 	];

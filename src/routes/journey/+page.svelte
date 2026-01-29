@@ -26,7 +26,7 @@
 		const url = journeyService.getLessonUrl(unit, lesson);
 		// Split the path and query params
 		const [path, query] = url.split('?');
-		return query ? `${resolve(path)}?${query}` : resolve(path);
+		return query ? `${resolve(path as any)}?${query}` : resolve(path as any);
 	}
 
 	function startPractice(unitId: string) {
