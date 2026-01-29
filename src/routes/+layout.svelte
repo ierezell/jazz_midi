@@ -10,7 +10,7 @@
 	import MicInputControl from '../components/MicInputControl.svelte';
 	import ThemeToggle from '../components/ThemeToggle.svelte';
 	import { page } from '$app/stores';
-	import { themeService } from '$lib/ThemeService';
+	import { themeService } from '$lib/ThemeService.svelte';
 
 	let { children } = $props();
 
