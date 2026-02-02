@@ -9,7 +9,7 @@ export interface Lesson {
 	params?: Record<string, string>;
 	completed: boolean;
 	stars: number; // 0-3
-	
+
 	// New Mastery Fields
 	perfectCompletions: number;
 	requiredPerfectCompletions: number;
@@ -279,7 +279,7 @@ export class JourneyService {
 		if (lesson.perfectCompletions >= lesson.requiredPerfectCompletions) {
 			lesson.completed = true;
 		}
-		
+
 		lesson.stars = Math.max(lesson.stars, stars);
 
 		this.checkUnitCompletion(unit);
@@ -329,7 +329,7 @@ export class JourneyService {
 	// Simple persistence using localStorage for now
 	private saveProgress() {
 		if (!browser || typeof localStorage === 'undefined') return;
-		
+
 		const progress = this.units.map(u => ({
 			id: u.id,
 			status: u.status,
@@ -340,7 +340,7 @@ export class JourneyService {
 				perfectCompletions: l.perfectCompletions
 			}))
 		}));
-		
+
 		localStorage.setItem('journey_progress_v2', JSON.stringify(progress));
 	}
 
@@ -351,18 +351,31 @@ export class JourneyService {
 		if (!saved) return;
 
 		try {
-			const progress = JSON.parse(saved);
+			interface SavedLesson {
+				id: string;
+				completed: boolean;
+				stars: number;
+				perfectCompletions?: number;
+			}
+
+			interface SavedUnit {
+				id: string;
+				status: 'locked' | 'active' | 'completed';
+				lessons: SavedLesson[];
+			}
+
+			const progress = JSON.parse(saved) as SavedUnit[];
 			// Merge saved progress with current structure
-			progress.forEach((savedUnit: any) => {
+			progress.forEach((savedUnit) => {
 				const unit = this.units.find(u => u.id === savedUnit.id);
 				if (unit) {
 					unit.status = savedUnit.status;
-					savedUnit.lessons.forEach((savedLesson: any) => {
+					savedUnit.lessons.forEach((savedLesson) => {
 						const lesson = unit.lessons.find(l => l.id === savedLesson.id);
 						if (lesson) {
 							lesson.completed = savedLesson.completed;
 							lesson.stars = savedLesson.stars;
-							lesson.perfectCompletions = savedLesson.perfectCompletions || 0;
+							lesson.perfectCompletions = savedLesson.perfectCompletions ?? 0;
 						}
 					});
 				}
@@ -371,7 +384,7 @@ export class JourneyService {
 			console.error('Failed to load journey progress', e);
 		}
 	}
-	
+
 	// Helper to generate the URL for a lesson
 	getLessonUrl(unit: Unit, lesson: Lesson): string {
 		const params = new URLSearchParams();
@@ -381,7 +394,7 @@ export class JourneyService {
 		// Add context so the exercise knows where to return/update
 		params.append('unitId', unit.id);
 		params.append('lessonId', lesson.id);
-		
+
 		return `${lesson.path}?${params.toString()}`;
 	}
 
@@ -394,7 +407,7 @@ export class JourneyService {
 
 		// 1. Find unmastered lessons in the target unit
 		const unmastered = unit.lessons.filter(l => (l.perfectCompletions || 0) < l.requiredPerfectCompletions);
-		
+
 		if (unmastered.length > 0) {
 			const randomIndex = Math.floor(Math.random() * unmastered.length);
 			return { unit, lesson: unmastered[randomIndex] };

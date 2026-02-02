@@ -3,6 +3,7 @@
 	import { fade } from 'svelte/transition';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 	import type { Note, NoteEvent, MidiNote, ScoreProps } from '$lib/types/types';
+	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { rhythmPatterns } from '$lib/data/rhythmPatterns';
 
 	let bpm = $state(100);
@@ -120,8 +121,8 @@
 	function validateNoteEvent(
 		selectedNote: Note,
 		event: NoteEvent,
-		expectedNotes: MidiNote[]
-	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		expectedNotes: ReadonlyArray<MidiNote>
+	): ValidationResult {
 		if (!isPlaying || !audioContext) {
 			return {
 				isCorrect: false,
@@ -204,7 +205,10 @@
 		}
 	}
 
-	function isCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+	function isCompleted(
+		currentNotes: ReadonlyArray<MidiNote>,
+		expectedNotes: ReadonlyArray<MidiNote>
+	): boolean {
 		// Complete after 32 hits (roughly 2-4 patterns)
 		return beatCount >= 32;
 	}
@@ -234,7 +238,7 @@
 	showScore={false}
 	exerciseType="rhythm"
 >
-	{#snippet children(api: any)}
+	{#snippet children(api: import('$lib/types/exercise-api').ExerciseAPI)}
 		<div class="rhythm-exercise-content">
 			<!-- Header Controls -->
 			<div class="rhythm-header card-premium">

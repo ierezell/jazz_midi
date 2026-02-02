@@ -17,7 +17,13 @@ export interface FlashCard {
 	prompt: string;
 	subtext?: string;
 	expectedNotes: MidiNote[];
-	config?: any; // Store specific config like chordType, inversion etc for detailed display if needed
+	config?: {
+		chordType?: ChordType;
+		inversion?: number;
+		scaleMode?: ScaleMode;
+		intervalName?: string;
+		[key: string]: unknown;
+	};
 }
 
 export function generateRandomCard(root: Note, forcedType?: FlashCardType): FlashCard {

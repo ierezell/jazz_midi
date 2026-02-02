@@ -3,6 +3,13 @@
 	import { midiManager } from '$lib/MIDIManager';
 	import { userStatsService } from '$lib/UserStatsService';
 	import { calculateOptimalRange, getNoteRole } from '$lib/MusicTheoryUtils';
+	import { validateNoteTiming } from '$lib/music-validation';
+	import type {
+		ValidationResult,
+		ExerciseAPI,
+		BeatTiming,
+		TempoValidation
+	} from '$lib/types/exercise-api';
 	import { AllNotes, NoteToMidi, DEFAULT_OCTAVE } from '$lib/types/notes.constants';
 	import {
 		type KeyboardProps,
@@ -18,6 +25,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { journeyService } from '$lib/JourneyService';
+	import type { Snippet } from 'svelte';
 	import DebugPanel from './DebugPanel.svelte';
 	import Keyboard from './Keyboard.svelte';
 	import Metronome from './Metronome.svelte';
@@ -26,28 +34,22 @@
 
 	interface BaseExerciseProps {
 		randomMode: boolean;
-		generateExpectedNotes: (selectedNote: Note, ...args: any[]) => MidiNote[];
+		generateExpectedNotes: (selectedNote: Note, ...args: unknown[]) => MidiNote[];
 		generateScoreProps: (selectedNote: Note) => ScoreProps;
 		validateNoteEvent: (
 			selectedNote: Note,
 			event: NoteEvent,
-			expectedNotes: MidiNote[],
-			currentNotes: MidiNote[]
-		) => {
-			isCorrect: boolean;
-			message: string;
-			collected: boolean;
-			resetCollected: boolean;
-		};
-		isCompleted: (currentNotes: MidiNote[], expectedNotes: MidiNote[]) => boolean;
+			expectedNotes: ReadonlyArray<MidiNote>,
+			currentNotes: ReadonlyArray<MidiNote>
+		) => ValidationResult;
+		isCompleted: (
+			currentNotes: ReadonlyArray<MidiNote>,
+			expectedNotes: ReadonlyArray<MidiNote>
+		) => boolean;
 		onReset: () => void;
 		onComplete: () => void;
 		description: string;
 		initialNote: Note;
-		/**
-		 * Show the score section (default true). Set to false to hide the score UI for
-		 * exercises that don't need a staff (e.g. note-name exercises).
-		 */
 		showScore?: boolean;
 		exerciseType?:
 			| 'chord'
@@ -78,7 +80,7 @@
 		showTempoControl = true,
 		showTrainingControl = true
 	}: BaseExerciseProps & {
-		children?: any;
+		children?: Snippet<[ExerciseAPI]>;
 		progressiveHints?: boolean;
 		prompt?: string;
 		showTempoControl?: boolean;
@@ -111,6 +113,8 @@
 	let tempoMode = $state(false);
 	let lastTickTime = $state(0);
 	let currentBpm = $state(120);
+	let lastBeatNumber = $state(0);
+	let wasDownbeat = $state(false);
 	const TEMPO_TOLERANCE_MS = 150; // Tolerance for "on beat"
 
 	// showScore controls whether the Score UI is rendered
@@ -190,10 +194,10 @@
 		return 'Adaptive help is active. Use the score and keyboard for reference.';
 	});
 
-	let exposedAPI = $derived({
+	const exposedAPI: ExerciseAPI = $derived({
 		selectedNote,
-		currentNotes,
-		expectedNotes,
+		currentNotes: currentNotes as ReadonlyArray<MidiNote>,
+		expectedNotes: expectedNotes as ReadonlyArray<MidiNote>,
 		mistakes,
 		completed,
 		collectedNotes,
@@ -246,19 +250,37 @@
 
 		let isOffBeat = false;
 
-		// Tempo Check
+		// Tempo Check - only validate timing for certain conditions
 		if (tempoMode) {
-			const now = Date.now();
-			const interval = (60 / currentBpm) * 1000;
-			const timeSinceLastTick = now - lastTickTime;
-			const timeToNextTick = interval - timeSinceLastTick;
-			const distance = Math.min(timeSinceLastTick, timeToNextTick);
+			const lastBeat: BeatTiming = {
+				timestamp: lastTickTime,
+				beatNumber: lastBeatNumber,
+				isDownbeat: wasDownbeat
+			};
 
-			if (distance > TEMPO_TOLERANCE_MS) {
-				showFeedback('Off beat! Try to play on the beat.', 'error');
-				mistakes++;
-				isOffBeat = true;
-				audioManager.playError();
+			const tempoConfig: TempoValidation = {
+				enabled: true,
+				toleranceMs: TEMPO_TOLERANCE_MS,
+				requireDownbeat:
+					exerciseType === 'chord' || exerciseType === 'progression' || exerciseType === 'II-V-I'
+			};
+
+			// For chord-based exercises, only check timing on the first note of the chord
+			// For sequential exercises (partition/licks), check timing on every note
+			const shouldCheckTiming =
+				exerciseType === 'partition' || // Licks: check every note
+				exerciseType === 'rhythm' || // Rhythm: check every note
+				collectedNotes.size === 0; // Chords/Progressions: only first note of chord
+
+			if (shouldCheckTiming) {
+				const errorMessage = validateNoteTiming(note, lastBeat, tempoConfig, currentBpm);
+
+				if (errorMessage) {
+					showFeedback(errorMessage, 'error');
+					mistakes++;
+					isOffBeat = true;
+					audioManager.playError();
+				}
 			}
 		}
 
@@ -269,8 +291,7 @@
 			collectedNotes = new Set();
 		}
 
-		// @ts-ignore - resetMistakes is a new optional return property
-		if (result.resetMistakes) {
+		if ('resetMistakes' in result && result.resetMistakes) {
 			mistakes = 0;
 		}
 
@@ -434,8 +455,10 @@
 		handleNoteSelect(note);
 	}
 
-	function handleTick(timestamp: number) {
+	function handleTick(timestamp: number, beatNumber: number, isDownbeat: boolean) {
 		lastTickTime = timestamp;
+		lastBeatNumber = beatNumber;
+		wasDownbeat = isDownbeat;
 	}
 
 	function toggleTempoMode() {
@@ -545,7 +568,7 @@
 		{/if}
 
 		<div class="focus-area">
-			{#if prompt && !showScoreState}
+			{#if prompt}
 				<div class="prompt-card card-premium">
 					<div class="prompt-text">{prompt}</div>
 				</div>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
+	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { AllNotes, MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 
@@ -81,8 +82,8 @@
 	function validateNoteEvent(
 		selectedNote: Note,
 		event: NoteEvent,
-		expectedNotes: MidiNote[]
-	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		expectedNotes: ReadonlyArray<MidiNote>
+	): ValidationResult {
 		const expectedMidi = expectedNotes[0];
 
 		if (event.noteNumber === expectedMidi) {
@@ -130,7 +131,10 @@
 		};
 	}
 
-	function isCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+	function isCompleted(
+		currentNotes: ReadonlyArray<MidiNote>,
+		expectedNotes: ReadonlyArray<MidiNote>
+	): boolean {
 		return playedCount === currentSequence.length;
 	}
 
@@ -151,7 +155,7 @@
 	{description}
 	exerciseType="partition"
 >
-	{#snippet children(api: any)}
+	{#snippet children(api: import('$lib/types/exercise-api').ExerciseAPI)}
 		<div class="dexterity-content">
 			<h2>Dexterity Builder</h2>
 			<p class="note-count">

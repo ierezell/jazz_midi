@@ -128,11 +128,7 @@ export class UserStatsService {
 			// globalThis used to support various environments
 			if (typeof globalThis === 'undefined') return false;
 			// Ensure localStorage exists and has the expected API
-			// Some test/SSR harnesses may inject a non-standard object.
-			// Check that getItem/setItem/removeItem are functions.
-			// Accessing localStorage may throw in some restricted environments, so guard in try/catch.
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const ls: any = (globalThis as any).localStorage;
+			const ls = (globalThis as typeof globalThis & { localStorage?: Storage }).localStorage;
 			return (
 				!!ls &&
 				typeof ls.getItem === 'function' &&
@@ -157,8 +153,7 @@ export class UserStatsService {
 	} {
 		try {
 			// prefer real localStorage when available and functional
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const ls: any = (globalThis as any).localStorage;
+			const ls = (globalThis as typeof globalThis & { localStorage?: Storage }).localStorage;
 			if (
 				ls &&
 				typeof ls.getItem === 'function' &&
@@ -374,15 +369,25 @@ export class UserStatsService {
 			const stored = storage.getItem(this.storageKey);
 			if (stored) {
 				const parsed = JSON.parse(stored);
-				
-				// Helper to rehydrate Maps from array of entries
-				const hydrateMap = <K, V>(data: any): Map<K, V> => {
+
+				const hydrateMap = <K, V>(data: unknown): Map<K, V> => {
 					if (!data) return new Map<K, V>();
 					if (Array.isArray(data)) return new Map<K, V>(data);
-					// Handle cases where might be stored as plain object (legacy/fallback)
-					if (typeof data === 'object') return new Map<K, V>(Object.entries(data) as any);
+					if (typeof data === 'object') {
+						return new Map<K, V>(Object.entries(data) as [K, V][]);
+					}
 					return new Map<K, V>();
 				};
+
+				interface SerializedMastery {
+					lastPracticed: string | Date;
+					[key: string]: unknown;
+				}
+
+				interface SerializedSession {
+					date: string | Date;
+					[key: string]: unknown;
+				}
 
 				return {
 					...parsed,
@@ -391,25 +396,25 @@ export class UserStatsService {
 					missedChords: hydrateMap(parsed.missedChords),
 					practiceCalendar: hydrateMap(parsed.practiceCalendar),
 					masteredChords:
-						parsed.masteredChords?.map((m: any) => ({
+						(parsed.masteredChords as SerializedMastery[] | undefined)?.map((m) => ({
 							...m,
 							lastPracticed: new Date(m.lastPracticed)
-						})) || [],
+						})) as ChordMastery[] || [],
 					masteredScales:
-						parsed.masteredScales?.map((m: any) => ({
+						(parsed.masteredScales as SerializedMastery[] | undefined)?.map((m) => ({
 							...m,
 							lastPracticed: new Date(m.lastPracticed)
-						})) || [],
+						})) as ScaleMastery[] || [],
 					masteredProgressions:
-						parsed.masteredProgressions?.map((m: any) => ({
+						(parsed.masteredProgressions as SerializedMastery[] | undefined)?.map((m) => ({
 							...m,
 							lastPracticed: new Date(m.lastPracticed)
-						})) || [],
+						})) as ProgressionMastery[] || [],
 					recentSessions:
-						parsed.recentSessions?.map((s: any) => ({
+						(parsed.recentSessions as SerializedSession[] | undefined)?.map((s) => ({
 							...s,
 							date: new Date(s.date)
-						})) || []
+						})) as SessionSummary[] || []
 				};
 			}
 		} catch (error) {
@@ -496,7 +501,7 @@ export class UserStatsService {
 
 		stats.masteryLevel = this.calculateMasteryLevel(stats);
 	}
-	private updateMastery(result: ExerciseResult): void {}
+	private updateMastery(result: ExerciseResult): void { }
 	private updateStreak(result: ExerciseResult): void {
 		if (result.success && result.accuracy >= 80) {
 			this.statistics.currentStreak++;
@@ -604,7 +609,7 @@ export class UserStatsService {
 				return 0;
 		}
 	}
-	private checkAchievements(): void {}
+	private checkAchievements(): void { }
 	updateNoteProgress(
 		note: Note,
 		exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm',
@@ -684,7 +689,7 @@ export class UserStatsService {
 	private saveStatistics(): void {
 		try {
 			const storage = UserStatsService.getStorage();
-			
+
 			// Convert Maps to arrays for serialization
 			const serializableStats = {
 				...this.statistics,
@@ -747,7 +752,7 @@ export class UserStatsService {
 		if (!(this.statistics.missedNotes instanceof Map)) {
 			this.statistics.missedNotes = new Map<string, MissedNote>();
 		}
-		
+
 		return Array.from(this.statistics.missedNotes.entries())
 			.map(([note, data]) => ({ note, count: data.count, lastMissed: data.lastMissed }))
 			.sort((a, b) => b.count - a.count)
@@ -760,7 +765,7 @@ export class UserStatsService {
 		if (!(this.statistics.missedChords instanceof Map)) {
 			this.statistics.missedChords = new Map<string, MissedNote>();
 		}
-		
+
 		return Array.from(this.statistics.missedChords.entries())
 			.map(([chord, data]) => ({ chord, count: data.count, lastMissed: data.lastMissed, exerciseType: data.exerciseType }))
 			.sort((a, b) => b.count - a.count)
@@ -800,7 +805,7 @@ export class UserStatsService {
 	private updateDailyPractice(result: ExerciseResult): void {
 		const today = new Date();
 		const dateKey = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-		
+
 		const existing = this.statistics.practiceCalendar.get(dateKey);
 		if (existing) {
 			existing.exercisesCompleted++;
@@ -818,17 +823,17 @@ export class UserStatsService {
 	getPracticeCalendar(days: number = 84): DayStats[] {
 		const result: DayStats[] = [];
 		const today = new Date();
-		
+
 		// Ensure practiceCalendar is initialized as a Map
 		if (!(this.statistics.practiceCalendar instanceof Map)) {
 			this.statistics.practiceCalendar = new Map<string, DayStats>();
 		}
-		
+
 		for (let i = days - 1; i >= 0; i--) {
 			const date = new Date(today);
 			date.setDate(date.getDate() - i);
 			const dateKey = date.toISOString().split('T')[0];
-			
+
 			const dayData = this.statistics.practiceCalendar.get(dateKey);
 			if (dayData) {
 				result.push(dayData);
@@ -841,7 +846,7 @@ export class UserStatsService {
 				});
 			}
 		}
-		
+
 		return result;
 	}
 
@@ -851,17 +856,17 @@ export class UserStatsService {
 		let currentStreak = 0;
 		let longestStreak = 0;
 		let tempStreak = 0;
-		
+
 		// Check if today has activity
 		const todayKey = today.toISOString().split('T')[0];
 		const hasToday = this.statistics.practiceCalendar.has(todayKey);
-		
+
 		// Count backwards from today
 		for (let i = 0; i < 365; i++) {
 			const date = new Date(today);
 			date.setDate(date.getDate() - i);
 			const dateKey = date.toISOString().split('T')[0];
-			
+
 			if (this.statistics.practiceCalendar.has(dateKey)) {
 				if (i === 0 || tempStreak > 0) {
 					tempStreak++;
@@ -883,7 +888,7 @@ export class UserStatsService {
 				}
 			}
 		}
-		
+
 		return { current: currentStreak, longest: Math.max(longestStreak, this.statistics.longestStreak) };
 	}
 }

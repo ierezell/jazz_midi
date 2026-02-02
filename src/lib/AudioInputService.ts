@@ -1,7 +1,7 @@
 
 export class AudioInputService {
 	private static instance: AudioInputService;
-	private basicPitch: any | null = null;
+	private basicPitch: unknown = null;
 	private audioContext: AudioContext | null = null;
 	private isRecording = false;
 	private listeners: ((event: MIDIMessageEvent) => void)[] = [];
@@ -143,16 +143,18 @@ export class AudioInputService {
 				audioBuffer.copyToChannel(rawData as any, 0);
 
 				// Evaluate model
-				// evaluateModel(audioBuffer, onFrames, onNote)
-				await this.basicPitch.evaluateModel(
+				await (this.basicPitch as {
+					evaluateModel(
+						audio: AudioBuffer,
+						onFrames: (frames: number[][], onsets: number[][], contours: number[][]) => void,
+						onNote: (note: { midiNumber: number; confidence: number }) => void
+					): Promise<void>;
+				}).evaluateModel(
 					audioBuffer,
 					(frames: number[][], onsets: number[][], contours: number[][]) => {
-						// frames is [time][pitch_index]
-						// We need to find the dominant pitch in these frames
 						let maxConfidence = 0;
 						let bestPitchIndex = -1;
 
-						// Iterate over all time steps in this chunk
 						for (let t = 0; t < frames.length; t++) {
 							for (let p = 0; p < frames[t].length; p++) {
 								if (frames[t][p] > maxConfidence) {
@@ -162,15 +164,15 @@ export class AudioInputService {
 							}
 						}
 
-						if (maxConfidence > 0.3) { // Threshold
-							const midiNote = bestPitchIndex + 21; // Approximation: BasicPitch output usually starts at MIDI 21 (A0)
+						if (maxConfidence > 0.3) {
+							const midiNote = bestPitchIndex + 21;
 							this.handleDetectedNote(midiNote);
 						} else {
 							this.handleSilence();
 						}
 					},
-					(note: any) => {
-						// Ignore note events for real-time low-latency, rely on frames
+					() => {
+						// Ignore note events
 					}
 				);
 			}

@@ -3,6 +3,7 @@
 <script lang="ts">
 	import { AllNotes, MidiToNote, NoteToMidi, DEFAULT_OCTAVE } from '$lib/types/notes.constants';
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
+	import type { ValidationResult } from '$lib/types/exercise-api';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 
 	const description =
@@ -127,15 +128,9 @@
 	function validateNoteName(
 		selectedNote: Note,
 		event: NoteEvent,
-		expectedNotes: MidiNote[],
-		currentNotes: MidiNote[]
-	): {
-		isCorrect: boolean;
-		message: string;
-		collected: boolean;
-		resetCollected: boolean;
-		resetMistakes?: boolean;
-	} {
+		expectedNotes: ReadonlyArray<MidiNote>,
+		currentNotes: ReadonlyArray<MidiNote>
+	): ValidationResult {
 		if (expectedNotes.includes(event.noteNumber)) {
 			playedCorrectly = true;
 			const sourceNotation = englishToLatin ? 'English' : 'Latin';
@@ -153,8 +148,7 @@
 				isCorrect: true,
 				message: `Perfect! ${currentDisplayNote} (${sourceNotation}) = ${correctAnswer} (${targetNotation}) 🎵✨`,
 				collected: true,
-				resetCollected: true,
-				resetMistakes: true
+				resetCollected: true
 			};
 		} else {
 			const playedNoteName = MidiToNote[event.noteNumber]?.slice(0, -1) as Note;
@@ -170,7 +164,10 @@
 		}
 	}
 
-	function isNoteNameCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+	function isNoteNameCompleted(
+		currentNotes: ReadonlyArray<MidiNote>,
+		expectedNotes: ReadonlyArray<MidiNote>
+	): boolean {
 		// Never complete - continuous practice
 		return false;
 	}
@@ -219,7 +216,7 @@
 	showTempoControl={false}
 	showTrainingControl={false}
 >
-	{#snippet children(api: any)}
+	{#snippet children(api: import('$lib/types/exercise-api').ExerciseAPI)}
 		{@const wasCompleted = exerciseCompleted}
 		{@const isNowCompleted = api.completed}
 		{#if isNowCompleted && !wasCompleted}

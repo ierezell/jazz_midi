@@ -3,9 +3,11 @@
 <script lang="ts">
 	import type { ChordType, Note, ChordVoicing, Inversion } from '$lib/types/notes';
 	import type { MidiNote, NoteEvent, ScoreProps, NoteFullName } from '$lib/types/types';
+	import type { ValidationResult } from '$lib/types/exercise-api';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 	import { generateChordNotesData, chords } from '$lib/MusicTheoryUtils';
 	import { NoteToMidi, AllNotes } from '$lib/types/notes.constants';
+	import { calculateVoiceLeadingDistance } from '$lib/music-validation';
 
 	const description =
 		'Practice chord progressions from real songs. Play each chord in the progression.';
@@ -36,11 +38,16 @@
 	let voicing: ChordVoicing = $state('full-right');
 	let inversion: Inversion = $state(0);
 	let playedNotes: Set<MidiNote> = $state(new Set());
+	let optimizedInversions: Inversion[] = $state([]);
+	let useOptimizedVoicing = $state(false);
 
 	$effect(() => {
 		// Reset when changing song
 		currentChordIndex = 0;
 		playedNotes = new Set();
+		if (useOptimizedVoicing) {
+			optimizedInversions = calculateOptimalInversions(selectedSong.chords);
+		}
 	});
 
 	function handleParentReset(): void {
@@ -51,11 +58,72 @@
 		return selectedSong.chords[currentChordIndex];
 	}
 
+	/**
+	 * Calculate optimal inversions for a chord progression to minimize voice leading distance
+	 */
+	function calculateOptimalInversions(chordProgression: ChordInProgression[]): Inversion[] {
+		if (chordProgression.length === 0) return [];
+
+		const inversions: Inversion[] = [0]; // Start with root position for first chord
+		const possibleInversions: Inversion[] = [0, 1, 2, 3];
+
+		for (let i = 1; i < chordProgression.length; i++) {
+			const prevChord = chordProgression[i - 1];
+			const currentChord = chordProgression[i];
+			const prevInversion = inversions[i - 1];
+
+			// Get notes for previous chord with its inversion
+			const prevRootNote = (prevChord.note + '3') as NoteFullName;
+			const prevRootMidi = NoteToMidi[prevRootNote];
+			const prevChordObj = chords(prevRootMidi, prevChord.type, prevInversion);
+			const prevNotes = [
+				prevChordObj.root,
+				prevChordObj.third,
+				prevChordObj.fifth,
+				prevChordObj.seventh
+			].filter((n) => n !== undefined) as MidiNote[];
+
+			// Try all inversions for current chord and pick the one with minimal movement
+			let bestInversion: Inversion = 0;
+			let minDistance = Infinity;
+
+			for (const inv of possibleInversions) {
+				const currentRootNote = (currentChord.note + '3') as NoteFullName;
+				const currentRootMidi = NoteToMidi[currentRootNote];
+				const currentChordObj = chords(currentRootMidi, currentChord.type, inv);
+				const currentNotes = [
+					currentChordObj.root,
+					currentChordObj.third,
+					currentChordObj.fifth,
+					currentChordObj.seventh
+				].filter((n) => n !== undefined) as MidiNote[];
+
+				const distance = calculateVoiceLeadingDistance(prevNotes, currentNotes);
+				if (distance < minDistance) {
+					minDistance = distance;
+					bestInversion = inv;
+				}
+			}
+
+			inversions.push(bestInversion);
+		}
+
+		return inversions;
+	}
+
+	function getEffectiveInversion(): Inversion {
+		if (useOptimizedVoicing && optimizedInversions.length > currentChordIndex) {
+			return optimizedInversions[currentChordIndex];
+		}
+		return inversion;
+	}
+
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
 		const currentChord = getCurrentChord();
 		const rootNote = (currentChord.note + '3') as NoteFullName;
 		const rootMidi = NoteToMidi[rootNote];
-		const chord = chords(rootMidi, currentChord.type, inversion);
+		const effectiveInv = getEffectiveInversion();
+		const chord = chords(rootMidi, currentChord.type, effectiveInv);
 
 		const allChordNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
 			(note) => note !== undefined
@@ -66,10 +134,11 @@
 
 	function generateScoreProps(selectedNote: Note): ScoreProps {
 		const currentChord = getCurrentChord();
+		const effectiveInv = getEffectiveInversion();
 		const { leftHand, rightHand } = generateChordNotesData(
 			currentChord.note,
 			currentChord.type,
-			inversion,
+			effectiveInv,
 			voicing
 		);
 
@@ -83,9 +152,9 @@
 	function validateChordNote(
 		selectedNote: Note,
 		event: NoteEvent,
-		expectedNotes: MidiNote[],
-		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		expectedNotes: ReadonlyArray<MidiNote>,
+		currentNotes: ReadonlyArray<MidiNote>
+	): ValidationResult {
 		if (expectedNotes.includes(event.noteNumber)) {
 			playedNotes = new Set([...playedNotes, event.noteNumber]);
 
@@ -117,7 +186,10 @@
 		}
 	}
 
-	function isChordCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+	function isChordCompleted(
+		currentNotes: ReadonlyArray<MidiNote>,
+		expectedNotes: ReadonlyArray<MidiNote>
+	): boolean {
 		const uniqueExpectedNotes = [...new Set(expectedNotes)];
 		return playedNotes.size === uniqueExpectedNotes.length;
 	}
@@ -126,6 +198,10 @@
 		// Move to next chord
 		if (currentChordIndex < selectedSong.chords.length - 1) {
 			currentChordIndex++;
+			playedNotes = new Set();
+		} else {
+			// Loop back to the beginning for continuous practice
+			currentChordIndex = 0;
 			playedNotes = new Set();
 		}
 	}
@@ -142,12 +218,23 @@
 		playedNotes = new Set();
 	}
 
+	function handleOptimizedVoicingToggle(): void {
+		useOptimizedVoicing = !useOptimizedVoicing;
+		if (useOptimizedVoicing) {
+			optimizedInversions = calculateOptimalInversions(selectedSong.chords);
+		}
+		playedNotes = new Set();
+	}
+
 	function handleSongChange(event: Event): void {
 		const target = event.target as HTMLSelectElement;
 		const songIndex = parseInt(target.value);
 		selectedSong = songs[songIndex];
 		currentChordIndex = 0;
 		playedNotes = new Set();
+		if (useOptimizedVoicing) {
+			optimizedInversions = calculateOptimalInversions(selectedSong.chords);
+		}
 	}
 </script>
 
@@ -163,7 +250,7 @@
 	{description}
 	exerciseType="progression"
 >
-	{#snippet children(api: any)}
+	{#snippet children(api: import('$lib/types/exercise-api').ExerciseAPI)}
 		<div class="song-controls">
 			<div class="song-header">
 				<h2>{selectedSong.name}</h2>
@@ -210,8 +297,24 @@
 			</div>
 
 			<div class="control-group">
+				<label>
+					<input
+						type="checkbox"
+						checked={useOptimizedVoicing}
+						onchange={handleOptimizedVoicingToggle}
+					/>
+					Optimize Voice Leading
+				</label>
+			</div>
+
+			<div class="control-group">
 				<label for="inversion">Inversion:</label>
-				<select id="inversion" value={inversion} onchange={handleInversionChange}>
+				<select
+					id="inversion"
+					value={useOptimizedVoicing ? getEffectiveInversion() : inversion}
+					onchange={handleInversionChange}
+					disabled={useOptimizedVoicing}
+				>
 					<option value="0">Root Position</option>
 					<option value="1">1st Inversion</option>
 					<option value="2">2nd Inversion</option>
@@ -242,13 +345,15 @@
 
 	.song-info {
 		font-size: 0.85rem;
-		color: var(--color-text-secondary, #666);
+		color: var(--color-text, inherit);
+		opacity: 0.8;
 		margin-bottom: 0.25rem;
 	}
 
 	.chord-progress {
 		font-size: 0.9rem;
-		color: var(--color-text-secondary, #666);
+		color: var(--color-text, inherit);
+		opacity: 0.8;
 	}
 
 	.chord-progression {
@@ -263,9 +368,9 @@
 
 	.chord-box {
 		padding: 0.75rem 1rem;
-		border: 2px solid #ddd;
+		border: 2px solid var(--color-border, #ddd);
 		border-radius: 6px;
-		background: white;
+		background: var(--color-surface, white);
 		transition: all 0.3s ease;
 		min-width: 80px;
 		text-align: center;
@@ -306,7 +411,8 @@
 		padding: 0.5rem;
 		border: 1px solid var(--color-border, #ccc);
 		border-radius: 4px;
-		background: white;
+		background: var(--color-surface, white);
+		color: var(--color-text, inherit);
 		font-size: 1rem;
 		min-width: 180px;
 	}

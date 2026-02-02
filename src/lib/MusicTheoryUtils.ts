@@ -7,6 +7,7 @@ import {
 	INTERVAL_SEMITONES
 } from './types/notes.constants';
 import type { Chord, ChordType, MidiNote, Note, NoteFullName, NoteRole } from './types/types';
+import { calculateVoiceLeadingDistance } from './music-validation';
 
 const inverseTriadChord = (
 	notes: MidiNote[],
@@ -94,81 +95,77 @@ const inverseSeventhChord = (
 			};
 	}
 };
-export const chords = (
+
+/**
+ * Interval builders - pure functions for calculating intervals
+ */
+const intervals = {
+	second: (root: MidiNote) => (root + 2) as MidiNote,
+	minorThird: (root: MidiNote) => (root + 3) as MidiNote,
+	majorThird: (root: MidiNote) => (root + 4) as MidiNote,
+	fourth: (root: MidiNote) => (root + 5) as MidiNote,
+	flatFifth: (root: MidiNote) => (root + 6) as MidiNote,
+	perfectFifth: (root: MidiNote) => (root + 7) as MidiNote,
+	augmentedFifth: (root: MidiNote) => (root + 8) as MidiNote,
+	diminishedSeventh: (root: MidiNote) => (root + 9) as MidiNote,
+	minorSeventh: (root: MidiNote) => (root + 10) as MidiNote,
+	majorSeventh: (root: MidiNote) => (root + 11) as MidiNote
+} as const;
+
+/**
+ * Chord type to intervals mapping - pure data structure
+ */
+const CHORD_INTERVALS: Record<ChordType, ReadonlyArray<(root: MidiNote) => MidiNote>> = {
+	major: [intervals.majorThird, intervals.perfectFifth],
+	minor: [intervals.minorThird, intervals.perfectFifth],
+	maj7: [intervals.majorThird, intervals.perfectFifth, intervals.majorSeventh],
+	min7: [intervals.minorThird, intervals.perfectFifth, intervals.minorSeventh],
+	'7': [intervals.majorThird, intervals.perfectFifth, intervals.minorSeventh],
+	dom7: [intervals.majorThird, intervals.perfectFifth, intervals.minorSeventh],
+	diminished: [intervals.minorThird, intervals.flatFifth],
+	augmented: [intervals.majorThird, intervals.augmentedFifth],
+	sus2: [intervals.second, intervals.perfectFifth],
+	sus4: [intervals.fourth, intervals.perfectFifth],
+	dim7: [intervals.minorThird, intervals.flatFifth, intervals.diminishedSeventh],
+	'half-dim7': [intervals.minorThird, intervals.flatFifth, intervals.minorSeventh]
+};
+
+/**
+ * Constrains MIDI note to C3-C4 range (48-60) for optimal playability
+ * Pure function - no side effects
+ */
+function constrainToOptimalRange(midi: MidiNote): MidiNote {
+	let constrained = midi;
+	while (constrained > 60) constrained = (constrained - 12) as MidiNote;
+	while (constrained < 48) constrained = (constrained + 12) as MidiNote;
+	return constrained;
+}
+
+/**
+ * Generates a chord from root, type, and inversion
+ * Pure function - same inputs always produce same output
+ */
+export function chords(
 	rootMidi: MidiNote,
 	chordType: ChordType,
 	inversion: Inversion = 0
-): Chord => {
-	const second = (rootMidi + 2) as MidiNote;
-	const minorThird = (rootMidi + 3) as MidiNote;
-	const majorThird = (rootMidi + 4) as MidiNote;
-	const fourth = (rootMidi + 5) as MidiNote;
-	const flatFifth = (rootMidi + 6) as MidiNote;
-	const perfectFifth = (rootMidi + 7) as MidiNote;
-	const augmentedFifth = (rootMidi + 8) as MidiNote;
-	const diminishedSeventh = (rootMidi + 9) as MidiNote;
-	const minorSeventh = (rootMidi + 10) as MidiNote;
-	const majorSeventh = (rootMidi + 11) as MidiNote;
-	let chord = [] as MidiNote[];
-	switch (chordType) {
-		case 'major': {
-			chord = [rootMidi, majorThird, perfectFifth] as MidiNote[];
-			break;
-		}
-		case 'minor': {
-			chord = [rootMidi, minorThird, perfectFifth] as MidiNote[];
-			break;
-		}
-		case 'maj7': {
-			chord = [rootMidi, majorThird, perfectFifth, majorSeventh] as MidiNote[];
-			break;
-		}
-		case 'min7': {
-			chord = [rootMidi, minorThird, perfectFifth, minorSeventh] as MidiNote[];
-			break;
-		}
-		case '7':
-		case 'dom7': {
-			chord = [rootMidi, majorThird, perfectFifth, minorSeventh] as MidiNote[];
-			break;
-		}
-		case 'diminished': {
-			chord = [rootMidi, minorThird, flatFifth] as MidiNote[];
-			break;
-		}
-		case 'augmented': {
-			chord = [rootMidi, majorThird, augmentedFifth] as MidiNote[];
-			break;
-		}
-		case 'sus2': {
-			chord = [rootMidi, second, perfectFifth] as MidiNote[];
-			break;
-		}
-		case 'sus4': {
-			chord = [rootMidi, fourth, perfectFifth] as MidiNote[];
-			break;
-		}
-		case 'dim7': {
-			chord = [rootMidi, minorThird, flatFifth, diminishedSeventh] as MidiNote[];
-			break;
-		}
-		case 'half-dim7': {
-			chord = [rootMidi, minorThird, flatFifth, minorSeventh] as MidiNote[];
-			break;
-		}
-		default: {
-			chord = [rootMidi] as MidiNote[];
-		}
+): Chord {
+	const constrainedRoot = constrainToOptimalRange(rootMidi);
+
+	// Build chord notes using interval functions
+	const intervalFns = CHORD_INTERVALS[chordType] ?? [];
+	const chord = [constrainedRoot, ...intervalFns.map(fn => fn(constrainedRoot))];
+
+	// Validate inversion for triads
+	if (chord.length === 3 && inversion === 3) {
+		throw new Error(`Triad ${chordType} chords do not have a 3rd inversion`);
 	}
-	if (chord.length === 3) {
-		if (inversion === 3) {
-			throw new Error(`Triad ${chordType} chords do not have a 3rd inversion`);
-		}
-		return inverseTriadChord(chord, inversion, chordType);
-	} else {
-		return inverseSeventhChord(chord, inversion, chordType);
-	}
-};
+
+	return chord.length === 3
+		? inverseTriadChord(chord as MidiNote[], inversion, chordType)
+		: inverseSeventhChord(chord as MidiNote[], inversion, chordType);
+}
+
 
 export function getVoicedChordNotes(chord: Chord, voicing: ChordVoicing): MidiNote[] {
 	const allChordNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
@@ -334,6 +331,49 @@ export function getNoteRole(noteNumber: MidiNote, rootNumber: MidiNote): NoteRol
 		default:
 			return 'unknown';
 	}
+}
+
+/**
+ * Calculate the optimal inversion for voice leading
+ * Finds the inversion that minimizes total semitone movement from the previous chord
+ * @param rootMidi - The root MIDI note of the new chord
+ * @param chordType - The type of chord
+ * @param previousChordNotes - Array of MIDI notes from the previous chord
+ * @returns The optimal inversion (0-3)
+ */
+export function calculateOptimalInversion(
+	rootMidi: MidiNote,
+	chordType: ChordType,
+	previousChordNotes: ReadonlyArray<MidiNote>
+): Inversion {
+	if (previousChordNotes.length === 0) return 0;
+
+	const possibleInversions: ReadonlyArray<Inversion> = chordType.includes('7')
+		? ([0, 1, 2, 3] as const)
+		: ([0, 1, 2] as const);
+
+	let bestInversion: Inversion = 0;
+	let minDistance = Infinity;
+
+	for (const inversion of possibleInversions) {
+		try {
+			const chord = chords(rootMidi, chordType, inversion);
+			const chordNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
+				(n): n is MidiNote => n !== undefined
+			);
+
+			const distance = calculateVoiceLeadingDistance(previousChordNotes, chordNotes);
+
+			if (distance < minDistance) {
+				minDistance = distance;
+				bestInversion = inversion;
+			}
+		} catch {
+			continue;
+		}
+	}
+
+	return bestInversion;
 }
 
 /**
