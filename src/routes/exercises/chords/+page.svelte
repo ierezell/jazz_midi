@@ -70,7 +70,6 @@
 				? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
 				: 'full-right')
 	);
-	let exerciseCompleted = $state(false);
 
 	function generateNewChallenge() {
 		const randomRoot = AllNotes[Math.floor(Math.random() * AllNotes.length)];
@@ -94,6 +93,7 @@
 	}
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
+		void selectedNote;
 		// Calculate optimal octave to keep chords centered
 		// If root is high (G, A, B), drop to octave 3. Otherwise use octave 4.
 		// This keeps roots roughly between G3 and F4.
@@ -130,8 +130,12 @@
 	function validateNoteEvent(
 		selectedNote: Note,
 		event: NoteEvent,
-		expectedNotes: MidiNote[]
+		expectedNotes: MidiNote[],
+		currentNotes: MidiNote[]
 	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		void selectedNote;
+		void currentNotes;
+
 		const expectedClasses = expectedNotes.map((n) => n % 12);
 		const playedClass = event.noteNumber % 12;
 
@@ -177,16 +181,8 @@
 		currentVoicing = target.value as typeof currentVoicing;
 	}
 
-	// Derived values for display and score
-	let chordInfo = $derived.by(() => {
-		return {
-			name: `${currentChordType}`,
-			voicing: currentVoicing,
-			inversion: currentInversion
-		};
-	});
-
 	function generateScoreProps(selectedNote: Note): ScoreProps {
+		void selectedNote;
 		try {
 			const scoreData = generateChordNotesData(
 				currentRoot,
@@ -194,20 +190,13 @@
 				currentInversion,
 				currentVoicing
 			);
-			console.debug('Generated score data:', {
-				currentRoot,
-				chordType: currentChordType,
-				voicing: currentVoicing,
-				inversion: currentInversion,
-				scoreData
-			});
 			return {
 				leftHand: scoreData.leftHand,
 				rightHand: scoreData.rightHand,
 				selectedNote: currentRoot
 			};
 		} catch (error) {
-			console.error('Error generating score data:', error);
+			void error;
 			// Return a default C major chord if there's an error
 			return {
 				selectedNote: 'C',
@@ -234,9 +223,7 @@
 		);
 	}
 
-	function handleParentReset(): void {
-		exerciseCompleted = false;
-	}
+	function handleParentReset(): void {}
 
 	// Generate prompt from current state
 	let computedPrompt = $derived(`${currentRoot} ${currentChordType}`);
@@ -255,16 +242,10 @@
 	{description}
 	{progressiveHints}
 	prompt={effectivePrompt}
+	showTempoControl={true}
+	timingModeLabel="Play chord on beat"
 >
-	{#snippet children(api: any)}
-		{@const wasCompleted = exerciseCompleted}
-		{@const isNowCompleted = api.completed}
-		{#if isNowCompleted && !wasCompleted}
-			{(exerciseCompleted = true)}
-		{:else if !isNowCompleted && wasCompleted}
-			{(exerciseCompleted = false)}
-		{/if}
-
+	{#snippet children()}
 		{#if !randomMode && !page.url.searchParams.get('unitId')}
 			<div class="controls">
 				<div class="control-group">

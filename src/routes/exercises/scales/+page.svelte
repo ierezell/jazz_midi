@@ -2,8 +2,8 @@
 
 <script lang="ts">
 	import type { ScaleMode } from '$lib/types/notes';
-	import { AllScaleModes, MidiToNote } from '$lib/types/notes.constants';
-	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
+	import { MidiToNote } from '$lib/types/notes.constants';
+	import type { MidiNote, Note, NoteEvent, ScoreProps } from '$lib/types/types';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 	import { page } from '$app/state';
 
@@ -60,6 +60,8 @@
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
 	) {
+		void selectedNote;
+
 		if (sequentialMode) {
 			return validateSequential(event, expectedNotes, currentNotes);
 		} else {
@@ -68,6 +70,7 @@
 	}
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
+		void selectedNote;
 		// Use local state effectiveRootKey
 		return generateExpectedNotesFor(effectiveRootKey, scaleMode, handMode);
 	}
@@ -87,6 +90,8 @@
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
 	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		void currentNotes;
+
 		const nextExpectedIndex = playedSequence.length;
 		const expectedNote = expectedNotes[nextExpectedIndex];
 
@@ -135,6 +140,8 @@
 		expectedNotes: MidiNote[],
 		currentNotes: MidiNote[]
 	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		void currentNotes;
+
 		const expectedClasses = expectedNotes.map((n) => n % 12);
 		const playedClass = event.noteNumber % 12;
 
@@ -236,8 +243,10 @@
 	exerciseType="scale"
 	{progressiveHints}
 	prompt={effectivePrompt}
+	showTempoControl={true}
+	timingModeLabel="Play scale on beat"
 >
-	{#snippet children(api: any)}
+	{#snippet children()}
 		<div class="scale-controls">
 			{#if !randomMode && !page.url.searchParams.get('unitId')}
 				<div class="control-group">

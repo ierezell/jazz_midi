@@ -46,10 +46,19 @@ describe('User Journey Integration', () => {
 		const lessonToPractice = journeyService.getPracticeLesson(activeUnit!.id);
 		expect(lessonToPractice).toBeDefined();
 
-		// 5. User completes the lesson (BaseExercise component logic)
-		// The journeyService.completeLesson calls userStatsService.recordExerciseResult internally
+		// 5. User completes the lesson and exercise runtime records stats
 
 		const lessonId = lessonToPractice!.lesson.id;
+		userStatsService.recordExerciseResult({
+			exerciseId: lessonId,
+			exerciseType: 'scale',
+			success: true,
+			accuracy: 100,
+			timeElapsed: 10000,
+			mistakes: 0,
+			score: 100,
+			timestamp: new Date()
+		});
 
 		journeyService.completeLesson(activeUnit!.id, lessonId, 3); // 3 stars
 

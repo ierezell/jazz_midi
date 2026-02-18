@@ -708,13 +708,6 @@
 		max-width: 500px;
 	}
 
-	.modal-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1rem;
-	}
-
 	.export-textarea {
 		width: 100%;
 		height: 200px;
@@ -724,13 +717,6 @@
 		padding: 0.5rem;
 		margin-bottom: 1rem;
 		border-radius: 0.5rem;
-	}
-
-	.close-btn {
-		background: none;
-		border: none;
-		color: white;
-		cursor: pointer;
 	}
 
 	.modal {

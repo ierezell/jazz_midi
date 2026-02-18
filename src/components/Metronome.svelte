@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Play, Pause, Settings } from 'lucide-svelte';
 
-	let { onTick }: { onTick?: (timestamp: number) => void } = $props();
+	let { onTick }: { onTick?: (timestamp: number, bpm: number) => void } = $props();
 
 	let bpm = $state(120);
 	let isPlaying = $state(false);
@@ -49,7 +49,7 @@
 		gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
 		osc.stop(audioContext.currentTime + 0.1);
 
-		onTick?.(Date.now());
+		onTick?.(Date.now(), bpm);
 	}
 
 	function updateBpm(e: Event) {

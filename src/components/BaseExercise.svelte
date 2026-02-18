@@ -10,7 +10,8 @@
 		type Note,
 		type NoteEvent,
 		type ScoreProps,
-		type ExerciseResult
+		type ExerciseResult,
+		type ExerciseType
 	} from '$lib/types/types';
 	import { onMount, onDestroy } from 'svelte';
 	import { fade } from 'svelte/transition';
@@ -33,12 +34,7 @@
 			event: NoteEvent,
 			expectedNotes: MidiNote[],
 			currentNotes: MidiNote[]
-		) => {
-			isCorrect: boolean;
-			message: string;
-			collected: boolean;
-			resetCollected: boolean;
-		};
+		) => ValidationResult;
 		isCompleted: (currentNotes: MidiNote[], expectedNotes: MidiNote[]) => boolean;
 		onReset: () => void;
 		onComplete: () => void;
@@ -49,15 +45,15 @@
 		 * exercises that don't need a staff (e.g. note-name exercises).
 		 */
 		showScore?: boolean;
-		exerciseType?:
-			| 'chord'
-			| 'scale'
-			| 'II-V-I'
-			| 'note'
-			| 'interval'
-			| 'partition'
-			| 'progression'
-			| 'rhythm';
+		exerciseType?: ExerciseType;
+	}
+
+	interface ValidationResult {
+		isCorrect: boolean;
+		message: string;
+		collected: boolean;
+		resetCollected: boolean;
+		resetMistakes?: boolean;
 	}
 
 	let {
@@ -76,13 +72,15 @@
 		progressiveHints = true,
 		prompt,
 		showTempoControl = true,
-		showTrainingControl = true
+		showTrainingControl = true,
+		timingModeLabel = 'Play on beat'
 	}: BaseExerciseProps & {
 		children?: any;
 		progressiveHints?: boolean;
 		prompt?: string;
 		showTempoControl?: boolean;
 		showTrainingControl?: boolean;
+		timingModeLabel?: string;
 	} = $props();
 
 	const SCORE_SHOW_AFTER_MISTAKES = 1; // Show score after 1 mistake
@@ -269,7 +267,6 @@
 			collectedNotes = new Set();
 		}
 
-		// @ts-ignore - resetMistakes is a new optional return property
 		if (result.resetMistakes) {
 			mistakes = 0;
 		}
@@ -294,6 +291,21 @@
 				mistakes++;
 				showFeedback(result.message, 'error');
 				audioManager.playError();
+
+				const mappedType =
+					exerciseType === 'II-V-I'
+						? 'progression'
+						: exerciseType === 'note' || exerciseType === 'interval'
+							? 'chord'
+							: exerciseType;
+
+				if (mappedType !== 'rhythm') {
+					userStatsService.trackMissedNote(note.noteName, mappedType);
+					if (mappedType === 'chord' || mappedType === 'progression') {
+						const chordKey = `${selectedNote}-${prompt ?? exerciseType ?? 'unknown'}`;
+						userStatsService.trackMissedChord(chordKey, mappedType);
+					}
+				}
 			}
 			// If it was already off beat, we already showed error/played sound.
 			// But the message might need to say "Wrong note AND Off beat"?
@@ -325,7 +337,8 @@
 			);
 		}
 
-		if (isCompleted(currentNotes, expectedNotes)) {
+		const updatedCurrentNotes = [...currentNotes, note.noteNumber];
+		if (isCompleted(updatedCurrentNotes, expectedNotes)) {
 			onCompleteExercise();
 		}
 	}
@@ -364,16 +377,17 @@
 	}
 
 	function onCompleteExercise(extra?: Partial<ExerciseResult>): void {
-		console.log('Exercise Completed!', { exerciseType, mistakes, startTime });
 		completed = true;
 		const timeElapsed = Date.now() - startTime;
-		const accuracy = Math.round(((expectedNotes.length - mistakes) / expectedNotes.length) * 100);
+		const expectedCount = expectedNotes.length;
+		const accuracy =
+			expectedCount > 0
+				? Math.max(0, Math.round(((expectedCount - mistakes) / expectedCount) * 100))
+				: 0;
 		showFeedback(`Exercise completed! Time: ${timeElapsed}ms, Accuracy: ${accuracy}%`, 'success');
 		audioManager.playSound?.('success');
 
 		if (exerciseType) {
-			console.log('Recording stats...', { exerciseType, success: true, accuracy, timeElapsed });
-
 			// Map exercise types to match ExerciseResult type
 			const resultType: 'chord' | 'scale' | 'progression' | 'partition' | 'rhythm' =
 				exerciseType === 'II-V-I'
@@ -393,8 +407,6 @@
 				timestamp: new Date(),
 				...extra
 			});
-		} else {
-			console.warn('No exerciseType provided, stats not recorded.');
 		}
 
 		// Journey mode: calculate stars and show modal
@@ -434,8 +446,11 @@
 		handleNoteSelect(note);
 	}
 
-	function handleTick(timestamp: number) {
+	function handleTick(timestamp: number, bpm?: number) {
 		lastTickTime = timestamp;
+		if (bpm) {
+			currentBpm = bpm;
+		}
 	}
 
 	function toggleTempoMode() {
@@ -471,7 +486,7 @@
 						class:active={tempoMode}
 						onclick={toggleTempoMode}
 					>
-						{tempoMode ? 'Enabled' : 'Disabled'}
+						{tempoMode ? `${timingModeLabel} ✓` : timingModeLabel}
 					</button>
 				</div>
 

@@ -8,6 +8,9 @@
 	let bpm = $state(100);
 	let isPlaying = $state(false);
 	let beatCount = $state(0);
+	let leftHandHits = $state(0);
+	let rightHandHits = $state(0);
+	let coordinatedHits = $state(0);
 	let lastDiff = $state<number | null>(null);
 	let feedback = $state('');
 	let syncOffset = $state<number | null>(null); // Difference between LH and RH in ms
@@ -104,12 +107,14 @@
 	}
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
+		void selectedNote;
 		// For rhythm, we just need something to show on the keyboard if debug is on
 		// But validation is custom.
 		return [60 as MidiNote];
 	}
 
 	function generateScoreProps(selectedNote: Note): ScoreProps {
+		void selectedNote;
 		return {
 			selectedNote,
 			leftHand: [],
@@ -120,8 +125,13 @@
 	function validateNoteEvent(
 		selectedNote: Note,
 		event: NoteEvent,
-		expectedNotes: MidiNote[]
+		expectedNotes: MidiNote[],
+		currentNotes: MidiNote[]
 	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		void selectedNote;
+		void expectedNotes;
+		void currentNotes;
+
 		if (!isPlaying || !audioContext) {
 			return {
 				isCorrect: false,
@@ -136,8 +146,6 @@
 
 		// Find the expected hit in the pattern that is closest to "now"
 		let minDiff = Infinity;
-		let targetHit = null;
-
 		const hand = event.noteNumber < LH_SPLIT_NOTE ? 'LH' : 'RH';
 
 		if (soloHand !== 'none' && hand !== soloHand) {
@@ -163,7 +171,6 @@
 				const timeDiff = hitTime - now;
 				if (Math.abs(timeDiff) < Math.abs(minDiff)) {
 					minDiff = timeDiff;
-					targetHit = hit;
 				}
 			}
 		}
@@ -176,6 +183,11 @@
 			if (absDiff > 0.05) msg = minDiff > 0 ? 'Early' : 'Late';
 			feedback = msg;
 			beatCount++;
+			if (hand === 'LH') {
+				leftHandHits++;
+			} else {
+				rightHandHits++;
+			}
 			deviations.push(absDiff * 1000);
 
 			// Logic for Sync Meter
@@ -185,6 +197,7 @@
 			// If both hands hit within a small window, calculate sync offset
 			if (Math.abs(lastLhTime - lastRhTime) < 0.2) {
 				syncOffset = (lastRhTime - lastLhTime) * 1000;
+				coordinatedHits++;
 			}
 
 			return {
@@ -205,12 +218,21 @@
 	}
 
 	function isCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
-		// Complete after 32 hits (roughly 2-4 patterns)
-		return beatCount >= 32;
+		void currentNotes;
+		void expectedNotes;
+
+		if (soloHand !== 'none') {
+			return beatCount >= 32;
+		}
+
+		return beatCount >= 32 && leftHandHits >= 8 && rightHandHits >= 8 && coordinatedHits >= 8;
 	}
 
 	function onReset() {
 		beatCount = 0;
+		leftHandHits = 0;
+		rightHandHits = 0;
+		coordinatedHits = 0;
 		deviations = [];
 		stop();
 	}
@@ -232,6 +254,8 @@
 	initialNote={'C'}
 	description={`Style: ${currentPattern.name}. ${currentPattern.description}`}
 	showScore={false}
+	showTempoControl={false}
+	showTrainingControl={false}
 	exerciseType="rhythm"
 >
 	{#snippet children(api: any)}
@@ -351,19 +375,38 @@
 				{#if beatCount >= 32}
 					<div class="completion-cta card-premium">
 						<h3>Target Reached!</h3>
-						<p>You've completed 32 hits. Click below to save your stats.</p>
+						<p>
+							{#if soloHand === 'none'}
+								Hit target: 32 hits + balanced hands + 8 synced pairs.
+							{:else}
+								You've completed 32 hits. Click below to save your stats.
+							{/if}
+						</p>
 						<button
+							disabled={!isCompleted([], [])}
 							class="finish-btn"
 							onclick={() => {
 								const avgDev =
 									deviations.length > 0
 										? deviations.reduce((a, b) => a + b, 0) / deviations.length
 										: undefined;
-								api.completeExercise({ avgDeviationMs: avgDev });
+								api.completeExercise({
+									avgDeviationMs: avgDev,
+									leftHandHits,
+									rightHandHits,
+									coordinatedHits
+								});
 							}}
 						>
 							Finish Exercise
 						</button>
+						{#if soloHand === 'none'}
+							<div class="coordination-summary">
+								<span>LH: {leftHandHits}</span>
+								<span>RH: {rightHandHits}</span>
+								<span>Synced: {coordinatedHits}</span>
+							</div>
+						{/if}
 					</div>
 				{/if}
 
@@ -644,6 +687,12 @@
 		transition: transform 0.2s;
 	}
 
+	.finish-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		transform: none;
+	}
+
 	.finish-btn:hover {
 		transform: scale(1.05);
 	}
@@ -717,6 +766,14 @@
 		font-size: 0.8rem;
 		font-weight: 800;
 		color: var(--color-success);
+	}
+
+	.coordination-summary {
+		display: flex;
+		gap: 1rem;
+		margin-top: 0.75rem;
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
 	}
 
 	/* Hand Isolation Toggles */

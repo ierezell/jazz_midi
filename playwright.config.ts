@@ -1,13 +1,30 @@
-export const e2eConfig = {
-	baseURL: 'http://localhost:4173',
-	timeout: 30000,
-	browsers: ['chromium', 'firefox', 'webkit'],
-	mobile: ['iPhone', 'Pixel'],
-	tests: {
-		smoke: ['home', 'navigation', 'basic-interaction'],
-		regression: ['chord-exercise', 'scale-exercise', 'progression-exercise'],
-		accessibility: ['keyboard-nav', 'screen-reader', 'aria-compliance'],
-		performance: ['load-time', 'interaction-speed', 'memory-usage'],
-		responsive: ['mobile', 'tablet', 'desktop']
-	}
-};
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+    testDir: './tests/e2e',
+    timeout: 30_000,
+    expect: {
+        timeout: 5_000
+    },
+    fullyParallel: true,
+    forbidOnly: !!process.env.CI,
+    retries: process.env.CI ? 2 : 0,
+    workers: process.env.CI ? 1 : undefined,
+    reporter: 'html',
+    use: {
+        baseURL: 'http://127.0.0.1:4173',
+        trace: 'on-first-retry'
+    },
+    projects: [
+        {
+            name: 'chromium',
+            use: { ...devices['Desktop Chrome'] }
+        }
+    ],
+    webServer: {
+        command: 'npm run dev -- --host 127.0.0.1 --port 4173 --strictPort',
+        url: 'http://127.0.0.1:4173',
+        reuseExistingServer: !process.env.CI,
+        timeout: 180_000
+    }
+});

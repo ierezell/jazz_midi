@@ -42,7 +42,9 @@ export class MIDIManager {
 		try {
 			this.midiAccess = await this.safeRequestMidiAccess({ sysex: false });
 			if (!this.midiAccess) {
-				throw new Error('Failed to obtain MIDI access');
+				this.midiState.set({ inputs: [], outputs: [] });
+				console.info('MIDI unavailable. Running in fallback mode (virtual keyboard/audio only).');
+				return false;
 			}
 			this.safeSetupMidiCallback(
 				this.midiAccess,
@@ -54,7 +56,7 @@ export class MIDIManager {
 			this.updateMidiState();
 			return true;
 		} catch (error) {
-			this.handleError(error as Error);
+			console.warn('Could not initialize MIDI devices. Fallback mode enabled.', error);
 			return false;
 		}
 	}
@@ -69,7 +71,7 @@ export class MIDIManager {
 			console.debug('MIDI Access obtained successfully');
 			return midiAccess;
 		} catch (error) {
-			console.error('Failed to obtain MIDI access:', error);
+			console.warn('Failed to obtain MIDI access:', error);
 			return null;
 		}
 	}

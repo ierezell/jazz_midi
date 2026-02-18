@@ -3,11 +3,11 @@ import { test, expect } from '@playwright/test';
 test.describe('User Journey - Complete Exercise Flow', () => {
 	test('should complete a full exercise session', async ({ page }) => {
 		await page.goto('/');
-		await expect(page.locator('text=Jazz MIDI').or(page.locator('text=Jazz'))).toBeVisible();
+		await expect(page.locator('.logo-text')).toBeVisible();
 
-		// Navigate to an exercise via menu
-		await page.click('button[aria-label="Toggle menu"]');
-		await page.click('nav.menu-content a[href="/exercises/flashcards"]');
+		// Navigate to an exercise via main nav + exercise hub
+		await page.locator('nav.nav-bar a[href="/exercises"]').first().click();
+		await page.click('a[href="/exercises/flashcards"]');
 
 		// Wait for exercise page to load
 		await expect(page).toHaveURL('/exercises/flashcards');
@@ -25,33 +25,28 @@ test.describe('User Journey - Complete Exercise Flow', () => {
 		await page.goto('/');
 
 		// Navigate to Journey
-		await page.click('button[aria-label="Toggle menu"]');
-		await page.click('nav.menu-content a[href="/journey"]');
+		await page.locator('nav.nav-bar a[href="/journey"]').first().click();
 
 		// Verify Journey page loaded
 		await expect(page).toHaveURL('/journey');
-		await expect(
-			page.locator('text=Journey').or(page.locator('text=journey'))
-		).toBeVisible();
+		await expect(page.locator('h1')).toContainText(/Journey/i);
 	});
 
-	test('should access Statistics page', async ({ page }) => {
+	test('should access profile statistics page', async ({ page }) => {
 		await page.goto('/');
 
-		// Navigate to Stats
-		await page.click('button[aria-label="Toggle menu"]');
-		await page.click('nav.menu-content a[href="/stats"]');
+		// Navigate to Profile
+		await page.locator('nav.nav-bar a[href="/profile"]').first().click();
 
-		// Verify Stats page loaded
-		await expect(page).toHaveURL('/stats');
+		// Verify Profile page loaded
+		await expect(page).toHaveURL('/profile');
 	});
 
 	test('should access Profile page', async ({ page }) => {
 		await page.goto('/');
 
 		// Navigate to Profile
-		await page.click('button[aria-label="Toggle menu"]');
-		await page.click('nav.menu-content a[href="/profile"]');
+		await page.locator('nav.nav-bar a[href="/profile"]').first().click();
 
 		// Verify Profile page loaded
 		await expect(page).toHaveURL('/profile');
@@ -60,12 +55,12 @@ test.describe('User Journey - Complete Exercise Flow', () => {
 
 test.describe('User Journey - Exercise Type Access', () => {
 	const exercises = [
-		{ route: '/exercises/random', name: 'Random' },
 		{ route: '/exercises/two_five_ones', name: 'II-V-I' },
 		{ route: '/exercises/scales', name: 'Scales' },
 		{ route: '/exercises/chords', name: 'Chords' },
 		{ route: '/exercises/intervals', name: 'Intervals' },
 		{ route: '/exercises/songs', name: 'Songs' },
+		{ route: '/exercises/licks', name: 'Licks' },
 		{ route: '/exercises/names', name: 'Names' },
 		{ route: '/exercises/partition', name: 'Partition' },
 		{ route: '/exercises/rhythm', name: 'Rhythm' },
@@ -78,7 +73,7 @@ test.describe('User Journey - Exercise Type Access', () => {
 			await page.goto(exercise.route);
 
 			// Wait for page to load
-			await page.waitForLoadState('networkidle');
+			await page.waitForLoadState('domcontentloaded');
 
 			// Check that page loaded (has content)
 			const bodyText = await page.textContent('body');
@@ -105,9 +100,9 @@ test.describe('User Journey - Navigation Persistence', () => {
 		await page.goto('/exercises/scales');
 		await expect(page).toHaveURL('/exercises/scales');
 
-		// Go to stats
-		await page.goto('/stats');
-		await expect(page).toHaveURL('/stats');
+		// Go to profile
+		await page.goto('/profile');
+		await expect(page).toHaveURL('/profile');
 
 		// Navigate back
 		await page.goBack();

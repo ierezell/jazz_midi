@@ -52,6 +52,9 @@ export interface ExerciseResult {
 	score: number;
 	timestamp: Date;
 	avgDeviationMs?: number;
+	leftHandHits?: number;
+	rightHandHits?: number;
+	coordinatedHits?: number;
 }
 
 export interface MIDIEventHandlers {

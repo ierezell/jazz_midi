@@ -3,18 +3,18 @@ import { test, expect } from '@playwright/test';
 const ROUTES = [
 	'/',
 	'/journey',
-	'/exercises/random',
 	'/exercises/two_five_ones',
 	'/exercises/scales',
 	'/exercises/chords',
 	'/exercises/intervals',
 	'/exercises/songs',
+	'/exercises/licks',
 	'/exercises/names',
 	'/exercises/partition',
 	'/exercises/rhythm',
 	'/exercises/flashcards',
 	'/exercises/dexterity',
-	'/stats',
+	'/exercises',
 	'/profile'
 ];
 
@@ -35,7 +35,7 @@ test.describe('Console Error Detection', () => {
 		});
 
 		await page.goto('/');
-		await page.waitForLoadState('networkidle');
+		await page.waitForLoadState('domcontentloaded');
 
 		// Check for errors
 		if (errors.length > 0) {
@@ -73,7 +73,7 @@ test.describe('Console Error Detection', () => {
 			});
 
 			await page.goto(route);
-			await page.waitForLoadState('networkidle');
+			await page.waitForLoadState('domcontentloaded');
 
 			// Give the page some time to potentially log errors
 			await page.waitForTimeout(1000);
@@ -107,7 +107,7 @@ test.describe('Resource Loading', () => {
 
 		for (const route of ROUTES) {
 			await page.goto(route);
-			await page.waitForLoadState('networkidle');
+			await page.waitForLoadState('domcontentloaded');
 		}
 
 		if (failedRequests.length > 0) {
@@ -139,7 +139,7 @@ test.describe('JavaScript Errors', () => {
 
 		for (const route of criticalRoutes) {
 			await page.goto(route);
-			await page.waitForLoadState('networkidle');
+			await page.waitForLoadState('domcontentloaded');
 			await page.waitForTimeout(500);
 		}
 

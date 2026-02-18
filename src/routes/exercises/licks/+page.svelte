@@ -2,10 +2,10 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps, Lick } from '$lib/types/types';
+	import type { MidiNote, Note, NoteEvent, ScoreProps, Lick } from '$lib/types/types';
 	import { MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
-	import { licks, getLicksByHand, getLicksByDifficulty } from '$lib/data/licksData';
+	import { licks } from '$lib/data/licksData';
 
 	const description =
 		'Practice jazz licks and patterns to develop finger mechanics, muscle memory, and vocabulary. Learn classic phrases from different styles.';
@@ -67,6 +67,8 @@
 	});
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
+		void selectedNote;
+
 		if (!currentLick) return [];
 
 		// Return the NEXT expected note in the lick
@@ -82,8 +84,12 @@
 	function validateNoteEvent(
 		selectedNote: Note,
 		event: NoteEvent,
-		expectedNotes: MidiNote[]
+		expectedNotes: MidiNote[],
+		currentNotes: MidiNote[]
 	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		void selectedNote;
+		void currentNotes;
+
 		if (!currentLick) {
 			return {
 				isCorrect: false,
@@ -174,8 +180,9 @@
 	{description}
 	exerciseType="partition"
 	showTempoControl={true}
+	timingModeLabel="Play lick on beat"
 >
-	{#snippet children(api: any)}
+	{#snippet children()}
 		<div class="licks-content">
 			{#if currentLick}
 				<div class="lick-header">

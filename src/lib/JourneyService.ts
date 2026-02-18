@@ -9,7 +9,7 @@ export interface Lesson {
 	params?: Record<string, string>;
 	completed: boolean;
 	stars: number; // 0-3
-	
+
 	// New Mastery Fields
 	perfectCompletions: number;
 	requiredPerfectCompletions: number;
@@ -279,23 +279,11 @@ export class JourneyService {
 		if (lesson.perfectCompletions >= lesson.requiredPerfectCompletions) {
 			lesson.completed = true;
 		}
-		
+
 		lesson.stars = Math.max(lesson.stars, stars);
 
 		this.checkUnitCompletion(unit);
 		this.saveProgress();
-
-		// Sync with UserStatsService
-		userStatsService.recordExerciseResult({
-			exerciseId: lessonId,
-			exerciseType: 'scale', // Should be dynamic
-			success: true,
-			accuracy: stars === 3 ? 100 : stars === 2 ? 80 : 50,
-			score: stars * 33,
-			timeElapsed: 0,
-			mistakes: stars === 3 ? 0 : 3,
-			timestamp: new Date()
-		});
 	}
 
 	getStats() {
@@ -329,7 +317,7 @@ export class JourneyService {
 	// Simple persistence using localStorage for now
 	private saveProgress() {
 		if (!browser || typeof localStorage === 'undefined') return;
-		
+
 		const progress = this.units.map(u => ({
 			id: u.id,
 			status: u.status,
@@ -340,7 +328,7 @@ export class JourneyService {
 				perfectCompletions: l.perfectCompletions
 			}))
 		}));
-		
+
 		localStorage.setItem('journey_progress_v2', JSON.stringify(progress));
 	}
 
@@ -371,7 +359,7 @@ export class JourneyService {
 			console.error('Failed to load journey progress', e);
 		}
 	}
-	
+
 	// Helper to generate the URL for a lesson
 	getLessonUrl(unit: Unit, lesson: Lesson): string {
 		const params = new URLSearchParams();
@@ -381,7 +369,7 @@ export class JourneyService {
 		// Add context so the exercise knows where to return/update
 		params.append('unitId', unit.id);
 		params.append('lessonId', lesson.id);
-		
+
 		return `${lesson.path}?${params.toString()}`;
 	}
 
@@ -394,7 +382,7 @@ export class JourneyService {
 
 		// 1. Find unmastered lessons in the target unit
 		const unmastered = unit.lessons.filter(l => (l.perfectCompletions || 0) < l.requiredPerfectCompletions);
-		
+
 		if (unmastered.length > 0) {
 			const randomIndex = Math.floor(Math.random() * unmastered.length);
 			return { unit, lesson: unmastered[randomIndex] };
