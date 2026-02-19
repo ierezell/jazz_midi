@@ -4,11 +4,7 @@
 	import { userStatsService } from '$lib/UserStatsService';
 	import { calculateOptimalRange, getNoteRole } from '$lib/MusicTheoryUtils';
 	import { validateNoteTiming } from '$lib/music-validation';
-	import type {
-		ExerciseAPI,
-		BeatTiming,
-		TempoValidation
-	} from '$lib/types/exercise-api';
+	import type { ExerciseAPI, BeatTiming, TempoValidation } from '$lib/types/exercise-api';
 	import { AllNotes, NoteToMidi, DEFAULT_OCTAVE } from '$lib/types/notes.constants';
 	import {
 		type KeyboardProps,
@@ -48,10 +44,7 @@
 			resetCollected: boolean;
 			resetMistakes?: boolean;
 		};
-		isCompleted: (
-			currentNotes: MidiNote[],
-			expectedNotes: MidiNote[]
-		) => boolean;
+		isCompleted: (currentNotes: MidiNote[], expectedNotes: MidiNote[]) => boolean;
 		onReset: () => void;
 		onComplete: () => void;
 		description: string;
