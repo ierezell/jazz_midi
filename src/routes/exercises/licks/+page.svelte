@@ -3,6 +3,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { MidiNote, Note, NoteEvent, ScoreProps, Lick } from '$lib/types/types';
+	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 	import { licks } from '$lib/data/licksData';
@@ -23,6 +24,14 @@
 	let selectedHand = $state<'left' | 'right' | 'both'>('right');
 	let selectedDifficulty = $state<'beginner' | 'intermediate' | 'advanced' | 'all'>('beginner');
 	let selectedLickId = $state<string>('');
+
+	// Failure modes: 'hard-reset' or 'sticky-note'
+	let failureMode = $state<'hard-reset' | 'sticky-note'>('hard-reset');
+
+	// Progression modes: 'cycle', 'require-x', 'loop'
+	let progressionMode = $state<'cycle' | 'require-x' | 'loop'>('cycle');
+	let requiredRepetitions = $state(3);
+	let currentRepetitions = $state(0);
 
 	function getFilteredLicks(): Lick[] {
 		let filtered = [...licks];
@@ -46,7 +55,18 @@
 			// Fallback to all licks if no match
 			currentLick = licks[Math.floor(Math.random() * licks.length)];
 		} else {
-			currentLick = availableLicks[Math.floor(Math.random() * availableLicks.length)];
+			// Exclude current lick to ensure variety
+			const otherLicks =
+				currentLick !== null
+					? availableLicks.filter((l) => l.id !== currentLick!.id)
+					: availableLicks;
+
+			if (otherLicks.length > 0) {
+				currentLick = otherLicks[Math.floor(Math.random() * otherLicks.length)];
+			} else {
+				// If only one lick available, keep the current one
+				currentLick = availableLicks[0];
+			}
 		}
 		selectedLickId = currentLick.id;
 		playedCount = 0;
@@ -84,12 +104,11 @@
 	function validateNoteEvent(
 		selectedNote: Note,
 		event: NoteEvent,
-		expectedNotes: MidiNote[],
-		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		expectedNotes: ReadonlyArray<MidiNote>,
+		currentNotes: ReadonlyArray<MidiNote>
+	): ValidationResult {
 		void selectedNote;
 		void currentNotes;
-
 		if (!currentLick) {
 			return {
 				isCorrect: false,
@@ -106,12 +125,51 @@
 			const remaining = currentLick.notes.length - playedCount;
 
 			if (remaining === 0) {
-				return {
-					isCorrect: true,
-					message: `🎉 Perfect! "${currentLick.name}" completed!`,
-					collected: true,
-					resetCollected: true
-				};
+				// Lick completed!
+				currentRepetitions++;
+
+				// Check progression mode
+				if (progressionMode === 'loop') {
+					// Just restart the same lick
+					playedCount = 0;
+					return {
+						isCorrect: true,
+						message: `Completed! Repetition ${currentRepetitions}. Keep practicing!`,
+						collected: true,
+						resetCollected: true
+					};
+				} else if (progressionMode === 'require-x') {
+					if (currentRepetitions >= requiredRepetitions) {
+						// Move to next lick
+						currentRepetitions = 0;
+						setTimeout(() => selectRandomLick(), 1500);
+						return {
+							isCorrect: true,
+							message: `🎉 Perfect! ${requiredRepetitions} repetitions completed!`,
+							collected: true,
+							resetCollected: true
+						};
+					} else {
+						// Need more repetitions
+						playedCount = 0;
+						return {
+							isCorrect: true,
+							message: `Great! ${currentRepetitions}/${requiredRepetitions} repetitions`,
+							collected: true,
+							resetCollected: true
+						};
+					}
+				} else {
+					// 'cycle' mode - move to next lick immediately
+					currentRepetitions = 0;
+					setTimeout(() => selectRandomLick(), 1500);
+					return {
+						isCorrect: true,
+						message: `🎉 Perfect! "${currentLick.name}" completed!`,
+						collected: true,
+						resetCollected: true
+					};
+				}
 			} else {
 				return {
 					isCorrect: true,
@@ -121,14 +179,28 @@
 				};
 			}
 		} else {
+			// Wrong note
 			const playedNote = MidiToNote[event.noteNumber];
 			const expectedNoteName = currentLick.notes[playedCount];
-			return {
-				isCorrect: false,
-				message: `Wrong note! You played ${playedNote}, expected ${expectedNoteName}`,
-				collected: false,
-				resetCollected: false
-			};
+
+			if (failureMode === 'hard-reset') {
+				// Reset entire lick
+				playedCount = 0;
+				return {
+					isCorrect: false,
+					message: `Mistake! Starting over. You played ${playedNote}, expected ${expectedNoteName}`,
+					collected: false,
+					resetCollected: false
+				};
+			} else {
+				// 'sticky-note' mode - don't advance, wait for correct note
+				return {
+					isCorrect: false,
+					message: `Wrong note! You played ${playedNote}, expected ${expectedNoteName}. Try again!`,
+					collected: false,
+					resetCollected: false
+				};
+			}
 		}
 	}
 
@@ -153,7 +225,10 @@
 		};
 	}
 
-	function isCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+	function isCompleted(
+		currentNotes: ReadonlyArray<MidiNote>,
+		expectedNotes: ReadonlyArray<MidiNote>
+	): boolean {
 		return currentLick ? playedCount === currentLick.notes.length : false;
 	}
 
@@ -269,6 +344,37 @@
 							<option value="all">All Levels</option>
 						</select>
 					</div>
+
+					<div class="control-group">
+						<label for="failure-mode">On Mistake:</label>
+						<select id="failure-mode" bind:value={failureMode}>
+							<option value="hard-reset">Hard Reset (Start Over)</option>
+							<option value="sticky-note">Sticky Note (Wait for Correct)</option>
+						</select>
+					</div>
+
+					<div class="control-group">
+						<label for="progression-mode">Progression:</label>
+						<select id="progression-mode" bind:value={progressionMode}>
+							<option value="cycle">Cycle on Success</option>
+							<option value="require-x">Require Repetitions</option>
+							<option value="loop">Loop Same Lick</option>
+						</select>
+					</div>
+
+					{#if progressionMode === 'require-x'}
+						<div class="control-group">
+							<label for="repetitions">Repetitions:</label>
+							<input
+								id="repetitions"
+								type="number"
+								min="1"
+								max="10"
+								bind:value={requiredRepetitions}
+								class="repetitions-input"
+							/>
+						</div>
+					{/if}
 
 					<button
 						class="new-lick-btn"
@@ -455,6 +561,24 @@
 	}
 
 	.control-group select:focus {
+		outline: none;
+		border-color: var(--color-theme-1, #9b59b6);
+		box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
+	}
+
+	.repetitions-input {
+		padding: 0.5rem 1rem;
+		border: 2px solid rgba(155, 89, 182, 0.3);
+		border-radius: 8px;
+		font-size: 0.95rem;
+		background: var(--color-bg-1, #1a1a1a);
+		color: var(--color-text, white);
+		width: 80px;
+		transition: all 0.2s;
+	}
+
+	.repetitions-input:hover,
+	.repetitions-input:focus {
 		outline: none;
 		border-color: var(--color-theme-1, #9b59b6);
 		box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);

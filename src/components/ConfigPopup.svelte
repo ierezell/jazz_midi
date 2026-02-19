@@ -34,37 +34,73 @@
 	} = $props();
 
 	function handleUpdate(type: string, key: string, checked: boolean) {
-		let currentArray: any[] = [];
-		switch (type) {
-			case 'allowedExerciseTypes':
-				currentArray = [...allowedExerciseTypes];
-				break;
-			case 'allowedNotes':
-				currentArray = [...allowedNotes];
-				break;
-			case 'allowedChordTypes':
-				currentArray = [...allowedChordTypes];
-				break;
-			case 'allowedInversions':
-				currentArray = [...allowedInversions];
-				break;
-			case 'allowedScaleModes':
-				currentArray = [...allowedScaleModes];
-				break;
-			case 'allowedVoicings':
-				currentArray = [...allowedVoicings];
-				break;
-		}
-
-		if (checked) {
-			currentArray.push(key);
-		} else if (currentArray.length > 1) {
-			const index = currentArray.indexOf(key);
-			if (index > -1) {
-				currentArray.splice(index, 1);
+		if (type === 'allowedExerciseTypes') {
+			const currentArray = [...allowedExerciseTypes];
+			if (checked) {
+				currentArray.push(key as ExerciseType);
+			} else if (currentArray.length > 1) {
+				const index = currentArray.indexOf(key as ExerciseType);
+				if (index > -1) {
+					currentArray.splice(index, 1);
+				}
 			}
+			onUpdate(type, currentArray.sort());
+		} else if (type === 'allowedNotes') {
+			const currentArray = [...allowedNotes];
+			if (checked) {
+				currentArray.push(key as Note);
+			} else if (currentArray.length > 1) {
+				const index = currentArray.indexOf(key as Note);
+				if (index > -1) {
+					currentArray.splice(index, 1);
+				}
+			}
+			onUpdate(type, currentArray.sort());
+		} else if (type === 'allowedChordTypes') {
+			const currentArray = [...allowedChordTypes];
+			if (checked) {
+				currentArray.push(key as ChordType);
+			} else if (currentArray.length > 1) {
+				const index = currentArray.indexOf(key as ChordType);
+				if (index > -1) {
+					currentArray.splice(index, 1);
+				}
+			}
+			onUpdate(type, currentArray.sort());
+		} else if (type === 'allowedInversions') {
+			const currentArray = [...allowedInversions];
+			if (checked) {
+				currentArray.push(key as unknown as Inversion);
+			} else if (currentArray.length > 1) {
+				const index = currentArray.indexOf(key as unknown as Inversion);
+				if (index > -1) {
+					currentArray.splice(index, 1);
+				}
+			}
+			onUpdate(type, currentArray.sort((a, b) => a - b).map(String));
+		} else if (type === 'allowedScaleModes') {
+			const currentArray = [...allowedScaleModes];
+			if (checked) {
+				currentArray.push(key as ScaleMode);
+			} else if (currentArray.length > 1) {
+				const index = currentArray.indexOf(key as ScaleMode);
+				if (index > -1) {
+					currentArray.splice(index, 1);
+				}
+			}
+			onUpdate(type, currentArray.sort());
+		} else if (type === 'allowedVoicings') {
+			const currentArray = [...allowedVoicings];
+			if (checked) {
+				currentArray.push(key as ChordVoicing);
+			} else if (currentArray.length > 1) {
+				const index = currentArray.indexOf(key as ChordVoicing);
+				if (index > -1) {
+					currentArray.splice(index, 1);
+				}
+			}
+			onUpdate(type, currentArray.sort());
 		}
-		onUpdate(type, currentArray.sort());
 	}
 
 	function handleClickOutside(event: KeyboardEvent | MouseEvent) {

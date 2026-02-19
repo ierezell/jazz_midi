@@ -17,6 +17,7 @@
 		DEFAULT_OCTAVE
 	} from '$lib/types/notes.constants';
 	import type { NoteEvent, ScoreProps } from '$lib/types/types';
+	import type { ValidationResult } from '$lib/types/exercise-api';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 	import { page } from '$app/state';
 
@@ -94,9 +95,9 @@
 	function validateNoteEvent(
 		selectedNote: Note,
 		event: NoteEvent,
-		expectedNotes: MidiNote[],
-		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		expectedNotes: ReadonlyArray<MidiNote>,
+		currentNotes: ReadonlyArray<MidiNote>
+	): ValidationResult {
 		const chordName = getChordNames(selectedNote)[currentChordIndex];
 		if (expectedNotes.includes(event.noteNumber)) {
 			const correctCount = currentNotes.filter((note) => expectedNotes.includes(note)).length;
@@ -141,18 +142,21 @@
 		};
 	}
 
-	function isCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+	function isCompleted(
+		currentNotes: ReadonlyArray<MidiNote>,
+		expectedNotes: ReadonlyArray<MidiNote>
+	): boolean {
 		if (expectedNotes.length === 0) return false;
 
 		const correctNotes = currentNotes.filter((note) => expectedNotes.includes(note));
 		const currentChordComplete = correctNotes.length === expectedNotes.length;
 		const isFullProgressionComplete = currentChordComplete && currentChordIndex === 2;
 
-		// Reset to first chord when completed for next attempt
+		// Loop back to the first chord for continuous practice
 		if (isFullProgressionComplete) {
 			setTimeout(() => {
-				resetProgression();
-			}, 2000);
+				currentChordIndex = 0;
+			}, 1500);
 		}
 
 		return isFullProgressionComplete;
@@ -212,7 +216,7 @@
 		{progressiveHints}
 		{prompt}
 	>
-		{#snippet children(api: any)}
+		{#snippet children(api: import('$lib/types/exercise-api').ExerciseAPI)}
 			{@const wasCompleted = exerciseCompleted}
 			{@const isNowCompleted = api.completed}
 			{#if isNowCompleted && !wasCompleted}

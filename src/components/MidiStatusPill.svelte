@@ -3,7 +3,16 @@
 	import { Piano, AlertCircle, CheckCircle2, HelpCircle } from 'lucide-svelte';
 	import { midiManager } from '$lib/MIDIManager';
 
-	let midiState = $state<{ inputs: any[]; outputs: any[] }>({ inputs: [], outputs: [] });
+	interface MidiDevice {
+		name: string | null;
+		id: string;
+		[key: string]: unknown;
+	}
+
+	let midiState = $state<{ inputs: MidiDevice[]; outputs: MidiDevice[] }>({
+		inputs: [],
+		outputs: []
+	});
 	let showHelp = $state(false);
 
 	let isConnected = $derived(midiState.inputs.length > 0);
@@ -13,7 +22,16 @@
 	onMount(() => {
 		unsubscribe = midiManager.midiState.subscribe((state) => {
 			if (state) {
-				midiState = state;
+				midiState = {
+					inputs: state.inputs.map((input) => ({
+						name: input.name,
+						id: input.id
+					})),
+					outputs: state.outputs.map((output) => ({
+						name: output.name,
+						id: output.id
+					}))
+				};
 			}
 		});
 	});
@@ -62,7 +80,7 @@
 						<p>Connected Devices:</p>
 						<ul>
 							{#each midiState.inputs as input}
-								<li>🎹 {input.name}</li>
+								<li>🎹 {input.name ?? 'Unknown Device'}</li>
 							{/each}
 						</ul>
 					</div>

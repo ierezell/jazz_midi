@@ -1,12 +1,16 @@
 <script lang="ts">
 	import { Play, Pause, Settings } from 'lucide-svelte';
 
-	let { onTick }: { onTick?: (timestamp: number, bpm: number) => void } = $props();
+	let {
+		onTick
+	}: { onTick?: (timestamp: number, beatNumber: number, isDownbeat: boolean) => void } = $props();
 
 	let bpm = $state(120);
 	let isPlaying = $state(false);
 	let intervalId: number | null = null;
 	let audioContext: AudioContext | null = null;
+	let timeSignature = $state(4); // 4/4 time by default
+	let currentBeat = $state(1);
 
 	function toggleMetronome() {
 		if (isPlaying) {
@@ -21,6 +25,7 @@
 			audioContext = new AudioContext();
 		}
 		isPlaying = true;
+		currentBeat = 1;
 		const interval = (60 / bpm) * 1000;
 		playClick();
 		intervalId = window.setInterval(playClick, interval);
@@ -32,6 +37,7 @@
 			clearInterval(intervalId);
 			intervalId = null;
 		}
+		currentBeat = 1;
 	}
 
 	function playClick() {
@@ -42,14 +48,19 @@
 		osc.connect(gain);
 		gain.connect(audioContext.destination);
 
-		osc.frequency.value = 1000;
-		gain.gain.value = 0.5;
+		// First beat is higher pitch
+		const isDownbeat = currentBeat === 1;
+		osc.frequency.value = isDownbeat ? 1200 : 1000;
+		gain.gain.value = isDownbeat ? 0.7 : 0.5;
 
 		osc.start();
 		gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
 		osc.stop(audioContext.currentTime + 0.1);
 
-		onTick?.(Date.now(), bpm);
+		onTick?.(Date.now(), currentBeat, isDownbeat);
+
+		// Advance beat
+		currentBeat = currentBeat >= timeSignature ? 1 : currentBeat + 1;
 	}
 
 	function updateBpm(e: Event) {

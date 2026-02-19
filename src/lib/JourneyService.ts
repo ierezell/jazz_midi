@@ -339,18 +339,31 @@ export class JourneyService {
 		if (!saved) return;
 
 		try {
-			const progress = JSON.parse(saved);
+			interface SavedLesson {
+				id: string;
+				completed: boolean;
+				stars: number;
+				perfectCompletions?: number;
+			}
+
+			interface SavedUnit {
+				id: string;
+				status: 'locked' | 'active' | 'completed';
+				lessons: SavedLesson[];
+			}
+
+			const progress = JSON.parse(saved) as SavedUnit[];
 			// Merge saved progress with current structure
-			progress.forEach((savedUnit: any) => {
+			progress.forEach((savedUnit) => {
 				const unit = this.units.find(u => u.id === savedUnit.id);
 				if (unit) {
 					unit.status = savedUnit.status;
-					savedUnit.lessons.forEach((savedLesson: any) => {
+					savedUnit.lessons.forEach((savedLesson) => {
 						const lesson = unit.lessons.find(l => l.id === savedLesson.id);
 						if (lesson) {
 							lesson.completed = savedLesson.completed;
 							lesson.stars = savedLesson.stars;
-							lesson.perfectCompletions = savedLesson.perfectCompletions || 0;
+							lesson.perfectCompletions = savedLesson.perfectCompletions ?? 0;
 						}
 					});
 				}

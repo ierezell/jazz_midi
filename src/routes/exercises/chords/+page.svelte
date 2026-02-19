@@ -1,7 +1,12 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import { chords, generateChordNotesData, getVoicedChordNotes } from '$lib/MusicTheoryUtils';
+	import {
+		chords,
+		generateChordNotesData,
+		getVoicedChordNotes,
+		calculateOptimalInversion
+	} from '$lib/MusicTheoryUtils';
 	import type { ChordVoicing, Inversion } from '$lib/types/notes';
 	import {
 		AllChordTypes,
@@ -18,6 +23,7 @@
 		NoteFullName,
 		ScoreProps
 	} from '$lib/types/types';
+	import type { ValidationResult } from '$lib/types/exercise-api';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 	import { page } from '$app/state';
 
@@ -70,24 +76,33 @@
 				? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
 				: 'full-right')
 	);
+	let useOptimizedVoicing = $state(false);
+	let previousChordNotes: MidiNote[] = $state([]);
 
 	function generateNewChallenge() {
 		const randomRoot = AllNotes[Math.floor(Math.random() * AllNotes.length)];
 		const randomType = possibleChordTypes[Math.floor(Math.random() * possibleChordTypes.length)];
 
-		// Optional: also randomize inversion/voicing?
-		// User asked for "new random note and a new random chord type".
-		// We'll stick to that for now, preserving inversion/voicing unless we want to randomize them too.
-		// Let's randomize all for a better drill experience if in randomMode.
-		const randomInv = Math.floor(Math.random() * 4) as Inversion;
+		// Calculate optimal inversion if enabled
+		let randomInv: Inversion;
+		if (useOptimizedVoicing && previousChordNotes.length > 0) {
+			const rootNote = (randomRoot + '3') as NoteFullName;
+			const rootMidi = NoteToMidi[rootNote];
+			randomInv = calculateOptimalInversion(rootMidi, randomType, previousChordNotes);
+		} else {
+			randomInv = Math.floor(Math.random() * 4) as Inversion;
+		}
 
 		currentRoot = randomRoot;
 		currentChordType = randomType;
 		currentInversion = randomInv;
-		// Keep voicing consistent potentially? Or randomize. Let's keep voicing user-controlled or as is for now to avoid confusion.
 	}
 
 	function handleComplete() {
+		// Store current chord notes for voice leading optimization
+		const notes = generateExpectedNotes(currentRoot);
+		previousChordNotes = notes;
+
 		generateNewChallenge();
 		onComplete?.();
 	}
@@ -130,30 +145,34 @@
 	function validateNoteEvent(
 		selectedNote: Note,
 		event: NoteEvent,
-		expectedNotes: MidiNote[],
-		currentNotes: MidiNote[]
-	): { isCorrect: boolean; message: string; collected: boolean; resetCollected: boolean } {
+		expectedNotes: ReadonlyArray<MidiNote>,
+		currentNotes: ReadonlyArray<MidiNote>
+	): ValidationResult {
 		void selectedNote;
 		void currentNotes;
-
 		const expectedClasses = expectedNotes.map((n) => n % 12);
 		const playedClass = event.noteNumber % 12;
 
 		if (expectedClasses.includes(playedClass)) {
-			if (expectedNotes.includes(event.noteNumber)) {
+			// For strict inversion validation, check if the exact MIDI note is expected
+			// For rootless voicings, we can be more lenient with octaves
+			const isExactMatch = expectedNotes.includes(event.noteNumber);
+			const isRootless = currentVoicing.startsWith('rootless');
+
+			if (isExactMatch || isRootless) {
 				return {
 					isCorrect: true,
-					message: 'Correct chord tone!',
+					message: isExactMatch ? 'Correct chord tone!' : 'Correct chord tone (octave ignored)!',
 					collected: true,
 					resetCollected: false
 				};
-			}
-			if (currentVoicing.startsWith('rootless')) {
+			} else {
+				// Right pitch class, wrong octave/inversion
 				return {
-					isCorrect: true,
-					message: 'Correct chord tone (octave ignored)!',
-					collected: true,
-					resetCollected: false
+					isCorrect: false,
+					message: 'Correct note, but check the inversion/octave!',
+					collected: false,
+					resetCollected: true
 				};
 			}
 		}
@@ -206,7 +225,10 @@
 		}
 	}
 
-	function isCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+	function isCompleted(
+		currentNotes: ReadonlyArray<MidiNote>,
+		expectedNotes: ReadonlyArray<MidiNote>
+	): boolean {
 		// If rootless, check if we have 4 unique note classes that match expected
 		if (currentVoicing.startsWith('rootless')) {
 			const currentClasses = new Set(currentNotes.map((n) => n % 12));
@@ -226,8 +248,25 @@
 	function handleParentReset(): void {}
 
 	// Generate prompt from current state
-	let computedPrompt = $derived(`${currentRoot} ${currentChordType}`);
+	let computedPrompt = $derived(
+		`${currentRoot} ${currentChordType} - ${getInversionName(currentInversion)}`
+	);
 	let effectivePrompt = $derived(prompt ?? computedPrompt);
+
+	function getInversionName(inv: Inversion): string {
+		switch (inv) {
+			case 0:
+				return 'Root Position';
+			case 1:
+				return '1st Inversion';
+			case 2:
+				return '2nd Inversion';
+			case 3:
+				return '3rd Inversion';
+			default:
+				return 'Root Position';
+		}
+	}
 </script>
 
 <BaseExercise
@@ -265,6 +304,13 @@
 						<option value={2}>2nd</option>
 						<option value={3}>3rd</option>
 					</select>
+				</div>
+
+				<div class="control-group">
+					<label>
+						<input type="checkbox" bind:checked={useOptimizedVoicing} />
+						Optimized Voice Leading
+					</label>
 				</div>
 
 				<div class="control-group">

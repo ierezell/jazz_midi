@@ -128,11 +128,7 @@ export class UserStatsService {
 			// globalThis used to support various environments
 			if (typeof globalThis === 'undefined') return false;
 			// Ensure localStorage exists and has the expected API
-			// Some test/SSR harnesses may inject a non-standard object.
-			// Check that getItem/setItem/removeItem are functions.
-			// Accessing localStorage may throw in some restricted environments, so guard in try/catch.
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const ls: any = (globalThis as any).localStorage;
+			const ls = (globalThis as typeof globalThis & { localStorage?: Storage }).localStorage;
 			return (
 				!!ls &&
 				typeof ls.getItem === 'function' &&
@@ -157,8 +153,7 @@ export class UserStatsService {
 	} {
 		try {
 			// prefer real localStorage when available and functional
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const ls: any = (globalThis as any).localStorage;
+			const ls = (globalThis as typeof globalThis & { localStorage?: Storage }).localStorage;
 			if (
 				ls &&
 				typeof ls.getItem === 'function' &&
@@ -375,14 +370,24 @@ export class UserStatsService {
 			if (stored) {
 				const parsed = JSON.parse(stored);
 
-				// Helper to rehydrate Maps from array of entries
-				const hydrateMap = <K, V>(data: any): Map<K, V> => {
+				const hydrateMap = <K, V>(data: unknown): Map<K, V> => {
 					if (!data) return new Map<K, V>();
 					if (Array.isArray(data)) return new Map<K, V>(data);
-					// Handle cases where might be stored as plain object (legacy/fallback)
-					if (typeof data === 'object') return new Map<K, V>(Object.entries(data) as any);
+					if (typeof data === 'object') {
+						return new Map<K, V>(Object.entries(data) as [K, V][]);
+					}
 					return new Map<K, V>();
 				};
+
+				interface SerializedMastery {
+					lastPracticed: string | Date;
+					[key: string]: unknown;
+				}
+
+				interface SerializedSession {
+					date: string | Date;
+					[key: string]: unknown;
+				}
 
 				return {
 					...parsed,
@@ -391,25 +396,25 @@ export class UserStatsService {
 					missedChords: hydrateMap(parsed.missedChords),
 					practiceCalendar: hydrateMap(parsed.practiceCalendar),
 					masteredChords:
-						parsed.masteredChords?.map((m: any) => ({
+						(parsed.masteredChords as SerializedMastery[] | undefined)?.map((m) => ({
 							...m,
 							lastPracticed: new Date(m.lastPracticed)
-						})) || [],
+						})) as ChordMastery[] || [],
 					masteredScales:
-						parsed.masteredScales?.map((m: any) => ({
+						(parsed.masteredScales as SerializedMastery[] | undefined)?.map((m) => ({
 							...m,
 							lastPracticed: new Date(m.lastPracticed)
-						})) || [],
+						})) as ScaleMastery[] || [],
 					masteredProgressions:
-						parsed.masteredProgressions?.map((m: any) => ({
+						(parsed.masteredProgressions as SerializedMastery[] | undefined)?.map((m) => ({
 							...m,
 							lastPracticed: new Date(m.lastPracticed)
-						})) || [],
+						})) as ProgressionMastery[] || [],
 					recentSessions:
-						parsed.recentSessions?.map((s: any) => ({
+						(parsed.recentSessions as SerializedSession[] | undefined)?.map((s) => ({
 							...s,
 							date: new Date(s.date)
-						})) || []
+						})) as SessionSummary[] || []
 				};
 			}
 		} catch (error) {

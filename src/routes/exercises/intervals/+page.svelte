@@ -16,6 +16,7 @@
 		IntervalType,
 		NoteFullName
 	} from '$lib/types/types';
+	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { calculateInterval } from '$lib/MusicTheoryUtils';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 
@@ -92,7 +93,14 @@
 				`Interval ${INTERVAL_NAMES[intervalType]} from ${currentRoot}${octave} to ${expectedMidi}:`,
 				`Root MIDI: ${rootMidi}, Expected MIDI: ${expectedMidi}`
 			);
+
 			// Always return both notes for validation
+			// Ensure both notes are distinct in the array even if they're the same MIDI number (unison)
+			// This helps the keyboard display show the note properly
+			if (rootMidi === expectedMidi) {
+				// For unison, return the same note but ensure it's in the array
+				return [rootMidi];
+			}
 			return [rootMidi, expectedMidi];
 		} catch (error) {
 			console.error('Error generating expected note:', error);
@@ -139,24 +147,19 @@
 	function validateIntervalNote(
 		_selectedNote: Note,
 		event: NoteEvent,
-		expectedNotes: MidiNote[],
-		currentNotes: MidiNote[]
-	): {
-		isCorrect: boolean;
-		message: string;
-		collected: boolean;
-		resetCollected: boolean;
-		resetMistakes?: boolean;
-	} {
-		const [rootMidi, intervalMidi] = expectedNotes;
+		expectedNotes: ReadonlyArray<MidiNote>,
+		currentNotes: ReadonlyArray<MidiNote>
+	): ValidationResult {
 		const intervalName = INTERVAL_NAMES[intervalType];
+		const isUnison = expectedNotes.length === 1; // Unison means both notes are the same
+		const requiredNotesCount = isUnison ? 1 : 2;
 
 		if (expectedNotes.includes(event.noteNumber)) {
 			// Add the played note to our collection
 			playedNotes = new Set([...playedNotes, event.noteNumber]);
 
-			// Check if we have both notes
-			if (playedNotes.size === 2) {
+			// Check if we have all required notes
+			if (playedNotes.size === requiredNotesCount) {
 				// Auto-advance
 				setTimeout(() => {
 					generateNewChallenge();
@@ -166,16 +169,17 @@
 					isCorrect: true,
 					message: `Perfect ${intervalName}! 🎵✨`,
 					collected: true,
-					resetCollected: true,
-					resetMistakes: true
+					resetCollected: true
 				};
 			} else {
 				// Determine which note was played
+				const [rootMidi, intervalMidi] =
+					expectedNotes.length === 2 ? expectedNotes : [expectedNotes[0], expectedNotes[0]];
 				const isRoot = event.noteNumber === rootMidi;
 				const noteName = isRoot ? 'root' : intervalName;
 				return {
 					isCorrect: true,
-					message: `Good! ${noteName} played (${playedNotes.size}/2)`,
+					message: `Good! ${noteName} played (${playedNotes.size}/${requiredNotesCount})`,
 					collected: true,
 					resetCollected: false
 				};
@@ -192,7 +196,10 @@
 		}
 	}
 
-	function isIntervalCompleted(currentNotes: MidiNote[], expectedNotes: MidiNote[]): boolean {
+	function isIntervalCompleted(
+		currentNotes: ReadonlyArray<MidiNote>,
+		expectedNotes: ReadonlyArray<MidiNote>
+	): boolean {
 		// Continuous practice
 		return false;
 	}
@@ -227,7 +234,7 @@
 	showTempoControl={false}
 	showTrainingControl={false}
 >
-	{#snippet children(api: any)}
+	{#snippet children(api: import('$lib/types/exercise-api').ExerciseAPI)}
 		{@const wasCompleted = exerciseCompleted}
 		{@const isNowCompleted = api.completed}
 		{#if isNowCompleted && !wasCompleted}
