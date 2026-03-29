@@ -1,0 +1,16 @@
+{
+  "id": "level1-shells-scale",
+  "title": "Shell Voicings + Major Scale",
+  "level": 1,
+  "description": "Left hand plays root and 7th shell voicings on beats 1 and 3. Right hand plays the major scale ascending.",
+  "lhPattern": [
+    { "beat": 1.0, "semitones": [0, 10] },
+    { "beat": 3.0, "semitones": [0, 10] }
+  ],
+  "rhPattern": [0, 2, 4, 5, 7, 9, 11, 12],
+  "rootMidi": 48,
+  "rhStartMidi": 60,
+  "suggestedBpm": 80,
+  "measures": 2,
+  "instructions": "LH: Play root (C2) + minor 7th (Bb3) on beats 1 & 3. RH: Play C major scale ascending, one note at a time."
+}

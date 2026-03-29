@@ -182,6 +182,7 @@
 			<button onclick={() => (showConfigPopup = true)} class="config-btn"> ⚙️ Config </button>
 			<button onclick={generateNewCard} class="new-btn"> 🎲 New Card </button>
 		</div>
+		<p class="exercise-instructions">Play the requested note, chord, scale, or interval on your MIDI keyboard — cards advance automatically on success.</p>
 	</div>
 
 	<ConfigPopup
@@ -285,23 +286,33 @@
 
 	.header {
 		display: flex;
+		flex-wrap: wrap;
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 1rem;
-		background: #f8f9fa;
+		background: var(--color-surface);
 		padding: 1rem;
 		border-radius: 8px;
+		border: 1px solid var(--color-border);
 	}
 
 	.progress {
 		font-size: 1.2rem;
 		font-weight: bold;
-		color: #2c3e50;
+		color: var(--color-text);
 	}
 
 	.controls {
 		display: flex;
 		gap: 0.5rem;
+	}
+
+	.exercise-instructions {
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
+		text-align: center;
+		margin: 0.5rem 0 0;
+		width: 100%;
 	}
 
 	.config-btn,
@@ -315,17 +326,17 @@
 	}
 
 	.config-btn {
-		background: #e9ecef;
-		color: #495057;
+		background: var(--color-surface-raised);
+		color: var(--color-text);
 	}
 
 	.new-btn {
 		background: #4caf50;
-		color: white;
+		color: var(--color-text);
 	}
 
 	.config-btn:hover {
-		background: #dee2e6;
+		background: var(--color-border);
 	}
 
 	.new-btn:hover {
@@ -346,6 +357,6 @@
 	.loading {
 		text-align: center;
 		padding: 4rem;
-		color: #666;
+		color: var(--color-text-muted);
 	}
 </style>

@@ -20,8 +20,8 @@ export interface ScoreProps {
 	selectedNote: Note;
 }
 
-export type ExerciseType = 'chord' | 'scale' | 'II-V-I' | 'note' | 'interval' | 'partition' | 'progression' | 'rhythm';
-export const allExerciseType: ExerciseType[] = ['chord', 'scale', 'II-V-I', 'note', 'interval', 'partition', 'progression', 'rhythm'];
+export type ExerciseType = 'chord' | 'scale' | 'II-V-I' | 'note' | 'interval' | 'partition' | 'progression' | 'rhythm' | 'hand_independence' | 'dexterity';
+export const allExerciseType: ExerciseType[] = ['chord', 'scale', 'II-V-I', 'note', 'interval', 'partition', 'progression', 'rhythm', 'dexterity'];
 export interface KeyboardProps {
 	midiNotes: MidiNote[];
 	middleC: number;
@@ -44,7 +44,7 @@ export interface ExerciseStatistics {
 
 export interface ExerciseResult {
 	exerciseId: string;
-	exerciseType: 'chord' | 'scale' | 'progression' | 'partition' | 'rhythm';
+	exerciseType: 'chord' | 'scale' | 'progression' | 'partition' | 'rhythm' | 'hand_independence' | 'dexterity';
 	success: boolean;
 	accuracy: number;
 	timeElapsed: number;

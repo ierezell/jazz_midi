@@ -4,11 +4,13 @@ test.describe('Progression Flow', () => {
     test('should update profile, journey and recommendations after practice progress', async ({ page }) => {
         await page.goto('/login');
         await page.evaluate(async () => {
-            const { userStatsService } = await import('/src/lib/UserStatsService.ts');
+            const path = '/src/lib/UserStatsService.ts';
+            const { userStatsService } = await import(/* @vite-ignore */ path);
             userStatsService.createProfile('E2E Jazz Student');
         });
         await page.evaluate(async () => {
-            const { userStatsService } = await import('/src/lib/UserStatsService.ts');
+            const path = '/src/lib/UserStatsService.ts';
+            const { userStatsService } = await import(/* @vite-ignore */ path);
 
             userStatsService.recordExerciseResult({
                 exerciseId: '/exercises/scales',

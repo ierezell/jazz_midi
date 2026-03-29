@@ -3,10 +3,10 @@
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { AllNotes, MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
+	import { page } from '$app/state';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 
-	const description =
-		'Improve your finger dexterity and speed! Play the sequence of notes shown in time with the metronome.';
+	type DexMode = 'random' | 'chromatic' | 'five-finger' | 'thirds';
 
 	interface Props {
 		randomMode: boolean;
@@ -14,73 +14,127 @@
 		rootKey?: Note;
 	}
 
-	let { randomMode, onComplete, rootKey: propKey }: Props = $props();
+	let { randomMode: _randomMode, onComplete, rootKey: propKey }: Props = $props();
 
-	let currentSequence: NoteFullName[] = $state([]);
-	let hand: 'left' | 'right' = $state('right');
-	let playedCount = $state(0);
-
-	// Filter for natural notes (C Major) for dexterity focus
 	const naturalNotes = AllNotes.filter((n) => !n.includes('#') && !n.includes('b'));
 
-	function generateNewSequence() {
-		const sequenceLength = 16; // Longer sequence for dexterity
-		const newSequence: NoteFullName[] = [];
+	let hand = $state<'left' | 'right'>('right');
+	let currentSequence: NoteFullName[] = $state([]);
+	let playedCount = $state(0);
 
-		hand = Math.random() < 0.5 ? 'left' : 'right';
+	const modeLabel: Record<DexMode, string> = {
+		random: 'Random Walk',
+		chromatic: 'Chromatic Scale',
+		'five-finger': '5-Finger (Hanon)',
+		thirds: 'Thirds'
+	};
 
-		const minOctave = hand === 'left' ? 2 : 4;
-		const maxOctave = hand === 'left' ? 3 : 5;
+	const urlMode = page.url.searchParams.get('mode') as DexMode | null;
+	let mode = $state<DexMode>(urlMode && urlMode in modeLabel ? urlMode : 'five-finger');
 
-		// Generate a random "run" or pattern
-		// Let's do a random walk to avoid large jumps
-		let currentNoteIndex = Math.floor(Math.random() * naturalNotes.length);
-		let currentOctave = minOctave;
+	const modeHint: Record<DexMode, string> = {
+		random: 'Play each note shown in order. Stay relaxed!',
+		chromatic: 'Play every semitone from C up to B and back down.',
+		'five-finger':
+			'Classic Hanon warm-up: C-D-E-F-G-F-E-D-C. Lift each finger cleanly.',
+		thirds: 'Skip-step pattern: C-E-D-F-E-G... great for interval control.'
+	};
 
-		for (let i = 0; i < sequenceLength; i++) {
-			// Random step: -1, 0, +1
-			const step = Math.floor(Math.random() * 3) - 1;
-			let nextIndex = currentNoteIndex + step;
+	function generateSequence(m: DexMode, h: 'left' | 'right'): NoteFullName[] {
+		const octave = h === 'left' ? 3 : 4;
 
-			// Wrap around or bounce? Bounce.
-			if (nextIndex < 0) nextIndex = 1;
-			if (nextIndex >= naturalNotes.length) nextIndex = naturalNotes.length - 2;
-
-			currentNoteIndex = nextIndex;
-
-			// Handle octave changes?
-			// For simplicity, keep octave mostly constant or random within range
-			// Let's just pick random octave within range for now, but maybe keep it close?
-			// Actually, let's just pick random note from naturalNotes + random octave
-			// But to make it "dexterity", maybe runs are better.
-
-			// Let's stick to random notes for now, but restricted to natural keys.
-			const note = naturalNotes[Math.floor(Math.random() * naturalNotes.length)];
-			const octave = Math.floor(Math.random() * (maxOctave - minOctave + 1)) + minOctave;
-			newSequence.push(`${note}${octave}` as NoteFullName);
+		if (m === 'five-finger') {
+			// Hanon 1: C D E F G - F E D C, then shift up to D E F G A - G F E D, etc.
+			const startNotes: Note[] = ['C', 'D', 'E', 'F', 'G', 'A'];
+			const seq: NoteFullName[] = [];
+			for (const root of startNotes) {
+				const rootIdx = naturalNotes.indexOf(root);
+				if (rootIdx < 0) continue;
+				// Up: root, +1, +2, +3, +4
+				for (let i = 0; i <= 4; i++) {
+					const ni = (rootIdx + i) % naturalNotes.length;
+					const oct = rootIdx + i >= naturalNotes.length ? octave + 1 : octave;
+					seq.push(`${naturalNotes[ni]}${oct}` as NoteFullName);
+				}
+				// Down: +3, +2, +1, root
+				for (let i = 3; i >= 0; i--) {
+					const ni = (rootIdx + i) % naturalNotes.length;
+					const oct = rootIdx + i >= naturalNotes.length ? octave + 1 : octave;
+					seq.push(`${naturalNotes[ni]}${oct}` as NoteFullName);
+				}
+			}
+			return seq;
 		}
-		currentSequence = newSequence;
+
+		if (m === 'chromatic') {
+			// All 12 semitones C4–B4 ascending then descending
+			const allChromaticUp: NoteFullName[] = [];
+			const allChromaticDown: NoteFullName[] = [];
+			const chromaticBase = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+			for (const n of chromaticBase) {
+				allChromaticUp.push(`${n}${octave}` as NoteFullName);
+			}
+			for (const n of [...chromaticBase].reverse()) {
+				allChromaticDown.push(`${n}${octave}` as NoteFullName);
+			}
+			return [...allChromaticUp, ...allChromaticDown];
+		}
+
+		if (m === 'thirds') {
+			// C-E, D-F, E-G, F-A, G-B, A-C (skip-step ascending, then descend)
+			const seq: NoteFullName[] = [];
+			const len = naturalNotes.length;
+			// Ascending: play each note, then the note a third up
+			for (let i = 0; i < len; i++) {
+				seq.push(`${naturalNotes[i]}${octave}` as NoteFullName);
+				const thirdIdx = (i + 2) % len;
+				const thirdOct = i + 2 >= len ? octave + 1 : octave;
+				seq.push(`${naturalNotes[thirdIdx]}${thirdOct}` as NoteFullName);
+			}
+			// Descending
+			for (let i = len - 1; i >= 0; i--) {
+				const thirdIdx = (i + 2) % len;
+				const thirdOct = i + 2 >= len ? octave + 1 : octave;
+				seq.push(`${naturalNotes[thirdIdx]}${thirdOct}` as NoteFullName);
+				seq.push(`${naturalNotes[i]}${octave}` as NoteFullName);
+			}
+			return seq;
+		}
+
+		// random: random walk through natural notes
+		const seq: NoteFullName[] = [];
+		let idx = 0;
+		for (let i = 0; i < 16; i++) {
+			const step = Math.floor(Math.random() * 3) - 1;
+			idx = Math.max(0, Math.min(naturalNotes.length - 1, idx + step));
+			seq.push(`${naturalNotes[idx]}${octave}` as NoteFullName);
+		}
+		return seq;
+	}
+
+	function resetSequence() {
+		currentSequence = generateSequence(mode, hand);
 		playedCount = 0;
 	}
 
-	// Initialize first sequence
-	onMount(() => {
-		generateNewSequence();
+	$effect(() => {
+		mode;
+		hand;
+		resetSequence();
 	});
 
-	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
-		// Return the NEXT expected note in the sequence
+	onMount(resetSequence);
+
+	function generateExpectedNotes(_selectedNote: Note): MidiNote[] {
 		if (playedCount < currentSequence.length) {
 			const note = currentSequence[playedCount];
-			if (note && NoteToMidi[note]) {
-				return [NoteToMidi[note]];
-			}
+			if (note && NoteToMidi[note]) return [NoteToMidi[note]];
 		}
 		return [];
 	}
 
 	function validateNoteEvent(
-		selectedNote: Note,
+		_selectedNote: Note,
 		event: NoteEvent,
 		expectedNotes: ReadonlyArray<MidiNote>
 	): ValidationResult {
@@ -89,82 +143,115 @@
 		if (event.noteNumber === expectedMidi) {
 			playedCount++;
 			const remaining = currentSequence.length - playedCount;
-
 			if (remaining === 0) {
 				return {
 					isCorrect: true,
-					message: `Perfect! All ${currentSequence.length} notes completed! 🎵✨`,
+					message: `All ${currentSequence.length} notes — well done!`,
 					collected: true,
 					resetCollected: true
 				};
-			} else {
-				return {
-					isCorrect: true,
-					message: `Good! ${playedCount}/${currentSequence.length}`,
-					collected: true,
-					resetCollected: false
-				};
 			}
-		} else {
-			const playedNote = MidiToNote[event.noteNumber];
-			const expectedNoteName = currentSequence[playedCount];
 			return {
-				isCorrect: false,
-				message: `Wrong note! You played ${playedNote}, expected ${expectedNoteName}`,
-				collected: false,
+				isCorrect: true,
+				message: `${playedCount}/${currentSequence.length}`,
+				collected: true,
 				resetCollected: false
 			};
 		}
-	}
 
-	function generateScoreProps(selectedNote: Note): ScoreProps {
-		// Limit to first 8 notes to avoid VexFlow "too many ticks" error
-		// VexFlow can't handle more than ~8 notes on a single staff gracefully
-		const maxNotesToDisplay = 8;
-		const displaySequence = currentSequence.slice(0, maxNotesToDisplay);
-		const formattedSequence = displaySequence.map((note) => [note]);
-
+		const playedName = MidiToNote[event.noteNumber];
+		const expectedName = currentSequence[playedCount];
 		return {
-			selectedNote,
-			leftHand: hand === 'left' ? formattedSequence : [],
-			rightHand: hand === 'right' ? formattedSequence : []
+			isCorrect: false,
+			message: `Expected ${expectedName}, got ${playedName}`,
+			collected: false,
+			resetCollected: false
 		};
 	}
 
-	function isCompleted(
-		currentNotes: ReadonlyArray<MidiNote>,
-		expectedNotes: ReadonlyArray<MidiNote>
-	): boolean {
-		return playedCount === currentSequence.length;
+	function generateScoreProps(_selectedNote: Note): ScoreProps {
+		const maxDisplay = 8;
+		const display = currentSequence.slice(playedCount, playedCount + maxDisplay).map((n) => [n]);
+		return {
+			selectedNote: 'C' as Note,
+			leftHand: hand === 'left' ? display : [],
+			rightHand: hand === 'right' ? display : []
+		};
 	}
 
-	function handleParentReset(): void {
-		generateNewSequence();
+	function isCompleted(): boolean {
+		return playedCount === currentSequence.length;
 	}
 </script>
 
 <BaseExercise
-	randomMode={true}
+	randomMode={false}
 	{generateExpectedNotes}
 	{generateScoreProps}
 	{validateNoteEvent}
 	{isCompleted}
-	onReset={handleParentReset}
+	onReset={resetSequence}
 	onComplete={onComplete ?? (() => {})}
 	initialNote={propKey || 'C'}
-	{description}
-	exerciseType="partition"
+	description="Build finger speed and accuracy with structured technical exercises."
+	exerciseType="dexterity"
+	showTempoControl={true}
+	timingModeLabel="Play with metronome"
+	defaultBpm={80}
 >
-	{#snippet children(api: import('$lib/types/exercise-api').ExerciseAPI)}
+	{#snippet children(_api: import('$lib/types/exercise-api').ExerciseAPI)}
 		<div class="dexterity-content">
-			<h2>Dexterity Builder</h2>
-			<p class="note-count">
-				{hand === 'left' ? 'Left Hand' : 'Right Hand'} - {currentSequence.length} notes
-			</p>
-			<p class="progress-text">
-				{playedCount}/{currentSequence.length}
-			</p>
-			<p class="hint">Try to play evenly with the metronome!</p>
+			<!-- Mode selector -->
+			<div class="mode-selector card-premium">
+				<span class="section-label">Mode</span>
+				<div class="mode-tabs" role="group" aria-label="Dexterity mode">
+					{#each (Object.keys(modeLabel) as DexMode[]) as m}
+						<button
+							class="mode-tab"
+							class:active={mode === m}
+							onclick={() => (mode = m)}
+						>
+							{modeLabel[m]}
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Hand selector + stats -->
+			<div class="dex-controls card-premium">
+				<div class="hand-toggle" role="group" aria-label="Hand selection">
+					<button
+						class="hand-btn"
+						class:active={hand === 'left'}
+						onclick={() => (hand = 'left')}
+					>Left Hand</button>
+					<button
+						class="hand-btn"
+						class:active={hand === 'right'}
+						onclick={() => (hand = 'right')}
+					>Right Hand</button>
+				</div>
+				<div class="progress-display">
+					<span class="progress-num">{playedCount}</span>
+					<span class="progress-sep">/</span>
+					<span class="progress-total">{currentSequence.length}</span>
+				</div>
+			</div>
+
+			<!-- Next notes preview (up to 8) -->
+			<div class="next-notes card-premium">
+				<span class="section-label">Upcoming</span>
+				<div class="note-row">
+					{#each currentSequence.slice(playedCount, playedCount + 8) as note, i}
+						<span class="note-chip" class:next={i === 0}>{note}</span>
+					{/each}
+					{#if playedCount === currentSequence.length}
+						<span class="done-chip">Complete!</span>
+					{/if}
+				</div>
+			</div>
+
+			<p class="hint">{modeHint[mode]}</p>
 		</div>
 	{/snippet}
 </BaseExercise>
@@ -173,33 +260,169 @@
 	.dexterity-content {
 		display: flex;
 		flex-direction: column;
+		gap: 1.25rem;
+		max-width: 860px;
+		margin: 0 auto;
+	}
+
+	/* ── Mode selector ───────────────────────── */
+	.mode-selector {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
+		padding: 1rem 1.5rem;
+		flex-wrap: wrap;
+	}
+
+	.section-label {
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-text-muted);
+		white-space: nowrap;
+	}
+
+	.mode-tabs {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
+
+	.mode-tab {
+		padding: 0.35rem 0.85rem;
+		border-radius: 6px;
+		border: 1px solid var(--color-border);
+		background: var(--color-surface-raised);
+		color: var(--color-text-muted);
+		font-size: 0.8rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.mode-tab:hover {
+		border-color: var(--color-primary);
+		color: var(--color-text);
+	}
+
+	.mode-tab.active {
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: #000;
+	}
+
+	/* ── Dex controls row ───────────────────── */
+	.dex-controls {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.875rem 1.5rem;
+		gap: 1rem;
+	}
+
+	.hand-toggle {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.hand-btn {
+		padding: 0.35rem 0.9rem;
+		border-radius: 6px;
+		border: 1px solid var(--color-border);
+		background: transparent;
+		color: var(--color-text-muted);
+		font-size: 0.82rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.hand-btn:hover {
+		border-color: var(--color-primary);
+		color: var(--color-text);
+	}
+
+	.hand-btn.active {
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: #000;
+	}
+
+	.progress-display {
+		display: flex;
+		align-items: baseline;
+		gap: 0.2rem;
+		font-family: monospace;
+	}
+
+	.progress-num {
+		font-size: 1.8rem;
+		font-weight: 800;
+		color: var(--color-primary);
+		line-height: 1;
+	}
+
+	.progress-sep {
+		font-size: 1.2rem;
+		color: var(--color-text-muted);
+	}
+
+	.progress-total {
+		font-size: 1.1rem;
+		color: var(--color-text-muted);
+	}
+
+	/* ── Next notes preview ─────────────────── */
+	.next-notes {
+		display: flex;
 		align-items: center;
 		gap: 1rem;
-		margin-bottom: 1rem;
+		padding: 1rem 1.5rem;
+		flex-wrap: wrap;
 	}
 
-	.dexterity-content h2 {
-		color: var(--color-theme-1, #e67e22);
-		margin: 0;
-		font-size: 1.5rem;
+	.note-row {
+		display: flex;
+		gap: 0.4rem;
+		flex-wrap: wrap;
 	}
 
-	.note-count {
-		font-size: 1.1rem;
-		color: var(--color-text-secondary, #666);
-		margin: 0;
-		font-weight: 500;
+	.note-chip {
+		padding: 0.2rem 0.55rem;
+		border-radius: 6px;
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
+		font-family: monospace;
+		font-size: 0.8rem;
+		color: var(--color-text-muted);
+		transition: all 0.15s ease;
 	}
 
-	.progress-text {
-		font-size: 1.2rem;
-		font-weight: bold;
-		color: var(--color-primary, #3498db);
-		margin: 0;
+	.note-chip.next {
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: #000;
+		font-weight: 700;
+		font-size: 0.9rem;
+		transform: scale(1.1);
+	}
+
+	.done-chip {
+		padding: 0.2rem 0.75rem;
+		border-radius: 6px;
+		background: color-mix(in srgb, var(--color-success) 15%, transparent);
+		border: 1px solid var(--color-success);
+		color: var(--color-success);
+		font-size: 0.85rem;
+		font-weight: 600;
 	}
 
 	.hint {
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
 		font-style: italic;
-		opacity: 0.8;
+		text-align: center;
+		margin: 0;
 	}
 </style>

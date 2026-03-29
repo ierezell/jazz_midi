@@ -128,7 +128,6 @@
 
 		// Only proceed if we have notes to render
 		if ((!rightHand || rightHand.length === 0) && (!leftHand || leftHand.length === 0)) {
-			console.debug('No notes to render, rendering test chord');
 			// Render a test C major chord for debugging (use octave 3 as default)
 			const testRightHand = `${toVexflow('C3')}, ${toVexflow('E3')}, ${toVexflow('G3')}`;
 			try {
@@ -150,8 +149,6 @@
 			return;
 		}
 
-		console.debug('Rendering score with notes:', { stringLeftHand, stringRightHand });
-		console.debug('Selected note for key signature:', selectedNote);
 
 		try {
 			if (rightHand && rightHand.length > 0 && stringRightHand) {
@@ -198,7 +195,6 @@
 		if (!isVexFlowLoaded) return;
 
 		// This effect will re-run whenever leftHand, rightHand, or selectedNote changes
-		console.debug('Score $effect triggered with props:', { leftHand, rightHand, selectedNote });
 		// Add a small delay to ensure DOM is ready
 		setTimeout(() => {
 			const container = document.getElementById('score-container');
@@ -216,7 +212,6 @@
 			const container = document.getElementById('score-container');
 			if (container) {
 				const width = container.getBoundingClientRect().width;
-				console.debug(`Container width: ${width}`);
 				if (width > 0) {
 					renderScore(width);
 				}

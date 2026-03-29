@@ -5,11 +5,19 @@
 	import { fade, fly } from 'svelte/transition';
 	import { ArrowRight, CheckCircle, Star } from 'lucide-svelte';
 	import { resolve } from '$app/paths';
+	import type { RouteId } from '$app/types';
 	import { goto } from '$app/navigation';
 
 	let profile = $state(userStatsService.getProfile());
+	let stats = $state(userStatsService.getStatistics());
 	let units = $state(journeyService.getUnits());
-	let activeUnit = $derived(units.find((u) => u.status === 'active') || units[0]);
+	// Prefer the first 'active' unit; fall back to the last non-locked unit so that
+	// a fully-completed journey doesn't silently revert to level 0.
+	let activeUnit = $derived(
+		units.find((u) => u.status === 'active') ??
+			[...units].reverse().find((u) => u.status !== 'locked') ??
+			units[0]
+	);
 
 	onMount(() => {
 		// Redirect to login if using default profile
@@ -20,6 +28,7 @@
 
 		const unsubscribe = userStatsService.subscribe(() => {
 			profile = userStatsService.getProfile();
+			stats = userStatsService.getStatistics();
 			units = journeyService.getUnits();
 		});
 		return unsubscribe;
@@ -35,7 +44,14 @@
 		const url = journeyService.getLessonUrl(unit, lesson);
 		// Split the path and query params
 		const [path, query] = url.split('?');
-		return query ? `${resolve(path as any)}?${query}` : resolve(path as any);
+		return query ? `${resolve(path as unknown as RouteId)}?${query}` : resolve(path as unknown as RouteId);
+	}
+
+	function startDailyPractice(): void {
+		// Pick a random lesson at click-time from the active unit only.
+		const practice = journeyService.getPracticeLesson(activeUnit.id);
+		const lesson = practice?.lesson ?? activeUnit.lessons[0];
+		goto(getLessonUrl(activeUnit, lesson));
 	}
 </script>
 
@@ -49,7 +65,39 @@
 		<p class="subtitle">Ready to continue your jazz journey?</p>
 	</section>
 
+	<div class="stats-bar">
+		<div class="stat-pill">
+			<span class="stat-num">{profile.level}</span>
+			<span class="stat-lbl">Level</span>
+		</div>
+		<div class="stat-pill">
+			<span class="stat-num">{profile.experiencePoints}</span>
+			<span class="stat-lbl">XP</span>
+		</div>
+		<div class="stat-pill highlight">
+			<span class="stat-num">{stats?.currentStreak ?? 0}</span>
+			<span class="stat-lbl">🔥 Day Streak</span>
+		</div>
+		<div class="stat-pill">
+			<span class="stat-num">{Math.round(stats?.averageAccuracy ?? 0)}%</span>
+			<span class="stat-lbl">Accuracy</span>
+		</div>
+	</div>
+
 	<section class="dashboard-grid" in:fade>
+		{#if profile.experiencePoints === 0}
+			<div class="dashboard-card getting-started-card">
+				<div class="gs-content">
+					<h2>Welcome! Here's where to begin 🎹</h2>
+					<p>New to the app? Start with the <strong>Rhythm</strong> exercise to learn beat timing, then explore <strong>Scales</strong> and <strong>Chords</strong>.</p>
+					<div class="gs-buttons">
+						<a href={resolve('/exercises/rhythm')} class="action-btn primary">Start Rhythm Exercise →</a>
+						<a href={resolve('/journey')} class="action-btn secondary">View Full Journey</a>
+					</div>
+				</div>
+			</div>
+		{/if}
+
 		<div class="dashboard-card daily">
 			<div class="card-header">
 				<h2>Daily Practice</h2>
@@ -58,13 +106,7 @@
 			<p>Keep your streak alive! Practice a lesson from your current unit.</p>
 			<button
 				class="action-btn"
-				onclick={() =>
-					goto(
-						getLessonUrl(
-							activeUnit,
-							journeyService.getPracticeLesson(activeUnit.id)?.lesson || activeUnit.lessons[0]
-						)
-					)}
+				onclick={startDailyPractice}
 			>
 				Start Daily Practice <ArrowRight size={16} />
 			</button>
@@ -79,7 +121,7 @@
 				<p>Focus on what needs improvement based on your history.</p>
 				<div class="recommendations-list">
 					{#each userStatsService.getWeaknessRecommendations().slice(0, 2) as rec}
-						<a href={resolve(rec.path as any)} class="recommendation-link">
+						<a href={resolve(rec.path as unknown as RouteId)} class="recommendation-link">
 							<span>{rec.recommendedExercise}</span>
 							<ArrowRight size={14} />
 						</a>
@@ -380,6 +422,34 @@
 		border-left: 4px solid #fca5a5;
 	}
 
+	.dashboard-card.getting-started-card {
+		background: var(--color-surface-raised);
+		border-left: 4px solid var(--color-primary);
+		grid-column: 1 / -1;
+	}
+
+	.gs-content h2 {
+		margin: 0 0 0.75rem 0;
+		font-size: 1.4rem;
+	}
+
+	.gs-content p {
+		margin: 0 0 1.25rem 0;
+		color: var(--color-text-muted);
+		line-height: 1.5;
+	}
+
+	.gs-buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+	}
+
+	.gs-buttons .action-btn {
+		margin-top: 0;
+		text-decoration: none;
+	}
+
 	.card-header {
 		display: flex;
 		justify-content: space-between;
@@ -436,5 +506,44 @@
 	.recommendation-link:hover {
 		border-color: var(--color-secondary);
 		background: rgba(192, 132, 252, 0.05);
+	}
+
+	.stats-bar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.stat-pill {
+		padding: 0.6rem 1.2rem;
+		border-radius: 12px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		background: var(--color-surface-raised);
+	}
+
+	.stat-pill.highlight {
+		background: var(--color-warn);
+		color: var(--color-bg);
+	}
+
+	.stat-pill.highlight .stat-num,
+	.stat-pill.highlight .stat-lbl {
+		color: var(--color-bg);
+	}
+
+	.stat-num {
+		font-size: 1.4rem;
+		font-weight: 700;
+		line-height: 1;
+		color: var(--color-text);
+	}
+
+	.stat-lbl {
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
+		margin-top: 2px;
 	}
 </style>

@@ -216,7 +216,7 @@
 		position: fixed;
 		top: 10px;
 		right: 10px;
-		width: 320px;
+		width: min(320px, calc(100vw - 2rem));
 		background: rgba(0, 0, 0, 0.9);
 		color: white;
 		border-radius: 8px;

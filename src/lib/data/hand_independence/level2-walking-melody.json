@@ -1,0 +1,13 @@
+{
+  "id": "level2-walking-melody",
+  "title": "Walking Bass + Pentatonic Melody",
+  "level": 2,
+  "description": "Left hand plays walking quarter note bass. Right hand plays major pentatonic melody.",
+  "lhPattern": [0, 4, 7, 11],
+  "rhPattern": [0, 2, 4, 7, 9, 12],
+  "rootMidi": 48,
+  "rhStartMidi": 60,
+  "suggestedBpm": 90,
+  "measures": 2,
+  "instructions": "LH: Play root, 3rd, 5th, 7th as quarter notes (1-2-3-4). RH: Play major pentatonic notes in sequence."
+}

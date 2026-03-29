@@ -60,9 +60,10 @@ export class JourneyService {
 				},
 				{
 					id: 'l0-dexterity',
-					title: 'Finger Dexterity',
+					title: 'Finger Dexterity: 5-Finger',
 					type: 'exercise',
 					path: '/exercises/dexterity',
+					params: { mode: 'five-finger' },
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
@@ -132,6 +133,17 @@ export class JourneyService {
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3,
 					bpm: 60
+				},
+				{
+					id: 'l1-dexterity-chromatic',
+					title: 'Dexterity: Chromatic Scale',
+					type: 'exercise',
+					path: '/exercises/dexterity',
+					params: { mode: 'chromatic' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
 				}
 			]
 		},
@@ -165,7 +177,74 @@ export class JourneyService {
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
 				},
-				// Add more G and F scale/chord exercises as needed
+				{
+					id: 'l2-shell-voicings',
+					title: 'Shell Voicings (LH Root + 7th)',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'C', quality: 'maj7', voicing: 'shell' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l2-g-scale',
+					title: 'G Major Scale (90 BPM)',
+					type: 'exercise',
+					path: '/exercises/scales',
+					params: { root: 'G', mode: 'Maj', bpm: '90' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3,
+					bpm: 90
+				},
+				{
+					id: 'l2-f-scale',
+					title: 'F Major Scale (90 BPM)',
+					type: 'exercise',
+					path: '/exercises/scales',
+					params: { root: 'F', mode: 'Maj', bpm: '90' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3,
+					bpm: 90
+				},
+				{
+					id: 'l2-g-chords',
+					title: 'G Major Chords',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'G', quality: 'maj7' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l2-dexterity-thirds',
+					title: 'Dexterity: Thirds',
+					type: 'exercise',
+					path: '/exercises/dexterity',
+					params: { mode: 'thirds' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l2-rhythm-basic',
+					title: 'Basic Rhythm: Pop Groove',
+					type: 'exercise',
+					path: '/exercises/rhythm',
+					params: { patternId: 'pop' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 2
+				}
 			]
 		},
 		{
@@ -175,6 +254,16 @@ export class JourneyService {
 			status: 'locked',
 			color: 'bg-orange-500',
 			lessons: [
+				{
+					id: 'l3-sight-reading',
+					title: 'Sight Reading Basics',
+					type: 'exercise',
+					path: '/exercises/partition',
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
 				{
 					id: 'l3-c-scale-fast',
 					title: 'C Major Scale (120 BPM)',
@@ -193,6 +282,72 @@ export class JourneyService {
 					type: 'exercise',
 					path: '/exercises/chords',
 					params: { voicing: '1735' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l3-guide-tones',
+					title: 'Guide Tones (3rd + 7th)',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'C', quality: 'maj7', voicing: 'guide-tones' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l3-blues-shuffle-rhythm',
+					title: 'Blues Shuffle Rhythm',
+					type: 'exercise',
+					path: '/exercises/rhythm',
+					params: { patternId: 'blues-shuffle' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l3-f-chords',
+					title: 'F Major Chords',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'F', quality: 'maj7' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l3-minor-chords',
+					title: 'Minor 7th Chords',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'C', quality: 'min7' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l3-blues-lick',
+					title: 'Blues Walking Bass Lick',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'blues-walking-bass' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l3-pentatonic-blues-riff',
+					title: 'Pentatonic Blues Riff',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'pentatonic-blues-riff' },
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
@@ -217,6 +372,94 @@ export class JourneyService {
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'hand-independence-1',
+					title: 'Hand Independence: Shells + Scale',
+					type: 'exercise',
+					path: '/exercises/hand_independence',
+					params: { level: '1' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l4-stride-lick',
+					title: 'Stride Left Hand Lick',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'stride-left-hand' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l4-jazz-charleston',
+					title: 'Jazz Charleston Rhythm',
+					type: 'exercise',
+					path: '/exercises/rhythm',
+					params: { patternId: 'jazz-charleston' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l4-bebop-lick',
+					title: 'Bebop Scale Run',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'bebop-scale-run' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l4-jazz-turnaround-lh',
+					title: 'Jazz Turnaround Left Hand',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'jazz-turnaround-lh' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l4-gospel-chord-run',
+					title: 'Gospel Chord Run',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'gospel-chord-run' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l4-dorian-mode-run',
+					title: 'Dorian Mode Run',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'dorian-mode-run' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l4-boogie',
+					title: 'Boogie-Woogie Pattern',
+					type: 'exercise',
+					path: '/exercises/boogie',
+					params: {},
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
 				}
 			]
 		},
@@ -228,6 +471,17 @@ export class JourneyService {
 			color: 'bg-purple-500',
 			lessons: [
 				{
+					id: 'l5-fly-me',
+					title: 'Fly Me To The Moon',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'fly_me_to_the_moon' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 1
+				},
+				{
 					id: 'l5-autumn-leaves',
 					title: 'Autumn Leaves',
 					type: 'exercise',
@@ -237,6 +491,213 @@ export class JourneyService {
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 1
+				},
+				{
+					id: 'l5-blue-bossa',
+					title: 'Blue Bossa',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'blue_bossa' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l5-summertime',
+					title: 'Summertime',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'summertime' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l5-all-the-things',
+					title: 'All The Things You Are',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'all_the_things_you_are' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l5-bebop-enclosure',
+					title: 'Bebop Enclosure Lick',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'bebop-enclosure' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 5
+				},
+				{
+					id: 'l5-swing-eighth-riff',
+					title: 'Swing Eighth Riff',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'swing-eighth-riff' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l5-funky-bass-line',
+					title: 'Funky Bass Line',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'funky-bass-line' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'hand-independence-3',
+					title: 'Hand Independence: Chord Melody',
+					type: 'exercise',
+					path: '/exercises/hand_independence',
+					params: { level: '3' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l5-funk-rhythm',
+					title: 'Funk Groove Rhythm',
+					type: 'exercise',
+					path: '/exercises/rhythm',
+					params: { patternId: 'funk-basic' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l5-latin-montuno',
+					title: 'Latin Montuno Rhythm',
+					type: 'exercise',
+					path: '/exercises/rhythm',
+					params: { patternId: 'latin-montuno' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				}
+			]
+		},
+		{
+			id: 'level-6',
+			title: 'Level 6: Jazz Master',
+			description: 'Advanced jazz vocabulary — complex rhythms, bebop licks, and stylistic mastery.',
+			color: '#8b5cf6',
+			status: 'locked',
+			lessons: [
+				{
+					id: 'l6-misty',
+					title: 'Misty',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'misty' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l6-so-what',
+					title: 'So What',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'so_what' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l6-herbie-funk',
+					title: 'Herbie Hancock Funk',
+					type: 'exercise',
+					path: '/exercises/rhythm',
+					params: { patternId: 'herbie-funk' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 5
+				},
+				{
+					id: 'l6-hand-independence-2',
+					title: 'Hand Independence: Walking Bass',
+					type: 'exercise',
+					path: '/exercises/hand_independence',
+					params: { level: '2' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l6-hand-independence-4',
+					title: 'Hand Independence: Stride Piano',
+					type: 'exercise',
+					path: '/exercises/hand_independence',
+					params: { level: '4' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 5
+				},
+				{
+					id: 'l6-latin-lick',
+					title: 'Latin Montuno Bass Lick',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'latin-montuno-bass' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'l6-funk-lick',
+					title: 'Funk 16th Note Bass',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'funk-sixteenth-bass' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 5
+				},
+				{
+					id: 'l6-minor-blues-head',
+					title: 'Minor Blues Head',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'minor-blues-head' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 5
+				},
+				{
+					id: 'l6-whole-tone-lick',
+					title: 'Whole Tone Lick',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'whole-tone-lick' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 5
 				}
 			]
 		}

@@ -91,13 +91,13 @@
 	h3 {
 		margin: 0 0 0.5rem 0;
 		font-size: 1.2rem;
-		color: rgba(0, 0, 0, 0.9);
+		color: var(--color-text);
 	}
 
 	.subtitle {
 		margin: 0 0 1.5rem 0;
 		font-size: 0.9rem;
-		color: rgba(0, 0, 0, 0.6);
+		color: var(--color-text-muted);
 	}
 
 	.piano-keyboard {
@@ -182,7 +182,7 @@
 
 	.no-data {
 		text-align: center;
-		color: rgba(255, 255, 255, 0.5);
+		color: var(--color-text-muted);
 		font-style: italic;
 		margin-top: 1rem;
 	}

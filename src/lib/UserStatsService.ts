@@ -163,8 +163,7 @@ export class UserStatsService {
 				if (!UserStatsService._storageResolved) {
 					UserStatsService._usingRealLocalStorage = true;
 					UserStatsService._storageResolved = true;
-					console.info('UserStatsService: using real localStorage');
-				}
+					}
 				return ls as typeof ls;
 			}
 			// If there is a localStorage-like object but missing methods, log once
@@ -180,10 +179,7 @@ export class UserStatsService {
 			if (!UserStatsService._storageResolved) {
 				UserStatsService._usingRealLocalStorage = false;
 				UserStatsService._storageResolved = true;
-				console.info(
-					'UserStatsService: accessing localStorage threw an error — using in-memory fallback'
-				);
-			}
+				}
 		}
 		// create in-memory storage if needed
 		if (!UserStatsService._memoryStorage)
@@ -193,8 +189,7 @@ export class UserStatsService {
 			UserStatsService._storageResolved = true;
 			// Only log if we're in the browser (not during SSR)
 			if (typeof window !== 'undefined') {
-				console.info('UserStatsService: no localStorage available — using in-memory fallback');
-			}
+				}
 		}
 		return {
 			getItem(key: string) {
@@ -501,7 +496,32 @@ export class UserStatsService {
 
 		stats.masteryLevel = this.calculateMasteryLevel(stats);
 	}
-	private updateMastery(result: ExerciseResult): void { }
+	private updateMastery(result: ExerciseResult): void {
+		// Update the masteryLevel of every NoteProgress entry that matches the
+		// exercise type in this result, using the entry's own accuracy/attempt data.
+		for (const [key, progress] of this.statistics.noteProgress.entries()) {
+			if (progress.exerciseType !== result.exerciseType) continue;
+
+			const accuracy = progress.averageAccuracy;
+			const attempts = progress.attempts;
+
+			let newLevel: NoteProgress['masteryLevel'];
+			if (accuracy >= 90 && attempts >= 5) {
+				newLevel = 'mastered';
+			} else if (accuracy >= 75 && attempts >= 3) {
+				newLevel = 'advanced';
+			} else if (accuracy >= 60 && attempts >= 2) {
+				newLevel = 'intermediate';
+			} else {
+				newLevel = 'beginner';
+			}
+
+			if (progress.masteryLevel !== newLevel) {
+				progress.masteryLevel = newLevel;
+				this.statistics.noteProgress.set(key, progress);
+			}
+		}
+	}
 	private updateStreak(result: ExerciseResult): void {
 		if (result.success && result.accuracy >= 80) {
 			this.statistics.currentStreak++;
@@ -609,7 +629,14 @@ export class UserStatsService {
 				return 0;
 		}
 	}
-	private checkAchievements(): void { }
+	private checkAchievements(): void {
+		// Achievements are not stored in UserStatistics — they are computed on-demand
+		// by getAchievements() which calls calculateAchievementProgress() against the
+		// current stats snapshot. Adding a persistent achievements[] field to
+		// UserStatistics would be the right place to record unlock timestamps and
+		// notify the user when a new achievement is earned (e.g., via notifyListeners).
+		// For now, no action is needed here; getAchievements() handles progress display.
+	}
 	updateNoteProgress(
 		note: Note,
 		exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm',

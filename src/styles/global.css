@@ -47,6 +47,14 @@
 	--color-level-5: #d8b4fe;
 	/* Purple 300 - Softer */
 
+	/* Wrong note highlight */
+	--color-wrong-note-start: #ff4444;
+	--color-wrong-note-end: #cc0000;
+	--color-wrong-note-border: #990000;
+
+	/* Text color on primary-colored backgrounds */
+	--color-on-primary: #000000;
+
 	/* Gradients */
 	--header-gradient: linear-gradient(135deg, #38bdf8 0%, #c084fc 100%);
 
@@ -88,6 +96,14 @@
 	/* Red 700 - Darker/Readable */
 	--color-level-5: #7e22ce;
 	/* Purple 700 - Darker/Readable */
+
+	/* Wrong note highlight */
+	--color-wrong-note-start: #ff4444;
+	--color-wrong-note-end: #cc0000;
+	--color-wrong-note-border: #990000;
+
+	/* Text color on primary-colored backgrounds */
+	--color-on-primary: #000000;
 
 	/* Gradients - High Contrast */
 	--header-gradient: linear-gradient(135deg, #0284c7 0%, #7e22ce 100%);

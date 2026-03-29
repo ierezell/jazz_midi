@@ -105,10 +105,6 @@
 		const rootNoteName = (currentTargetNote + DEFAULT_OCTAVE) as NoteFullName;
 		const rootMidi = NoteToMidi[rootNoteName];
 
-		console.debug(
-			`Note name exercise: ${currentDisplayNote} -> ${currentTargetNote}`,
-			`Expected MIDI: ${rootMidi}`
-		);
 		return [rootMidi];
 	}
 

@@ -26,6 +26,9 @@
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 	import { page } from '$app/state';
+	import { BeatValidator } from '$lib/BeatValidator.js';
+	import { rhythmPatterns } from '$lib/data/rhythmPatterns.js';
+	import BeatIndicator from '$lib/../components/BeatIndicator.svelte';
 
 	const description =
 		'Play the notes of the displayed chord on your MIDI keyboard. Try to match the voicing and inversion shown.';
@@ -78,6 +81,25 @@
 	);
 	let useOptimizedVoicing = $state(false);
 	let previousChordNotes: MidiNote[] = $state([]);
+
+	// Rhythm mode
+	let withRhythmMode = $state(false);
+	let beatValidator = $state<BeatValidator | null>(null);
+	let currentBeat = $state(0);
+	let selectedPatternId = $state(rhythmPatterns[0]?.id ?? '');
+	let selectedPattern = $derived(rhythmPatterns.find(p => p.id === selectedPatternId) ?? rhythmPatterns[0]);
+
+	function toggleRhythmMode(): void {
+		withRhythmMode = !withRhythmMode;
+		if (withRhythmMode) {
+			beatValidator = new BeatValidator();
+			beatValidator.start(selectedPattern.suggestedBpm, selectedPattern, (beat) => { currentBeat = beat; });
+		} else {
+			beatValidator?.stop();
+			beatValidator = null;
+			currentBeat = 0;
+		}
+	}
 
 	function generateNewChallenge() {
 		const randomRoot = AllNotes[Math.floor(Math.random() * AllNotes.length)];
@@ -150,6 +172,14 @@
 	): ValidationResult {
 		void selectedNote;
 		void currentNotes;
+
+		if (withRhythmMode && beatValidator && currentNotes.length === 0) {
+			const beatResult = beatValidator.validateHit(event);
+			if (!beatResult.isHit) {
+				return { isCorrect: false, message: `Off beat! (${beatResult.label})`, collected: false, resetCollected: false };
+			}
+		}
+
 		const expectedClasses = expectedNotes.map((n) => n % 12);
 		const playedClass = event.noteNumber % 12;
 
@@ -313,6 +343,26 @@
 					</label>
 				</div>
 
+				<div class="rhythm-controls">
+					<label class="rhythm-toggle">
+						<input type="checkbox" bind:checked={withRhythmMode} onchange={toggleRhythmMode} />
+						<span>With Rhythm</span>
+					</label>
+					{#if withRhythmMode}
+						<select bind:value={selectedPatternId} class="pattern-select">
+							{#each rhythmPatterns as p}
+								<option value={p.id}>{p.name} ({p.suggestedBpm} BPM)</option>
+							{/each}
+						</select>
+						<BeatIndicator
+							totalBeats={4}
+							{currentBeat}
+							hitPositions={selectedPattern.hits}
+							isActive={withRhythmMode}
+						/>
+					{/if}
+				</div>
+
 				<div class="control-group">
 					<label for="voicing">Voicing</label>
 					<select id="voicing" value={currentVoicing} onchange={handleVoicingChange}>
@@ -322,6 +372,8 @@
 						<option value="1537">1 & 5 Left / 3 & 7 Right</option>
 						<option value="rootless-a">Rootless A (3-5-7-9)</option>
 						<option value="rootless-b">Rootless B (7-9-3-5)</option>
+						<option value="shell">Shell Voicing (LH: Root + 7th)</option>
+						<option value="guide-tones">Guide Tones (3rd + 7th)</option>
 					</select>
 				</div>
 			</div>
@@ -352,6 +404,37 @@
 	.control-group label {
 		font-weight: 500;
 		color: var(--color-text-muted);
+	}
+
+	.rhythm-controls {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1rem;
+		background: var(--color-surface-raised, rgba(255, 255, 255, 0.04));
+		border: 1px solid var(--color-border);
+		border-radius: 0.5rem;
+		min-width: 160px;
+	}
+
+	.rhythm-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-weight: 500;
+		color: var(--color-text-muted);
+		cursor: pointer;
+	}
+
+	.pattern-select {
+		width: 100%;
+		padding: 0.25rem 0.5rem;
+		border: 1px solid var(--color-border);
+		border-radius: 0.375rem;
+		background: var(--color-surface);
+		color: var(--color-text);
+		font-size: 0.85rem;
 	}
 
 	@media (max-width: 768px) {

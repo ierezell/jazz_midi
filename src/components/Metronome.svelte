@@ -1,112 +1,186 @@
 <script lang="ts">
-	import { Play, Pause, Settings } from 'lucide-svelte';
+	import { Play, Pause } from 'lucide-svelte';
 
-	let {
-		onTick
-	}: { onTick?: (timestamp: number, beatNumber: number, isDownbeat: boolean) => void } = $props();
+	interface MetronomeProps {
+		initialBpm?: number;
+		onTick?: (timestamp: number, beatNumber: number, isDownbeat: boolean) => void;
+	}
+	let { initialBpm = 100, onTick }: MetronomeProps = $props();
 
-	let bpm = $state(120);
+	let bpm = $state(initialBpm);
 	let isPlaying = $state(false);
-	let intervalId: number | null = null;
-	let audioContext: AudioContext | null = null;
-	let timeSignature = $state(4); // 4/4 time by default
+	let swingEnabled = $state(false);
+	let timeSignature = $state(4);
 	let currentBeat = $state(1);
+
+	// Web Audio scheduler state
+	let audioCtx: AudioContext | null = null;
+	let schedulerTimer: ReturnType<typeof setTimeout> | null = null;
+	let nextBeatTime = 0;
+	let scheduledBeat = 1;
+
+	// Swing ratio: straight = 0.5, swing ≈ 0.667 (2:1 triplet feel)
+	const SWING_RATIO = 2 / 3;
+	const LOOKAHEAD_SEC = 0.1;
+	const SCHEDULE_INTERVAL_MS = 25;
 
 	function toggleMetronome() {
 		if (isPlaying) {
-			stop();
+			stopScheduler();
 		} else {
-			start();
+			startScheduler();
 		}
 	}
 
-	function start() {
-		if (!audioContext) {
-			audioContext = new AudioContext();
-		}
+	function startScheduler() {
+		if (!audioCtx) audioCtx = new AudioContext();
 		isPlaying = true;
+		scheduledBeat = 1;
 		currentBeat = 1;
-		const interval = (60 / bpm) * 1000;
-		playClick();
-		intervalId = window.setInterval(playClick, interval);
+		nextBeatTime = audioCtx.currentTime + 0.05;
+		schedule();
 	}
 
-	function stop() {
+	function stopScheduler() {
 		isPlaying = false;
-		if (intervalId) {
-			clearInterval(intervalId);
-			intervalId = null;
+		if (schedulerTimer !== null) {
+			clearTimeout(schedulerTimer);
+			schedulerTimer = null;
 		}
 		currentBeat = 1;
 	}
 
-	function playClick() {
-		if (!audioContext) return;
-		const osc = audioContext.createOscillator();
-		const gain = audioContext.createGain();
+	function schedule() {
+		if (!audioCtx || !isPlaying) return;
 
-		osc.connect(gain);
-		gain.connect(audioContext.destination);
+		const secPerBeat = 60 / bpm;
 
-		// First beat is higher pitch
-		const isDownbeat = currentBeat === 1;
-		osc.frequency.value = isDownbeat ? 1200 : 1000;
-		gain.gain.value = isDownbeat ? 0.7 : 0.5;
+		while (nextBeatTime < audioCtx.currentTime + LOOKAHEAD_SEC) {
+			const isDownbeat = scheduledBeat === 1;
 
-		osc.start();
-		gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.1);
-		osc.stop(audioContext.currentTime + 0.1);
+			// Quarter-note click
+			scheduleClick(nextBeatTime, isDownbeat ? 1200 : 1000, isDownbeat ? 0.7 : 0.5);
 
-		onTick?.(Date.now(), currentBeat, isDownbeat);
+			// Schedule the "and" subdivision click (swing or straight)
+			const andOffset = swingEnabled ? secPerBeat * SWING_RATIO : secPerBeat * 0.5;
+			scheduleClick(nextBeatTime + andOffset, 800, 0.25);
 
-		// Advance beat
-		currentBeat = currentBeat >= timeSignature ? 1 : currentBeat + 1;
+			// Notify on the beat
+			const beatForCallback = scheduledBeat;
+			const tsForCallback = nextBeatTime;
+			const downbeatForCallback = isDownbeat;
+			setTimeout(() => {
+				currentBeat = beatForCallback;
+				onTick?.(Math.round(tsForCallback * 1000), beatForCallback, downbeatForCallback);
+			}, Math.max(0, (tsForCallback - audioCtx!.currentTime) * 1000));
+
+			scheduledBeat = scheduledBeat >= timeSignature ? 1 : scheduledBeat + 1;
+			nextBeatTime += secPerBeat;
+		}
+
+		schedulerTimer = setTimeout(() => schedule(), SCHEDULE_INTERVAL_MS);
+	}
+
+	function scheduleClick(time: number, freq: number, gain: number) {
+		if (!audioCtx) return;
+		const osc = audioCtx.createOscillator();
+		const gainNode = audioCtx.createGain();
+		osc.connect(gainNode);
+		gainNode.connect(audioCtx.destination);
+		osc.frequency.value = freq;
+		gainNode.gain.setValueAtTime(gain, time);
+		gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+		osc.start(time);
+		osc.stop(time + 0.08);
 	}
 
 	function updateBpm(e: Event) {
-		const input = e.target as HTMLInputElement;
-		bpm = parseInt(input.value);
+		bpm = parseInt((e.target as HTMLInputElement).value);
 		if (isPlaying) {
-			stop();
-			start();
+			stopScheduler();
+			startScheduler();
+		}
+	}
+
+	function toggleSwing() {
+		swingEnabled = !swingEnabled;
+		if (isPlaying) {
+			stopScheduler();
+			startScheduler();
 		}
 	}
 </script>
 
 <div class="metronome">
 	<div class="controls">
-		<button class="toggle-btn" onclick={toggleMetronome} class:playing={isPlaying}>
+		<button
+			class="toggle-btn"
+			onclick={toggleMetronome}
+			class:playing={isPlaying}
+			aria-label={isPlaying ? 'Stop metronome' : 'Start metronome'}
+		>
 			{#if isPlaying}
 				<Pause size={20} />
 			{:else}
 				<Play size={20} />
 			{/if}
 		</button>
+
 		<div class="bpm-control">
 			<span class="bpm-display">{bpm} BPM</span>
-			<input type="range" min="40" max="240" value={bpm} oninput={updateBpm} class="bpm-slider" />
+			<input
+				type="range"
+				min="40"
+				max="240"
+				value={bpm}
+				oninput={updateBpm}
+				class="bpm-slider"
+				aria-label="BPM"
+			/>
 		</div>
+
+		<button
+			class="swing-btn"
+			class:active={swingEnabled}
+			onclick={toggleSwing}
+			aria-label={swingEnabled ? 'Disable swing' : 'Enable swing feel'}
+			title="Swing feel (2:1 eighth note ratio)"
+		>
+			<span class="swing-label">♪♩ Swing</span>
+		</button>
 	</div>
+
+	{#if isPlaying}
+		<div class="beat-dots" aria-hidden="true">
+			{#each Array(timeSignature) as _, i}
+				<span class="beat-dot" class:active={currentBeat === i + 1}></span>
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <style>
 	.metronome {
-		background: rgba(0, 0, 0, 0.2);
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
 		padding: 0.5rem 1rem;
 		border-radius: 2rem;
-		backdrop-filter: blur(5px);
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 	}
 
 	.controls {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: 0.75rem;
+		flex-wrap: wrap;
 	}
 
 	.toggle-btn {
 		background: none;
 		border: none;
-		color: white;
+		color: var(--color-text);
 		cursor: pointer;
 		padding: 0.5rem;
 		border-radius: 50%;
@@ -114,14 +188,15 @@
 		align-items: center;
 		justify-content: center;
 		transition: background 0.2s;
+		flex-shrink: 0;
 	}
 
 	.toggle-btn:hover {
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--color-border);
 	}
 
 	.toggle-btn.playing {
-		color: #4caf50;
+		color: var(--color-success, #4caf50);
 	}
 
 	.bpm-control {
@@ -134,11 +209,11 @@
 	.bpm-display {
 		font-size: 0.8rem;
 		font-weight: bold;
-		color: rgba(255, 255, 255, 0.9);
+		color: var(--color-text);
 	}
 
 	.bpm-slider {
-		width: 100px;
+		width: 90px;
 		height: 4px;
 		appearance: none;
 		background: rgba(255, 255, 255, 0.3);
@@ -153,5 +228,56 @@
 		border-radius: 50%;
 		background: white;
 		cursor: pointer;
+	}
+
+	/* Swing button */
+	.swing-btn {
+		padding: 0.3rem 0.75rem;
+		border-radius: 1rem;
+		border: 1px solid var(--color-border);
+		background: transparent;
+		color: var(--color-text-muted);
+		font-size: 0.75rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		white-space: nowrap;
+	}
+
+	.swing-btn:hover {
+		border-color: var(--color-primary);
+		color: var(--color-text);
+	}
+
+	.swing-btn.active {
+		background: var(--color-primary);
+		border-color: var(--color-primary);
+		color: #000;
+	}
+
+	.swing-label {
+		letter-spacing: 0.03em;
+	}
+
+	/* Beat dots */
+	.beat-dots {
+		display: flex;
+		justify-content: center;
+		gap: 0.4rem;
+		padding: 0 0.5rem;
+	}
+
+	.beat-dot {
+		display: block;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--color-border);
+		transition: background 0.05s ease, transform 0.05s ease;
+	}
+
+	.beat-dot.active {
+		background: var(--color-primary);
+		transform: scale(1.4);
 	}
 </style>

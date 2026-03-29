@@ -5,6 +5,7 @@
 	import { userStatsService } from '$lib/UserStatsService';
 	import { journeyService } from '$lib/JourneyService';
 	import { resolve } from '$app/paths';
+	import type { RouteId } from '$app/types';
 	import { onMount } from 'svelte';
 	import StatsWidget from '../../components/StatsWidget.svelte';
 	import type { PageData } from './$types';
@@ -146,10 +147,10 @@
 							placeholder="Your name"
 						/>
 						<div class="edit-actions">
-							<button onclick={saveProfile} class="icon-btn save" title="Save"
+							<button onclick={saveProfile} class="icon-btn save" title="Save" aria-label="Save profile"
 								><Save size={20} /></button
 							>
-							<button onclick={toggleEdit} class="icon-btn cancel" title="Cancel"
+							<button onclick={toggleEdit} class="icon-btn cancel" title="Cancel" aria-label="Cancel editing"
 								><X size={20} /></button
 							>
 						</div>
@@ -157,7 +158,7 @@
 				{:else}
 					<div class="view-mode">
 						<h1 class="profile-name">{profile.name}</h1>
-						<button onclick={toggleEdit} class="icon-btn edit" title="Edit Profile"
+						<button onclick={toggleEdit} class="icon-btn edit" title="Edit Profile" aria-label="Edit profile"
 							><Edit2 size={18} /></button
 						>
 					</div>
@@ -220,7 +221,7 @@
 						<h4>Recommended Practice</h4>
 						<div class="recommendation-list">
 							{#each weaknessRecommendations as rec}
-								<a href={resolve(rec.path as any)} class="recommendation-card">
+								<a href={resolve(rec.path as unknown as RouteId)} class="recommendation-card">
 									<div class="rec-header">
 										<TrendingUp size={20} />
 										<strong>{rec.weakness}</strong>
@@ -374,13 +375,18 @@
 </div>
 
 {#if showExportDialog}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="modal-overlay" role="button" tabindex="-1" onclick={() => (showExportDialog = false)}>
-		<div class="modal" role="dialog" tabindex="-1" onclick={(e) => e.stopPropagation()}>
+	<div
+		class="modal-overlay"
+		role="button"
+		tabindex="0"
+		aria-label="Close export dialog"
+		onclick={() => (showExportDialog = false)}
+		onkeydown={(e) => e.key === 'Enter' && (showExportDialog = false)}
+	>
+		<div class="modal" role="dialog" aria-modal="true" aria-label="Export Data" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 			<div class="modal-header">
 				<h3>Export Data</h3>
-				<button onclick={() => (showExportDialog = false)} class="close-btn"><X size={20} /></button
+				<button onclick={() => (showExportDialog = false)} class="close-btn" aria-label="Close export dialog"><X size={20} /></button
 				>
 			</div>
 			<div class="modal-content">
@@ -540,7 +546,7 @@
 	}
 
 	.stat-icon {
-		color: rgba(255, 255, 255, 0.8);
+		color: var(--color-text-muted);
 	}
 
 	.stat-value {
@@ -701,7 +707,7 @@
 	}
 
 	.modal {
-		background: #2c3e50;
+		background: var(--color-surface);
 		padding: 2rem;
 		border-radius: 1rem;
 		width: 90%;
@@ -728,23 +734,23 @@
 	}
 
 	.modal-header {
-		background: #34495e;
+		background: var(--color-surface-raised);
 		padding: 1.5rem;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.modal-header h3 {
 		margin: 0;
-		color: white;
+		color: var(--color-text);
 	}
 
 	.close-btn {
 		background: none;
 		border: none;
-		color: white;
+		color: var(--color-text);
 		font-size: 1.5rem;
 		cursor: pointer;
 		padding: 0;
@@ -760,15 +766,15 @@
 	}
 	.modal-content {
 		padding: 1.5rem;
-		color: white;
+		color: var(--color-text);
 	}
 	.export-textarea {
 		width: 100%;
 		height: 300px;
-		background: #1a1a1a;
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
 		border-radius: 0.5rem;
-		color: white;
+		color: var(--color-text);
 		padding: 1rem;
 		font-family: monospace;
 		font-size: 0.8rem;

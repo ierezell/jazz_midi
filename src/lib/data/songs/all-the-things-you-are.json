@@ -1,7 +1,9 @@
 {
 	"name": "All The Things You Are",
 	"composer": "Jerome Kern",
+	"year": 1939,
 	"key": "Ab",
+	"description": "Complex chord changes through multiple keys. A bebop favorite.",
 	"chords": [
 		{
 			"note": "F",

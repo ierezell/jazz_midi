@@ -33,6 +33,12 @@
 		<h1>Welcome to Jazz MIDI</h1>
 		<p class="subtitle">Start your improvisation journey today</p>
 
+		<ul class="features-list">
+			<li>🎹 Interactive MIDI keyboard exercises for jazz piano</li>
+			<li>🎵 10+ jazz styles: bebop, blues, funk, latin and more</li>
+			<li>📈 Track XP, streaks, and mastery across all exercises</li>
+		</ul>
+
 		<div class="input-group">
 			<label for="name">What should we call you?</label>
 			<input
@@ -84,6 +90,23 @@
 	.subtitle {
 		color: rgba(255, 255, 255, 0.6);
 		margin-bottom: 2rem;
+	}
+
+	.features-list {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 1.5rem 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		font-size: 0.9rem;
+		color: rgba(255, 255, 255, 0.6);
+	}
+
+	.features-list li {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
 	.input-group {

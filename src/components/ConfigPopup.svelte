@@ -253,7 +253,7 @@
 	}
 
 	.popup-content {
-		background: white;
+		background: var(--color-surface);
 		padding: 1.5rem;
 		border-radius: 8px;
 		max-width: 90%;
@@ -272,19 +272,19 @@
 		font-size: 1.5rem;
 		cursor: pointer;
 		padding: 0.25rem 0.5rem;
-		color: #666;
+		color: var(--color-text-muted);
 	}
 
 	h2 {
 		margin: 0 0 1rem 0;
 		font-size: 1.25rem;
-		color: #333;
+		color: var(--color-text);
 	}
 
 	h3 {
 		margin: 0 0 0.5rem 0;
 		font-size: 1rem;
-		color: #666;
+		color: var(--color-text-muted);
 	}
 
 	.config-grid {
@@ -294,7 +294,7 @@
 	}
 
 	.config-section {
-		background: #f8f9fa;
+		background: var(--color-surface-raised);
 		padding: 0.75rem;
 		border-radius: 6px;
 	}
@@ -309,16 +309,16 @@
 		display: flex;
 		align-items: center;
 		gap: 0.25rem;
-		background: white;
+		background: var(--color-surface);
 		padding: 0.25rem 0.5rem;
 		border-radius: 4px;
-		border: 1px solid #dee2e6;
+		border: 1px solid var(--color-border);
 		font-size: 0.875rem;
 		cursor: pointer;
 	}
 
 	.checkbox-label:hover {
-		background: #f0f0f0;
+		background: var(--color-surface-raised);
 	}
 
 	@media (orientation: landscape) and (max-height: 600px) {

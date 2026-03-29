@@ -14,6 +14,9 @@
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 	import { page } from '$app/state';
 	import { userStatsService } from '$lib/UserStatsService';
+	import { BeatValidator } from '$lib/BeatValidator.js';
+	import { rhythmPatterns } from '$lib/data/rhythmPatterns.js';
+	import BeatIndicator from '$lib/../components/BeatIndicator.svelte';
 
 	const description =
 		'Play the scale shown, ascending and/or descending, using your MIDI keyboard. Try to follow the correct order.';
@@ -91,11 +94,30 @@
 	let playedSequence: MidiNote[] = $state([]);
 	let playedNotes: Set<MidiNote> = $state(new Set());
 
+	// Rhythm mode
+	let rhythmicMode = $state(false);
+	let scaleBeatValidator = $state<BeatValidator | null>(null);
+	let scaleCurrentBeat = $state(0);
+	let scaleSelectedPatternId = $state(rhythmPatterns[0]?.id ?? '');
+	let scaleSelectedPattern = $derived(rhythmPatterns.find(p => p.id === scaleSelectedPatternId) ?? rhythmPatterns[0]);
+
 	// Derived
 	let computedPrompt = $derived(
 		`${effectiveRootKey} ${scaleMode === 'Maj' ? 'Major' : 'Minor'} Scale`
 	);
 	let effectivePrompt = $derived(prompt ?? computedPrompt);
+
+	function toggleRhythmicMode(): void {
+		rhythmicMode = !rhythmicMode;
+		if (rhythmicMode) {
+			scaleBeatValidator = new BeatValidator();
+			scaleBeatValidator.start(scaleSelectedPattern.suggestedBpm, scaleSelectedPattern, (beat) => { scaleCurrentBeat = beat; });
+		} else {
+			scaleBeatValidator?.stop();
+			scaleBeatValidator = null;
+			scaleCurrentBeat = 0;
+		}
+	}
 
 	function handleParentReset(): void {
 		playedSequence = [];
@@ -186,6 +208,14 @@
 		currentNotes: ReadonlyArray<MidiNote>
 	): ValidationResult {
 		void currentNotes;
+
+		if (rhythmicMode && scaleBeatValidator) {
+			const beatResult = scaleBeatValidator.validateHit(event);
+			if (!beatResult.isHit) {
+				return { isCorrect: false, message: `Off beat! (${beatResult.label})`, collected: false, resetCollected: false };
+			}
+		}
+
 		const nextExpectedIndex = playedSequence.length;
 		const expectedNote = expectedNotes[nextExpectedIndex];
 
@@ -370,6 +400,7 @@
 	prompt={effectivePrompt}
 	showTempoControl={true}
 	timingModeLabel="Play scale on beat"
+	perNoteTiming={rhythmicMode}
 >
 	{#snippet children()}
 		<div class="scale-controls">
@@ -444,6 +475,26 @@
 							<option value="down">Descending ↓</option>
 							<option value="up-down">Up & Down ↕</option>
 						</select>
+					</div>
+
+					<div class="rhythm-controls">
+						<label class="rhythm-toggle">
+							<input type="checkbox" bind:checked={rhythmicMode} onchange={toggleRhythmicMode} />
+							<span>Rhythmic Mode</span>
+						</label>
+						{#if rhythmicMode}
+							<select bind:value={scaleSelectedPatternId} class="pattern-select">
+								{#each rhythmPatterns as p}
+									<option value={p.id}>{p.name} ({p.suggestedBpm} BPM)</option>
+								{/each}
+							</select>
+							<BeatIndicator
+								totalBeats={4}
+								currentBeat={scaleCurrentBeat}
+								hitPositions={scaleSelectedPattern.hits}
+								isActive={rhythmicMode}
+							/>
+						{/if}
 					</div>
 				</div>
 			{/if}
@@ -605,6 +656,36 @@
 		60% {
 			transform: translateY(-5px);
 		}
+	}
+
+	.rhythm-controls {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1rem;
+		background: var(--color-surface-raised, rgba(255, 255, 255, 0.04));
+		border: 1px solid var(--color-border);
+		border-radius: 0.5rem;
+	}
+
+	.rhythm-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-weight: 500;
+		color: var(--color-text-muted);
+		cursor: pointer;
+	}
+
+	.pattern-select {
+		width: 100%;
+		padding: 0.25rem 0.5rem;
+		border: 1px solid var(--color-border);
+		border-radius: 0.375rem;
+		background: var(--color-surface);
+		color: var(--color-text);
+		font-size: 0.85rem;
 	}
 
 	@media (max-width: 768px) {

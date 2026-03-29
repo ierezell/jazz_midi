@@ -20,20 +20,23 @@
 	interface Song {
 		name: string;
 		composer?: string;
+		year?: number;
 		key?: string;
+		description?: string;
 		chords: ChordInProgression[];
 	}
 
 	interface Props {
 		data: {
 			songs: Song[];
+			initialIndex: number;
 		};
 	}
 
 	let { data }: Props = $props();
 	const songs = data.songs;
 
-	let selectedSong: Song = $state(songs[0]);
+	let selectedSong: Song = $state(songs[data.initialIndex] ?? songs[0]);
 	let currentChordIndex = $state(0);
 	let voicing: ChordVoicing = $state('full-right');
 	let inversion: Inversion = $state(0);
@@ -254,12 +257,20 @@
 		<div class="song-controls">
 			<div class="song-header">
 				<h2>{selectedSong.name}</h2>
-				{#if selectedSong.composer}
-					<div class="song-info">by {selectedSong.composer}</div>
+				{#if selectedSong.composer || selectedSong.year}
+					<div class="song-info">
+						{#if selectedSong.composer}by {selectedSong.composer}{/if}{#if selectedSong.composer && selectedSong.year}, {/if}{#if selectedSong.year}{selectedSong.year}{/if}
+					</div>
 				{/if}
-				{#if selectedSong.key}
-					<div class="song-info">Key: {selectedSong.key}</div>
+				{#if selectedSong.description}
+					<div class="song-description">{selectedSong.description}</div>
 				{/if}
+				<div class="song-stats">
+					{#if selectedSong.key}
+						<span class="song-stat">Key: <strong>{selectedSong.key}</strong></span>
+					{/if}
+					<span class="song-stat">{selectedSong.chords.length} bars</span>
+				</div>
 				<div class="chord-progress">
 					Chord {currentChordIndex + 1} of {selectedSong.chords.length}
 				</div>
@@ -348,6 +359,30 @@
 		color: var(--color-text, inherit);
 		opacity: 0.8;
 		margin-bottom: 0.25rem;
+	}
+
+	.song-description {
+		font-size: 0.9rem;
+		color: var(--color-text-muted, inherit);
+		font-style: italic;
+		margin: 0.25rem 0 0.5rem;
+		line-height: 1.4;
+	}
+
+	.song-stats {
+		display: flex;
+		gap: 1rem;
+		justify-content: center;
+		margin: 0.5rem 0;
+	}
+
+	.song-stat {
+		font-size: 0.85rem;
+		color: var(--color-text-muted, inherit);
+		background: var(--color-surface-raised, rgba(0, 0, 0, 0.05));
+		border: 1px solid var(--color-border, #ddd);
+		border-radius: 4px;
+		padding: 0.2rem 0.6rem;
 	}
 
 	.chord-progress {

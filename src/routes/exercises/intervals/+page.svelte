@@ -89,10 +89,6 @@
 			// expectedNoteValue is already a MidiNote, no need to look it up again
 			const expectedMidi = expectedNoteValue;
 
-			console.debug(
-				`Interval ${INTERVAL_NAMES[intervalType]} from ${currentRoot}${octave} to ${expectedMidi}:`,
-				`Root MIDI: ${rootMidi}, Expected MIDI: ${expectedMidi}`
-			);
 
 			// Always return both notes for validation
 			// Ensure both notes are distinct in the array even if they're the same MIDI number (unison)

@@ -256,6 +256,7 @@
 	exerciseType="partition"
 	showTempoControl={true}
 	timingModeLabel="Play lick on beat"
+	defaultBpm={currentLick?.suggestedBpm ?? 100}
 >
 	{#snippet children()}
 		<div class="licks-content">
@@ -321,7 +322,7 @@
 							onchange={() => selectSpecificLick(selectedLickId)}
 						>
 							{#each licks as lick}
-								<option value={lick.id}>{lick.name} ({lick.hand} - {lick.difficulty})</option>
+								<option value={lick.id}>{lick.name} — {lick.category} · {lick.difficulty} · {lick.suggestedBpm} BPM</option>
 							{/each}
 						</select>
 					</div>
@@ -349,7 +350,7 @@
 						<label for="failure-mode">On Mistake:</label>
 						<select id="failure-mode" bind:value={failureMode}>
 							<option value="hard-reset">Hard Reset (Start Over)</option>
-							<option value="sticky-note">Sticky Note (Wait for Correct)</option>
+							<option value="sticky-note">Hold Note (Wait for Correct)</option>
 						</select>
 					</div>
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import type { RouteId } from '$app/types';
 	import { Menu, X } from 'lucide-svelte';
 	import { fade, slide } from 'svelte/transition';
 
@@ -67,7 +68,7 @@
 		<nav class="menu-content" transition:slide={{ axis: 'x', duration: 300 }}>
 			<div class="menu-header">
 				<h2>Menu</h2>
-				<button class="close-btn" onclick={closeMenu}>
+				<button class="close-btn" onclick={closeMenu} aria-label="Close menu">
 					<X size={24} />
 				</button>
 			</div>
@@ -81,7 +82,7 @@
 									class:active={page.url.pathname === link.href ||
 										(link.href !== '/' && page.url.pathname.startsWith(link.href))}
 								>
-									<a href={resolve(link.href as any)} onclick={closeMenu}>
+									<a href={resolve(link.href as unknown as RouteId)} onclick={closeMenu}>
 										<span class="icon">{link.icon}</span>
 										<span class="label">{link.label}</span>
 									</a>

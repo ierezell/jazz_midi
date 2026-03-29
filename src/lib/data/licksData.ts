@@ -10,6 +10,14 @@ import countryAlternatingBass from './licks/country-alternating-bass.json';
 import funkSixteenthBass from './licks/funk-sixteenth-bass.json';
 import bebopEnclosure from './licks/bebop-enclosure.json';
 import strideLeftHand from './licks/stride-left-hand.json';
+import pentatonicBluesRiff from './licks/pentatonic-blues-riff.json';
+import jazzTurnaroundLh from './licks/jazz-turnaround-lh.json';
+import dorianModeRun from './licks/dorian-mode-run.json';
+import wholeToneLick from './licks/whole-tone-lick.json';
+import gospelChordRun from './licks/gospel-chord-run.json';
+import swingEighthRiff from './licks/swing-eighth-riff.json';
+import funkyBassLine from './licks/funky-bass-line.json';
+import minorBluesHead from './licks/minor-blues-head.json';
 
 export const licks: Lick[] = [
 	bluesWalkingBass as Lick,
@@ -20,7 +28,15 @@ export const licks: Lick[] = [
 	countryAlternatingBass as Lick,
 	funkSixteenthBass as Lick,
 	bebopEnclosure as Lick,
-	strideLeftHand as Lick
+	strideLeftHand as Lick,
+	pentatonicBluesRiff as Lick,
+	jazzTurnaroundLh as Lick,
+	dorianModeRun as Lick,
+	wholeToneLick as Lick,
+	gospelChordRun as Lick,
+	swingEighthRiff as Lick,
+	funkyBassLine as Lick,
+	minorBluesHead as Lick
 ];
 
 export const getLicksByHand = (hand: 'left' | 'right' | 'both'): Lick[] => {

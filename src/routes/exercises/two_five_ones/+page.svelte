@@ -20,6 +20,9 @@
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 	import { page } from '$app/state';
+	import { BeatValidator } from '$lib/BeatValidator.js';
+	import { rhythmPatterns } from '$lib/data/rhythmPatterns.js';
+	import BeatIndicator from '$lib/../components/BeatIndicator.svelte';
 
 	const description =
 		'Play the II-V-I progression as shown. Use the correct chords and voicings for each step.';
@@ -46,6 +49,47 @@
 
 	// Journey Params
 	const paramKey = $derived(page.url.searchParams.get('key') as Note);
+
+	// Rhythm mode - filter to progression-friendly patterns
+	let progressionPatterns = $derived(
+		rhythmPatterns.filter(p => p.isProgression).length > 0
+			? rhythmPatterns.filter(p => p.isProgression)
+			: [...rhythmPatterns].sort((a, b) => {
+				const preferred = ['blues-shells', 'jazz-charleston'];
+				const ai = preferred.indexOf(a.id);
+				const bi = preferred.indexOf(b.id);
+				if (ai !== -1 && bi !== -1) return ai - bi;
+				if (ai !== -1) return -1;
+				if (bi !== -1) return 1;
+				return 0;
+			})
+	);
+	let withRhythmMode = $state(false);
+	let progBeatValidator = $state<BeatValidator | null>(null);
+	let progCurrentBeat = $state(0);
+	let progSelectedPatternId = $state('');
+	let progSelectedPattern = $derived(
+		progressionPatterns.find(p => p.id === progSelectedPatternId) ?? progressionPatterns[0]
+	);
+
+	// Initialise progSelectedPatternId once progressionPatterns is known
+	$effect(() => {
+		if (!progSelectedPatternId && progressionPatterns.length > 0) {
+			progSelectedPatternId = progressionPatterns[0].id;
+		}
+	});
+
+	function toggleProgRhythmMode(): void {
+		withRhythmMode = !withRhythmMode;
+		if (withRhythmMode) {
+			progBeatValidator = new BeatValidator();
+			progBeatValidator.start(progSelectedPattern.suggestedBpm, progSelectedPattern, (beat) => { progCurrentBeat = beat; });
+		} else {
+			progBeatValidator?.stop();
+			progBeatValidator = null;
+			progCurrentBeat = 0;
+		}
+	}
 
 	let currentChordIndex = $state(0);
 	let inversion: Inversion = $state(
@@ -98,6 +142,13 @@
 		expectedNotes: ReadonlyArray<MidiNote>,
 		currentNotes: ReadonlyArray<MidiNote>
 	): ValidationResult {
+		if (withRhythmMode && progBeatValidator && currentNotes.length === 0) {
+			const beatResult = progBeatValidator.validateHit(event);
+			if (!beatResult.isHit) {
+				return { isCorrect: false, message: `Off beat! (${beatResult.label})`, collected: false, resetCollected: false };
+			}
+		}
+
 		const chordName = getChordNames(selectedNote)[currentChordIndex];
 		if (expectedNotes.includes(event.noteNumber)) {
 			const correctCount = currentNotes.filter((note) => expectedNotes.includes(note)).length;
@@ -245,6 +296,26 @@
 							<option value="1537">1 & 5 Left / 3 & 7 Right</option>
 						</select>
 					</div>
+
+					<div class="rhythm-controls">
+						<label class="rhythm-toggle">
+							<input type="checkbox" bind:checked={withRhythmMode} onchange={toggleProgRhythmMode} />
+							<span>With Rhythm</span>
+						</label>
+						{#if withRhythmMode}
+							<select bind:value={progSelectedPatternId} class="pattern-select">
+								{#each progressionPatterns as p}
+									<option value={p.id}>{p.name} ({p.suggestedBpm} BPM)</option>
+								{/each}
+							</select>
+							<BeatIndicator
+								totalBeats={4}
+								currentBeat={progCurrentBeat}
+								hitPositions={progSelectedPattern.hits}
+								isActive={withRhythmMode}
+							/>
+						{/if}
+					</div>
 				{/if}
 				<div class="chord-progress">
 					{#each getChordNames(api.selectedNote) as chordName, index}
@@ -320,6 +391,36 @@
 		border-color: #4caf50;
 		background: #e8f5e8;
 		color: #2e7d32;
+	}
+
+	.rhythm-controls {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1rem;
+		background: var(--color-surface-raised, rgba(255, 255, 255, 0.04));
+		border: 1px solid var(--color-border, #e0e0e0);
+		border-radius: 0.5rem;
+	}
+
+	.rhythm-toggle {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-weight: 500;
+		color: var(--color-text-muted, #666);
+		cursor: pointer;
+	}
+
+	.pattern-select {
+		width: 100%;
+		padding: 0.25rem 0.5rem;
+		border: 1px solid var(--color-border, #e0e0e0);
+		border-radius: 0.375rem;
+		background: var(--color-surface, #fff);
+		color: var(--color-text, #333);
+		font-size: 0.85rem;
 	}
 
 	.exercise-status {

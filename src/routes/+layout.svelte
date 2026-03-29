@@ -70,8 +70,10 @@
 	}
 
 	header {
-		position: sticky;
+		position: fixed;
 		top: 0;
+		left: 0;
+		right: 0;
 		z-index: 100;
 		background: var(--glass-bg);
 		backdrop-filter: var(--glass-blur);
@@ -124,6 +126,7 @@
 		max-width: 1200px;
 		margin: 0 auto;
 		padding: 2rem;
+		padding-top: calc(71px + 2rem); /* Fixed header height + normal padding */
 		box-sizing: border-box;
 	}
 

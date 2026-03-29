@@ -4,27 +4,73 @@ import {
 	DEFAULT_OCTAVE,
 	INTERVAL_SEMITONES,
 	SCALE_INTERVALS,
-	AllScaleModes
+	AllScaleModes,
+	AllChordVoicings
 } from './types/notes.constants';
 import type { MidiNote, Note, ChordType } from './types/types';
-import type { ScaleMode } from './types/notes';
+import type { ScaleMode, ChordVoicing, Inversion } from './types/notes';
 import { chords, calculateInterval } from './MusicTheoryUtils';
 
 export type FlashCardType = 'note' | 'interval' | 'chord' | 'scale' | 'II-V-I';
 
-export interface FlashCard {
-	type: FlashCardType;
+export interface FlashCardNote {
+	type: 'note';
 	prompt: string;
 	subtext?: string;
 	expectedNotes: MidiNote[];
-	config?: {
-		chordType?: ChordType;
-		inversion?: number;
-		scaleMode?: ScaleMode;
-		intervalName?: string;
-		[key: string]: unknown;
+	config?: never;
+}
+
+export interface FlashCardInterval {
+	type: 'interval';
+	prompt: string;
+	subtext?: string;
+	expectedNotes: MidiNote[];
+	config?: never;
+}
+
+export interface FlashCardChord {
+	type: 'chord';
+	prompt: string;
+	subtext?: string;
+	expectedNotes: MidiNote[];
+	config: {
+		chordType: ChordType;
+		inversion: Inversion;
+		voicing: ChordVoicing;
+		root: Note;
 	};
 }
+
+export interface FlashCardScale {
+	type: 'scale';
+	prompt: string;
+	subtext?: string;
+	expectedNotes: MidiNote[];
+	config: {
+		mode: ScaleMode;
+		root: Note;
+	};
+}
+
+export interface FlashCardTwoFiveOne {
+	type: 'II-V-I';
+	prompt: string;
+	subtext?: string;
+	expectedNotes: MidiNote[];
+	config: {
+		inversion: Inversion;
+		voicing: ChordVoicing;
+		root: Note;
+	};
+}
+
+export type FlashCard =
+	| FlashCardNote
+	| FlashCardInterval
+	| FlashCardChord
+	| FlashCardScale
+	| FlashCardTwoFiveOne;
 
 export function generateRandomCard(root: Note, forcedType?: FlashCardType): FlashCard {
 	const types: FlashCardType[] = ['note', 'interval', 'chord', 'scale', 'II-V-I'];
@@ -56,12 +102,14 @@ export function generateRandomCard(root: Note, forcedType?: FlashCardType): Flas
 		const notes = [chord.root, chord.third, chord.fifth];
 		if (chord.seventh) notes.push(chord.seventh);
 
+		const inversion = 0 as const;
+		const voicing = AllChordVoicings[0];
 		return {
 			type: 'chord',
 			prompt: `${root} ${chordType}`,
 			subtext: 'Play the chord',
 			expectedNotes: notes as MidiNote[],
-			config: { chordType }
+			config: { chordType, inversion, voicing, root }
 		};
 	} else if (type === 'scale') {
 		const modes: ScaleMode[] = AllScaleModes;
@@ -74,7 +122,7 @@ export function generateRandomCard(root: Note, forcedType?: FlashCardType): Flas
 			prompt: `${root} ${mode} Scale`,
 			subtext: 'Play the scale',
 			expectedNotes: notes,
-			config: { mode }
+			config: { mode, root }
 		};
 	} else {
 		// II-V-I
@@ -133,12 +181,14 @@ export function generateRandomCard(root: Note, forcedType?: FlashCardType): Flas
 		// Let's return the notes for the I chord for now to be safe, or maybe the II-V-I notes combined if we want to test "knowing the notes"? No that's messy.
 		// Let's stick to simple types for `generateRandomCard` for now, and handle `II-V-I` by delegating to the `TwoFiveOnes` component in the Page if type is II-V-I.
 		// So `expectedNotes` here might be ignored if the Page handles it.
+		const iiviInversion = 0 as const;
+		const iiviVoicing = AllChordVoicings[0];
 		return {
 			type: 'II-V-I',
 			prompt: `${root} II-V-I`,
 			subtext: 'Play the progression',
 			expectedNotes: [], // Handled by component
-			config: { key: root }
+			config: { inversion: iiviInversion, voicing: iiviVoicing, root }
 		};
 	}
 }

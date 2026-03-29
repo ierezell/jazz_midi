@@ -36,9 +36,9 @@
 
 <style>
 	.mic-btn {
-		background: rgba(0, 0, 0, 0.2);
-		border: none;
-		color: rgba(255, 255, 255, 0.7);
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
+		color: var(--color-text-muted);
 		cursor: pointer;
 		padding: 0.75rem;
 		border-radius: 50%;
@@ -46,22 +46,23 @@
 		align-items: center;
 		justify-content: center;
 		transition: all 0.2s;
-		backdrop-filter: blur(5px);
 	}
 
 	.mic-btn:hover {
-		background: rgba(255, 255, 255, 0.3);
-		color: white;
+		background: var(--color-border);
+		color: var(--color-text);
 	}
 
 	.mic-btn.active {
 		background: #4caf50;
 		color: white;
+		border-color: #4caf50;
 		box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
 	}
 
 	.mic-btn.error {
 		background: #f44336;
+		border-color: #f44336;
 		color: white;
 	}
 </style>

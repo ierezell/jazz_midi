@@ -1,0 +1,25 @@
+{
+	"id": "swing-eighth-riff",
+	"name": "Swing Eighth Note Riff",
+	"description": "Classic swing-feel riff with chromatic passing tones. Essential bebop vocabulary.",
+	"category": "bebop",
+	"hand": "right",
+	"difficulty": "intermediate",
+	"suggestedBpm": 140,
+	"notes": [
+		"G4",
+		"A4",
+		"Bb4",
+		"B4",
+		"C5",
+		"D5",
+		"Eb5",
+		"E5"
+	],
+	"tags": [
+		"swing",
+		"chromatic",
+		"bebop",
+		"eighth-notes"
+	]
+}

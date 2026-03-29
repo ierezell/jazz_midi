@@ -99,7 +99,6 @@ export class AudioManager {
 			audio.volume = previousVolume;
 			this.unlocked = true;
 			this.enabled = true;
-			console.debug('AudioManager: audio unlocked by user gesture');
 			return true;
 		} catch (error) {
 			// If the play() call failed, keep unlocked=false and return false

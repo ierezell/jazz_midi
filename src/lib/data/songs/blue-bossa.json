@@ -1,7 +1,9 @@
 {
 	"name": "Blue Bossa",
 	"composer": "Kenny Dorham",
+	"year": 1963,
 	"key": "Cm",
+	"description": "Bossa nova feel with a ii-V-I key change. Perfect for Latin jazz.",
 	"chords": [
 		{
 			"note": "C",

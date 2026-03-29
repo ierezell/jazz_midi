@@ -302,7 +302,9 @@ export type ChordVoicing =
 	| '1735'
 	| '1537'
 	| 'rootless-a'
-	| 'rootless-b';
+	| 'rootless-b'
+	| 'shell'
+	| 'guide-tones';
 
 export type IntervalType =
 	| 'unison'

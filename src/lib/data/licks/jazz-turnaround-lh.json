@@ -1,0 +1,21 @@
+{
+	"id": "jazz-turnaround-lh",
+	"name": "Jazz Turnaround Left Hand",
+	"description": "I-VI-II-V root motion in the left hand. Foundation of jazz comping.",
+	"category": "jazz",
+	"hand": "left",
+	"difficulty": "intermediate",
+	"suggestedBpm": 100,
+	"notes": [
+		"C2",
+		"A2",
+		"D2",
+		"G2"
+	],
+	"tags": [
+		"jazz",
+		"turnaround",
+		"I-VI-II-V",
+		"comping"
+	]
+}

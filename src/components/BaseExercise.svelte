@@ -51,6 +51,9 @@
 		initialNote: Note;
 		showScore?: boolean;
 		exerciseType?: ExerciseType;
+		breadcrumbParent?: string;
+		perNoteTiming?: boolean;
+		defaultBpm?: number;
 	}
 
 	let {
@@ -70,7 +73,10 @@
 		prompt,
 		showTempoControl = true,
 		showTrainingControl = true,
-		timingModeLabel = 'Play on beat'
+		defaultBpm = undefined,
+		timingModeLabel = 'Play on beat',
+		breadcrumbParent = undefined,
+		perNoteTiming = false
 	}: BaseExerciseProps & {
 		children?: Snippet<[ExerciseAPI]>;
 		progressiveHints?: boolean;
@@ -96,6 +102,7 @@
 	let noteEvents: NoteEvent[] = $state([]);
 	let mistakes = $state(0);
 	let collectedNotes: Set<MidiNote> = $state(new Set());
+	let lastVelocity = $state(0);
 	let startTime = $state(0);
 	let completed = $state(false);
 	let debugMode = $state(false);
@@ -104,11 +111,15 @@
 
 	let stopOnMistake = $state(false);
 	let tempoMode = $state(false);
+	let strictBeat = $state(false);
+	let beatFlash = $state(false);
 	let lastTickTime = $state(0);
 	let currentBpm = $state(120);
 	let lastBeatNumber = $state(0);
 	let wasDownbeat = $state(false);
-	const TEMPO_TOLERANCE_MS = 150; // Tolerance for "on beat"
+	const STRICT_TOLERANCE_MS = 50;
+	const NORMAL_TOLERANCE_MS = 150;
+	let toleranceMs = $derived(strictBeat ? STRICT_TOLERANCE_MS : NORMAL_TOLERANCE_MS);
 
 	// showScore controls whether the Score UI is rendered
 	// If progressiveHints is true, we hide score until mistakes threshold is reached
@@ -165,26 +176,30 @@
 
 	let helpMessage = $derived.by(() => {
 		if (!progressiveHints || completed) return '';
-		if (exerciseType === 'partition') return ''; // Score is visible, no hint needed
+		if (exerciseType === 'partition') return ''; // Score always visible for sight reading
 
-		if (mistakes < SCORE_SHOW_AFTER_MISTAKES) {
-			let description = `correct ${exerciseType || 'note'}`;
-			if (prompt) {
-				const typeLabel =
-					exerciseType === 'II-V-I'
-						? 'progression'
-						: exerciseType === 'note'
-							? 'note'
-							: exerciseType;
-				description = `${prompt} ${typeLabel}`;
-			}
+		const scoreVisible = mistakes >= SCORE_SHOW_AFTER_MISTAKES;
+		const keyboardVisible = mistakes >= KEYBOARD_SHOW_AFTER_MISTAKES;
+		const expectedNotesVisible = mistakes >= EXPECTED_NOTES_SHOW_AFTER_MISTAKES;
 
-			return `Play the ${description}. After ${SCORE_SHOW_AFTER_MISTAKES - mistakes} more mistake${SCORE_SHOW_AFTER_MISTAKES - mistakes === 1 ? '' : 's'} the score will appear.`;
+		if (!scoreVisible) {
+			// No hint before the first mistake threshold
+			if (mistakes === 0) return '';
+			const remaining = SCORE_SHOW_AFTER_MISTAKES - mistakes;
+			return `Struggling? Sheet music will appear after ${remaining} more mistake${remaining === 1 ? '' : 's'}.`;
 		}
-		if (mistakes < KEYBOARD_SHOW_AFTER_MISTAKES) {
-			return `Reference keyboard will appear after ${KEYBOARD_SHOW_AFTER_MISTAKES - mistakes} more mistake${KEYBOARD_SHOW_AFTER_MISTAKES - mistakes === 1 ? '' : 's'}.`;
+
+		if (!keyboardVisible) {
+			const remaining = KEYBOARD_SHOW_AFTER_MISTAKES - mistakes;
+			return `Sheet music is now visible. Keyboard will appear after ${remaining} more mistake${remaining === 1 ? '' : 's'}.`;
 		}
-		return 'Adaptive help is active. Use the score and keyboard for reference.';
+
+		if (!expectedNotesVisible) {
+			const remaining = EXPECTED_NOTES_SHOW_AFTER_MISTAKES - mistakes;
+			return `Keyboard is now visible. Expected notes will appear after ${remaining} more mistake${remaining === 1 ? '' : 's'}.`;
+		}
+
+		return 'All hints are visible. Keep practicing!';
 	});
 
 	const exposedAPI: ExerciseAPI = $derived({
@@ -235,11 +250,6 @@
 	});
 
 	function handleNoteOn(note: NoteEvent): void {
-		if (debugMode) {
-			console.debug(
-				`MIDI Note ON: ${note.noteNumber} (${note.noteFullName}) velocity=${note.velocity} channel=${note.channel}`
-			);
-		}
 
 		let isOffBeat = false;
 
@@ -253,7 +263,7 @@
 
 			const tempoConfig: TempoValidation = {
 				enabled: true,
-				toleranceMs: TEMPO_TOLERANCE_MS,
+				toleranceMs,
 				requireDownbeat:
 					exerciseType === 'chord' || exerciseType === 'progression' || exerciseType === 'II-V-I'
 			};
@@ -263,6 +273,7 @@
 			const shouldCheckTiming =
 				exerciseType === 'partition' || // Licks: check every note
 				exerciseType === 'rhythm' || // Rhythm: check every note
+				perNoteTiming === true || // Opt-in per-note timing (e.g. scales)
 				collectedNotes.size === 0; // Chords/Progressions: only first note of chord
 
 			if (shouldCheckTiming) {
@@ -277,6 +288,7 @@
 			}
 		}
 
+		lastVelocity = note.velocity;
 		noteEvents = [...noteEvents, note];
 		const result = validateNoteEvent(selectedNote, note, expectedNotes, currentNotes);
 
@@ -361,11 +373,6 @@
 	}
 
 	function handleNoteOff(note: NoteEvent): void {
-		if (debugMode) {
-			console.debug(
-				`MIDI Note OFF: ${note.noteNumber} (${note.noteFullName}) channel=${note.channel}`
-			);
-		}
 		noteEvents = noteEvents.filter((e) => e.noteNumber !== note.noteNumber);
 	}
 
@@ -467,11 +474,39 @@
 		lastTickTime = timestamp;
 		lastBeatNumber = beatNumber;
 		wasDownbeat = isDownbeat;
+		// Flash the beat indicator
+		if (tempoMode) {
+			beatFlash = true;
+			setTimeout(() => { beatFlash = false; }, 80);
+		}
 	}
 
 	function toggleTempoMode() {
 		tempoMode = !tempoMode;
 	}
+
+	function handleBack(): void {
+		if (isJourneyMode) goto(resolve('/journey'));
+		else history.back();
+	}
+
+	interface Breadcrumb { label: string; href: string | null; }
+
+	let breadcrumbs = $derived.by((): Breadcrumb[] => {
+		if (isJourneyMode) {
+			return [
+				{ label: 'Journey', href: resolve('/journey') },
+				{ label: breadcrumbParent ?? 'Lesson', href: null }
+			];
+		}
+		const gymLabel = exerciseType
+			? exerciseType.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+			: 'Exercise';
+		return [
+			{ label: 'Gym', href: resolve('/exercises') },
+			{ label: gymLabel, href: null }
+		];
+	});
 </script>
 
 <div class="exercise-layout">
@@ -508,7 +543,19 @@
 
 				{#if tempoMode}
 					<div class="control-group">
-						<Metronome onTick={handleTick} />
+						<Metronome onTick={handleTick} initialBpm={defaultBpm} />
+					</div>
+					<div class="control-group">
+						<label for="strict-beat-toggle">Strict Beat</label>
+						<button
+							id="strict-beat-toggle"
+							class="toggle-btn"
+							class:active={strictBeat}
+							onclick={() => (strictBeat = !strictBeat)}
+							title="Strict: ±{STRICT_TOLERANCE_MS}ms · Normal: ±{NORMAL_TOLERANCE_MS}ms"
+						>
+							{strictBeat ? `±${STRICT_TOLERANCE_MS}ms ✓` : `±${NORMAL_TOLERANCE_MS}ms`}
+						</button>
 					</div>
 				{/if}
 			{/if}
@@ -543,8 +590,38 @@
 
 	<!-- Main Exercise Area -->
 	<main class="exercise-main">
+		<!-- Breadcrumb navigation -->
+		{#if breadcrumbs.length > 0}
+			<nav class="breadcrumbs" aria-label="Breadcrumb">
+				{#each breadcrumbs as crumb, i}
+					{#if crumb.href}
+						<a href={crumb.href} class="breadcrumb-link">{crumb.label}</a>
+					{:else}
+						<span class="breadcrumb-current">{crumb.label}</span>
+					{/if}
+					{#if i < breadcrumbs.length - 1}
+						<span class="breadcrumb-sep" aria-hidden="true"> › </span>
+					{/if}
+				{/each}
+			</nav>
+		{/if}
+
+		<!-- Beat flash indicator (shown in tempo mode) -->
+		{#if tempoMode}
+			<div
+				class="beat-indicator"
+				class:flash={beatFlash}
+				class:strict={strictBeat}
+				aria-hidden="true"
+			></div>
+		{/if}
+
 		<!-- Header / Feedback Strip -->
 		<header class="exercise-header">
+			<button class="back-btn" onclick={handleBack} aria-label="Go back">
+				← {isJourneyMode ? 'Journey' : 'Back'}
+			</button>
+
 			<div class="info-group">
 				{#if description}
 					<div class="exercise-description">
@@ -566,6 +643,25 @@
 					<span class="label">Progress:</span>
 					<span class="value">{progressPercentage}%</span>
 				</div>
+				{#if lastVelocity > 0}
+					<div
+						class="stat-pill velocity-pill"
+						title="MIDI velocity (touch sensitivity)"
+						aria-label="Last note velocity: {lastVelocity}"
+					>
+						<span class="label">Vel:</span>
+						<span class="velocity-bar">
+							<span
+								class="velocity-fill"
+								class:soft={lastVelocity < 50}
+								class:medium={lastVelocity >= 50 && lastVelocity < 90}
+								class:loud={lastVelocity >= 90}
+								style="width: {Math.round((lastVelocity / 127) * 100)}%"
+							></span>
+						</span>
+						<span class="value">{lastVelocity}</span>
+					</div>
+				{/if}
 			</div>
 		</header>
 
@@ -576,6 +672,16 @@
 		{/if}
 
 		<div class="focus-area">
+			{#if isJourneyMode && mistakes === 0 && !completed}
+				<div class="star-criteria" aria-label="Star criteria">
+					<span class="star-chip gold">⭐⭐⭐ No mistakes</span>
+					<span class="star-sep">·</span>
+					<span class="star-chip silver">⭐⭐ 1-2 mistakes</span>
+					<span class="star-sep">·</span>
+					<span class="star-chip bronze">⭐ 3+</span>
+				</div>
+			{/if}
+
 			{#if prompt}
 				<div class="prompt-card card-premium">
 					<div class="prompt-text">{prompt}</div>
@@ -646,7 +752,8 @@
 	}
 
 	.sidebar {
-		width: 280px;
+		max-width: 280px;
+		width: 100%;
 		display: flex;
 		flex-direction: column;
 		background: var(--glass-bg);
@@ -717,6 +824,29 @@
 		padding-right: 0.5rem;
 	}
 
+	/* Beat flash indicator */
+	.beat-indicator {
+		height: 3px;
+		border-radius: 2px;
+		background: var(--color-border);
+		transition: background 0.05s ease, box-shadow 0.05s ease;
+		margin-bottom: 0.25rem;
+	}
+
+	.beat-indicator.flash {
+		background: var(--color-primary);
+		box-shadow: 0 0 8px var(--color-primary);
+	}
+
+	.beat-indicator.strict.flash {
+		background: var(--color-error, #f87171);
+		box-shadow: 0 0 12px var(--color-error, #f87171);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.beat-indicator { transition: none; }
+	}
+
 	.exercise-header {
 		display: flex;
 		justify-content: space-between;
@@ -760,6 +890,31 @@
 		color: var(--color-success);
 		border-color: var(--color-success);
 	}
+
+	.velocity-pill {
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.velocity-bar {
+		display: inline-block;
+		width: 40px;
+		height: 6px;
+		background: var(--color-border);
+		border-radius: 3px;
+		overflow: hidden;
+	}
+
+	.velocity-fill {
+		display: block;
+		height: 100%;
+		border-radius: 3px;
+		transition: width 0.1s ease;
+	}
+
+	.velocity-fill.soft { background: #60a5fa; }
+	.velocity-fill.medium { background: #34d399; }
+	.velocity-fill.loud { background: #f87171; }
 
 	.feedback-toast {
 		position: fixed;
@@ -896,4 +1051,42 @@
 			margin-bottom: 0;
 		}
 	}
+
+	.back-btn {
+		background: transparent;
+		border: 1px solid var(--color-border);
+		color: var(--color-text-muted);
+		border-radius: 8px;
+		padding: 0.35rem 0.75rem;
+		font-size: 0.85rem;
+		cursor: pointer;
+		flex-shrink: 0;
+	}
+	.back-btn:hover { color: var(--color-text); border-color: var(--color-text-muted); }
+
+	.breadcrumbs {
+		font-size: 0.8rem;
+		color: var(--color-text-muted);
+		margin-bottom: 0.5rem;
+		display: flex;
+		align-items: center;
+		gap: 0.15rem;
+	}
+	.breadcrumb-link { color: var(--color-primary); text-decoration: none; }
+	.breadcrumb-link:hover { text-decoration: underline; }
+	.breadcrumb-current { color: var(--color-text-muted); }
+	.breadcrumb-sep { color: var(--color-text-muted); opacity: 0.5; }
+
+	.star-criteria {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.78rem;
+		color: var(--color-text-muted);
+		margin-bottom: 0.75rem;
+		flex-wrap: wrap;
+	}
+	.star-chip { opacity: 0.7; }
+	.star-sep { opacity: 0.4; }
 </style>

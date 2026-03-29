@@ -224,7 +224,6 @@ export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard
 	function handleKeyDown(event: KeyboardEvent) {
 		if (!enableKeyboard) return;
 		const key = event.key.toLowerCase();
-		console.debug('Key pressed:', key);
 
 		// Get current keyboard mapping based on selected octave and root note
 		const keyboardToMidi = getKeyboardToMidi(virtualMidi.getOctave(), virtualMidi.getRootNote());
@@ -232,9 +231,6 @@ export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard
 		if (keyboardToMidi[key] && !pressedKeys.has(key)) {
 			pressedKeys.add(key);
 			const midiNote = keyboardToMidi[key] as MidiNote;
-			console.debug(
-				`Pressing MIDI note ${midiNote} for key '${key}' (octave ${virtualMidi.getOctave()})`
-			);
 			virtualMidi.pressKey(midiNote);
 			event.preventDefault();
 		}
@@ -250,29 +246,15 @@ export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard
 		if (keyboardToMidi[key] && pressedKeys.has(key)) {
 			pressedKeys.delete(key);
 			const midiNote = keyboardToMidi[key] as MidiNote;
-			console.debug(
-				`Releasing MIDI note ${midiNote} for key '${key}' (octave ${virtualMidi.getOctave()})`
-			);
 			virtualMidi.releaseKey(midiNote);
 			event.preventDefault();
 		}
 	}
 
-	if (enableKeyboard) {
-		console.debug(
-			'Virtual keyboard input setup complete. Available keys:',
-			Object.keys(keyboardLayout),
-			'Base octave:',
-			virtualMidi.getOctave()
-		);
-	} else {
-		console.debug('Virtual keyboard input setup (keyboard disabled)');
-	}
 
 	document.addEventListener('keydown', handleKeyDown);
 	document.addEventListener('keyup', handleKeyUp);
 	return () => {
-		console.debug('Virtual keyboard input cleanup');
 		document.removeEventListener('keydown', handleKeyDown);
 		document.removeEventListener('keyup', handleKeyUp);
 	};

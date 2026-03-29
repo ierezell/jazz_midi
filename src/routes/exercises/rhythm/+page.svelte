@@ -462,7 +462,7 @@
 	select {
 		background: var(--color-surface-raised);
 		border: 1px solid var(--color-border);
-		color: #fff;
+		color: var(--color-text);
 		padding: 0.6rem 1rem;
 		border-radius: 8px;
 		min-width: 200px;

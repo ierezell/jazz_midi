@@ -175,7 +175,7 @@
 
 <style>
 	.stats-widget {
-		background: white;
+		background: var(--color-surface);
 		border-radius: 12px;
 		padding: 1.5rem;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -189,7 +189,7 @@
 	}
 	.stats-header h3 {
 		margin: 0;
-		color: #2c3e50;
+		color: var(--color-text);
 	}
 	.overall-progress {
 		position: relative;
@@ -214,14 +214,14 @@
 		position: absolute;
 		inset: 8px;
 		border-radius: 50%;
-		background: white;
+		background: var(--color-surface);
 	}
 	.progress-text {
 		position: relative;
 		z-index: 1;
 		font-weight: bold;
 		font-size: 0.85rem;
-		color: #2c3e50;
+		color: var(--color-text);
 	}
 	.stats-summary {
 		display: flex;
@@ -237,15 +237,15 @@
 	.stat-value {
 		font-size: 1.5rem;
 		font-weight: bold;
-		color: #2c3e50;
+		color: var(--color-text);
 	}
 	.stat-label {
-		color: #7f8c8d;
+		color: var(--color-text-muted);
 		font-size: 0.85rem;
 		margin-top: 0.25rem;
 	}
 	.detailed-progress h4 {
-		color: #2c3e50;
+		color: var(--color-text);
 		margin-bottom: 1rem;
 	}
 	.progress-grid {
@@ -254,10 +254,10 @@
 		gap: 1rem;
 	}
 	.note-progress-card {
-		border: 1px solid #e0e0e0;
+		border: 1px solid var(--color-border);
 		border-radius: 8px;
 		padding: 1rem;
-		background: #fafafa;
+		background: var(--color-surface-raised);
 	}
 	.note-header {
 		margin-bottom: 0.75rem;
@@ -265,9 +265,8 @@
 	.note-name {
 		font-size: 1.1rem;
 		font-weight: bold;
-		color: #2c3e50;
-		background: #3498db;
-		color: rgb(100, 77, 77);
+		background: var(--color-primary);
+		color: var(--color-on-primary);
 		padding: 0.25rem 0.75rem;
 		border-radius: 20px;
 	}
@@ -277,10 +276,10 @@
 		gap: 0.75rem;
 	}
 	.exercise-progress {
-		background: white;
+		background: var(--color-surface);
 		padding: 0.75rem;
 		border-radius: 6px;
-		border-left: 4px solid #3498db;
+		border-left: 4px solid var(--color-primary);
 	}
 	.exercise-info {
 		display: flex;
@@ -290,7 +289,7 @@
 	}
 	.exercise-type {
 		font-weight: 500;
-		color: #2c3e50;
+		color: var(--color-text);
 		text-transform: capitalize;
 	}
 	.mastery-badge {
@@ -310,17 +309,17 @@
 	}
 	.stat-small .label {
 		font-size: 0.75rem;
-		color: #7f8c8d;
+		color: var(--color-text-muted);
 	}
 	.stat-small .value {
 		font-size: 0.85rem;
 		font-weight: 500;
-		color: #2c3e50;
+		color: var(--color-text);
 	}
 	.no-data {
 		text-align: center;
 		padding: 2rem;
-		color: #7f8c8d;
+		color: var(--color-text-muted);
 		font-style: italic;
 	}
 	@media (max-width: 768px) {

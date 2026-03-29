@@ -8,6 +8,7 @@
 	import { Star, Lock, Check, Play, MapPin, Flame, Zap, Trophy, Dumbbell } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import type { RouteId } from '$app/types';
 
 	let units = $state(journeyService.getUnits());
 	let profile = $state(userStatsService.getProfile());
@@ -26,7 +27,7 @@
 		const url = journeyService.getLessonUrl(unit, lesson);
 		// Split the path and query params
 		const [path, query] = url.split('?');
-		return query ? `${resolve(path as any)}?${query}` : resolve(path as any);
+		return query ? `${resolve(path as unknown as RouteId)}?${query}` : resolve(path as unknown as RouteId);
 	}
 
 	function startPractice(unitId: string) {
@@ -98,6 +99,19 @@
 					</div>
 				</div>
 
+				<div class="unit-meta">
+					<span class="lesson-count">{unit.lessons.length} lessons</span>
+					<span class="unit-progress-text">
+						{unit.lessons.filter(l => l.completed).length}/{unit.lessons.length} completed
+					</span>
+				</div>
+				<div class="unit-progress-bar">
+					<div
+						class="unit-progress-fill"
+						style="width: {unit.lessons.length > 0 ? (unit.lessons.filter(l => l.completed).length / unit.lessons.length) * 100 : 0}%"
+					></div>
+				</div>
+
 				<div class="lessons-grid">
 					{#each unit.lessons as lesson}
 						<a
@@ -155,7 +169,7 @@
 		max-width: 800px;
 		margin: 0 auto;
 		padding: 2rem 1rem;
-		padding-top: 10rem; /* Space for main header (60px) + stats header (60px) + margin */
+		padding-top: 5rem; /* Space for fixed stats-header (60px) below the layout header */
 	}
 
 	.stats-header {
@@ -257,7 +271,7 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: flex-start;
-		margin-bottom: 2rem;
+		margin-bottom: 0.75rem;
 	}
 
 	.unit-header.locked {
@@ -419,6 +433,29 @@
 		border-radius: 0.5rem;
 		color: var(--color-text-muted);
 		border: 1px solid var(--color-border);
+	}
+
+	.unit-meta {
+		display: flex;
+		gap: 0.5rem;
+		font-size: 0.8rem;
+		color: var(--color-text-muted);
+		margin-bottom: 0.5rem;
+	}
+
+	.unit-progress-bar {
+		height: 4px;
+		background: var(--color-surface-raised);
+		border-radius: 2px;
+		overflow: hidden;
+		margin-bottom: 1.5rem;
+	}
+
+	.unit-progress-fill {
+		height: 100%;
+		background: var(--color-primary);
+		border-radius: 2px;
+		transition: width 0.4s ease;
 	}
 
 	.path-connector {

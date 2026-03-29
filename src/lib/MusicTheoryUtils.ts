@@ -131,13 +131,13 @@ const CHORD_INTERVALS: Record<ChordType, ReadonlyArray<(root: MidiNote) => MidiN
 };
 
 /**
- * Constrains MIDI note to C3-C4 range (48-60) for optimal playability
+ * Constrains MIDI note to C4-C5 range (72-84) for optimal playability
  * Pure function - no side effects
  */
 function constrainToOptimalRange(midi: MidiNote): MidiNote {
 	let constrained = midi;
-	while (constrained > 60) constrained = (constrained - 12) as MidiNote;
-	while (constrained < 48) constrained = (constrained + 12) as MidiNote;
+	while (constrained > 72) constrained = (constrained - 12) as MidiNote;
+	while (constrained < 60) constrained = (constrained + 12) as MidiNote;
 	return constrained;
 }
 
@@ -207,6 +207,17 @@ export function getVoicedChordNotes(chord: Chord, voicing: ChordVoicing): MidiNo
 				(chord.third + 12) as MidiNote,
 				(chord.fifth + 12) as MidiNote
 			].filter((n) => n !== undefined) as MidiNote[];
+		case 'shell':
+			// Shell voicing: root (LH) + 7th (LH) — the pianist's left-hand shortcut
+			return [
+				(chord.root - 12) as MidiNote,
+				((chord.seventh ?? chord.root) - 12) as MidiNote
+			].filter((n) => n >= 24) as MidiNote[];
+		case 'guide-tones':
+			// Guide tones: 3rd + 7th — define the chord quality, great for voice leading
+			return [chord.third, chord.seventh ?? chord.third].filter(
+				(n) => n !== undefined
+			) as MidiNote[];
 		default:
 			return allChordNotes;
 	}
@@ -244,6 +255,18 @@ export function generateChordNotesDataFromChord(
 		}
 		case 'rootless-a':
 		case 'rootless-b': {
+			return {
+				leftHand: [],
+				rightHand: [voicedNotes.map((midi) => MidiToNote[midi])]
+			};
+		}
+		case 'shell': {
+			return {
+				leftHand: [voicedNotes.map((midi) => MidiToNote[midi])],
+				rightHand: []
+			};
+		}
+		case 'guide-tones': {
 			return {
 				leftHand: [],
 				rightHand: [voicedNotes.map((midi) => MidiToNote[midi])]

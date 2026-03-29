@@ -46,6 +46,7 @@
 	class:connected={isConnected}
 	onclick={() => (showHelp = !showHelp)}
 	title={isConnected ? 'MIDI Connected' : 'No MIDI Device Found'}
+	aria-label={isConnected ? 'MIDI Connected — click for details' : 'No MIDI Device Found — click for help'}
 >
 	{#if isConnected}
 		<CheckCircle2 size={16} class="icon-success" />
@@ -57,10 +58,15 @@
 </button>
 
 {#if showHelp}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="modal-backdrop" onclick={() => (showHelp = false)}>
-		<div class="modal-content" onclick={(e) => e.stopPropagation()}>
+	<div
+		class="modal-backdrop"
+		role="button"
+		tabindex="0"
+		aria-label="Close MIDI help"
+		onclick={() => (showHelp = false)}
+		onkeydown={(e) => e.key === 'Enter' && (showHelp = false)}
+	>
+		<div class="modal-content" role="dialog" aria-modal="true" aria-label="MIDI Setup" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 			<div class="modal-header">
 				<Piano size={28} class="text-primary" />
 				<h3>MIDI Setup</h3>
@@ -241,7 +247,7 @@
 		padding: 1rem;
 		border-radius: 8px;
 		background: var(--color-primary);
-		color: #000;
+		color: var(--color-on-primary);
 		font-weight: bold;
 		border: none;
 		cursor: pointer;

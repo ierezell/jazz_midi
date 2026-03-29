@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="cerberus">
+<html lang="en" data-theme="dark">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="/jazz_midi/favicon.png" />
@@ -11,26 +11,37 @@
 		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="theme-color" content="#4075a6" />
-		
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/entry/start.DgCT7Fu5.js">
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/CAh8VoQ4.js">
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/ZtE6Gyvq.js">
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/C4peLJJm.js">
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/CQeEJeRZ.js">
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/BRJReVLM.js">
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/entry/app.8XWX0Lm8.js">
+		<script>
+		// Restore theme before first paint to avoid flash
+		(function () {
+			var saved = localStorage.getItem('theme');
+			var theme = saved === 'light' || saved === 'dark' ? saved : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+			document.documentElement.setAttribute('data-theme', theme);
+			if (theme === 'dark') {
+				document.documentElement.classList.add('dark');
+			}
+		})();
+	</script>
+	
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/entry/start.C-UsDRYR.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/BHJGBT-8.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/FHRMlcpD.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/CMOYWztE.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/DoqNf67t.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/D1Hvt-3p.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/entry/app.Dj2eouRa.js">
 		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/PPVm8Dsz.js">
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/BnZ86L-c.js">
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/Bdvgn338.js">
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/CdTPX8-T.js">
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/BBj3Lkrj.js">
-		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/-nZJNBOr.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/DQgRAKJR.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/OjG4CKpy.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/DenO8-06.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/GmfoRYNG.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/CnjeKiF1.js">
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">
 			<script>
 				{
-					__sveltekit_123an3n = {
+					__sveltekit_vo9hck = {
 						base: "/jazz_midi",
 						assets: "/jazz_midi"
 					};
@@ -38,8 +49,8 @@
 					const element = document.currentScript.parentElement;
 
 					Promise.all([
-						import("/jazz_midi/_app/immutable/entry/start.DgCT7Fu5.js"),
-						import("/jazz_midi/_app/immutable/entry/app.8XWX0Lm8.js")
+						import("/jazz_midi/_app/immutable/entry/start.C-UsDRYR.js"),
+						import("/jazz_midi/_app/immutable/entry/app.Dj2eouRa.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element);
 					});

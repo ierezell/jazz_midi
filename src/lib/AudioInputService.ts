@@ -50,8 +50,7 @@ export class AudioInputService {
 
 			// Race condition check: If stop() was called while awaiting above
 			if (!this.isStarting) {
-				console.debug('AudioInputService: start() aborted');
-				stream.getTracks().forEach(track => track.stop());
+					stream.getTracks().forEach(track => track.stop());
 				context.close();
 				return;
 			}
@@ -75,7 +74,6 @@ export class AudioInputService {
 			this.processorNode.connect(this.audioContext.destination); // Needed for script processor to run
 
 			this.isRecording = true;
-			console.log('AudioInputService started');
 		} catch (error) {
 			console.error('Error starting audio input:', error);
 			this.stop();

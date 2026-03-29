@@ -1,4 +1,6 @@
 <script lang="ts">
+	const NOTE_NAMES = ['C', 'C sharp', 'D', 'D sharp', 'E', 'F', 'F sharp', 'G', 'G sharp', 'A', 'A sharp', 'B'];
+
 	let {
 		noteNum,
 		pressed,
@@ -24,6 +26,7 @@
 	} = $props();
 
 	let isNatural = ![1, 3, 6, 8, 10].includes(noteNum % 12);
+	let noteLabel = $derived(`${NOTE_NAMES[noteNum % 12]}${Math.floor(noteNum / 12) - 1}`);
 	let bias = $state(0);
 
 	if (!isNatural) {
@@ -75,6 +78,7 @@
 				? 0.0
 				: 1.0)}px; --height: {keyHeight}px; --note-role-color: {noteRoleColor}; transform: translate({bias}px);"
 	draggable="false"
+	aria-label={noteLabel}
 	onclick={handleClick}
 	onmousedown={handleMouseDown}
 	onmouseup={handleMouseUp}
@@ -162,12 +166,12 @@
 		transform: scale(0.98);
 	}
 	.wrong-note {
-		background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%) !important;
-		border-color: #990000 !important;
+		background: linear-gradient(135deg, var(--color-wrong-note-start) 0%, var(--color-wrong-note-end) 100%) !important;
+		border-color: var(--color-wrong-note-border) !important;
 		animation: wrongNoteFlash 0.3s ease-in-out;
 	}
 	.wrong-note.accidental {
-		background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%) !important;
+		background: linear-gradient(135deg, var(--color-wrong-note-start) 0%, var(--color-wrong-note-end) 100%) !important;
 	}
 	@keyframes wrongNoteFlash {
 		0% {
