@@ -28,39 +28,44 @@ export interface Unit {
 export class JourneyService {
 	private static instance: JourneyService;
 
-	// Updated Curriculum based on User Request
+	// ============================================================
+	// CURRICULUM v2.0 — 12 Units: Zero → Jazz Improvisation
+	// See src/lib/data/curriculum-design.ts for full rationale.
+	// ============================================================
 	private units: Unit[] = [
+
+		// ── UNIT 1 ─ First Steps ────────────────────────────────
+		// Milestone: Know all 12 note names and their keyboard positions.
 		{
-			id: 'level-0',
-			title: 'Level 0: Foundations',
-			description: 'Learn the basics: Reading, Names, Intervals, and Flash Cards.',
+			id: 'unit-1',
+			title: 'Unit 1: First Steps',
+			description: 'Learn the names of all the keys on the piano — white and black.',
 			status: 'active',
-			color: 'bg-blue-500',
+			color: 'bg-sky-500',
 			lessons: [
 				{
-					id: 'l0-c-scale',
-					title: 'C Major Scale',
+					id: 'u1-white-keys',
+					title: 'White Key Names (C–B)',
 					type: 'exercise',
-					path: '/exercises/scales',
-					params: { root: 'C', mode: 'Maj' },
+					path: '/exercises/names',
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l0-notes',
-					title: 'Note Identification',
+					id: 'u1-black-keys',
+					title: 'Black Key Names (Sharps & Flats)',
 					type: 'exercise',
 					path: '/exercises/names',
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
-					requiredPerfectCompletions: 5
+					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l0-dexterity',
-					title: 'Finger Dexterity: 5-Finger',
+					id: 'u1-keyboard-layout',
+					title: 'Five-Finger Position (Middle C)',
 					type: 'exercise',
 					path: '/exercises/dexterity',
 					params: { mode: 'five-finger' },
@@ -70,18 +75,19 @@ export class JourneyService {
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l0-intervals',
-					title: 'Intervals',
+					id: 'u1-quarter-rhythm',
+					title: 'Quarter-Note Groove',
 					type: 'exercise',
-					path: '/exercises/intervals',
+					path: '/exercises/rhythm',
+					params: { patternId: 'rock' },
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
+					requiredPerfectCompletions: 2
 				},
 				{
-					id: 'l0-flashcards',
-					title: 'Flash Cards',
+					id: 'u1-flashcards',
+					title: 'Flash Card Drill — All Notes',
 					type: 'exercise',
 					path: '/exercises/flashcards',
 					completed: false,
@@ -91,15 +97,18 @@ export class JourneyService {
 				}
 			]
 		},
+
+		// ── UNIT 2 ─ Scales: The Foundation ─────────────────────
+		// Milestone: Play C, G, and F major scales with correct fingering at 60 BPM.
 		{
-			id: 'level-1',
-			title: 'Level 1: Major Scales (Slow)',
-			description: 'C, G, and F Major Scales at a slow tempo.',
+			id: 'unit-2',
+			title: 'Unit 2: Scales — The Foundation',
+			description: 'C, G, and F major scales at 60 BPM. Build finger memory.',
 			status: 'locked',
 			color: 'bg-green-500',
 			lessons: [
 				{
-					id: 'l1-c-scale',
+					id: 'u2-c-scale-60',
 					title: 'C Major Scale (60 BPM)',
 					type: 'exercise',
 					path: '/exercises/scales',
@@ -111,7 +120,18 @@ export class JourneyService {
 					bpm: 60
 				},
 				{
-					id: 'l1-g-scale',
+					id: 'u2-five-finger-warmup',
+					title: 'Five-Finger Warmup',
+					type: 'exercise',
+					path: '/exercises/dexterity',
+					params: { mode: 'five-finger' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u2-g-scale-60',
 					title: 'G Major Scale (60 BPM)',
 					type: 'exercise',
 					path: '/exercises/scales',
@@ -123,7 +143,7 @@ export class JourneyService {
 					bpm: 60
 				},
 				{
-					id: 'l1-f-scale',
+					id: 'u2-f-scale-60',
 					title: 'F Major Scale (60 BPM)',
 					type: 'exercise',
 					path: '/exercises/scales',
@@ -135,8 +155,71 @@ export class JourneyService {
 					bpm: 60
 				},
 				{
-					id: 'l1-dexterity-chromatic',
-					title: 'Dexterity: Chromatic Scale',
+					id: 'u2-eighth-rhythm',
+					title: 'Eighth-Note Pop Groove',
+					type: 'exercise',
+					path: '/exercises/rhythm',
+					params: { patternId: 'pop' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 2
+				},
+				{
+					id: 'u2-flashcards-all',
+					title: 'Flash Cards — All 12 Notes',
+					type: 'exercise',
+					path: '/exercises/flashcards',
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 5
+				}
+			]
+		},
+
+		// ── UNIT 3 ─ Hearing Distance: Intervals ────────────────
+		// Milestone: Identify and play any interval from a unison to an octave.
+		{
+			id: 'unit-3',
+			title: 'Unit 3: Intervals — Hearing Distance',
+			description: 'Learn intervals from 2nds to octaves. The grammar of music.',
+			status: 'locked',
+			color: 'bg-teal-500',
+			lessons: [
+				{
+					id: 'u3-intervals-small',
+					title: 'Unison, 2nds, and 3rds',
+					type: 'exercise',
+					path: '/exercises/intervals',
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u3-intervals-mid',
+					title: '4ths and 5ths',
+					type: 'exercise',
+					path: '/exercises/intervals',
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u3-intervals-large',
+					title: '6ths, 7ths, and Octave',
+					type: 'exercise',
+					path: '/exercises/intervals',
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u3-chromatic',
+					title: 'Chromatic Scale — All 12 Notes',
 					type: 'exercise',
 					path: '/exercises/dexterity',
 					params: { mode: 'chromatic' },
@@ -144,18 +227,86 @@ export class JourneyService {
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u3-intervals-mix',
+					title: 'Interval Mix Quiz',
+					type: 'exercise',
+					path: '/exercises/intervals',
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
 				}
 			]
 		},
+
+		// ── UNIT 4 ─ Chords I: Triads ───────────────────────────
+		// Milestone: Play major and minor triads (root position) in C, G, F.
 		{
-			id: 'level-2',
-			title: 'Level 2: Medium Tempo & Chords',
-			description: 'Scales at medium tempo and basic chords.',
+			id: 'unit-4',
+			title: 'Unit 4: Triads — Your First Chords',
+			description: 'Major and minor triads in C, G, and F. Harmony starts here.',
 			status: 'locked',
-			color: 'bg-yellow-500',
+			color: 'bg-lime-500',
 			lessons: [
 				{
-					id: 'l2-c-scale',
+					id: 'u4-c-major-triad',
+					title: 'C Major Triad',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'C', quality: 'major' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u4-g-major-triad',
+					title: 'G Major Triad',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'G', quality: 'major' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u4-f-major-triad',
+					title: 'F Major Triad',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'F', quality: 'major' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u4-minor-triads',
+					title: 'Minor Triads (Am, Dm, Em)',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'A', quality: 'minor' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u4-diatonic-triads-c',
+					title: 'Diatonic Triads in C',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'C', quality: 'diatonic' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u4-c-scale-90',
 					title: 'C Major Scale (90 BPM)',
 					type: 'exercise',
 					path: '/exercises/scales',
@@ -165,10 +316,22 @@ export class JourneyService {
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3,
 					bpm: 90
-				},
+				}
+			]
+		},
+
+		// ── UNIT 5 ─ Chords II: The Jazz Sound ──────────────────
+		// Milestone: Play maj7, min7, dom7, and half-dim chords; hear the difference.
+		{
+			id: 'unit-5',
+			title: 'Unit 5: 7th Chords — The Jazz Sound',
+			description: 'Add the 7th — now everything sounds jazzy. Cmaj7, Dm7, G7, and more.',
+			status: 'locked',
+			color: 'bg-yellow-500',
+			lessons: [
 				{
-					id: 'l2-c-chords',
-					title: 'C Major Chords',
+					id: 'u5-cmaj7',
+					title: 'Cmaj7 — The Major 7th Sound',
 					type: 'exercise',
 					path: '/exercises/chords',
 					params: { root: 'C', quality: 'maj7' },
@@ -178,8 +341,52 @@ export class JourneyService {
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l2-shell-voicings',
-					title: 'Shell Voicings (LH Root + 7th)',
+					id: 'u5-dm7',
+					title: 'Dm7 — The Minor 7th Sound',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'D', quality: 'min7' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u5-g7',
+					title: 'G7 — The Dominant 7th Sound',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'G', quality: 'dom7' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u5-half-dim',
+					title: 'Bm7b5 — Half-Diminished',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'B', quality: 'half-dim' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u5-diatonic-7ths-c',
+					title: '7th Chords in C (All Diatonic)',
+					type: 'exercise',
+					path: '/exercises/chords',
+					params: { root: 'C', quality: 'diatonic7' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u5-shell-root-7',
+					title: 'Shell Voicings: Root + 7th (LH)',
 					type: 'exercise',
 					path: '/exercises/chords',
 					params: { root: 'C', quality: 'maj7', voicing: 'shell' },
@@ -189,107 +396,52 @@ export class JourneyService {
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l2-g-scale',
-					title: 'G Major Scale (90 BPM)',
+					id: 'u5-intervals-7ths',
+					title: 'Interval Review: 7ths by Ear',
 					type: 'exercise',
-					path: '/exercises/scales',
-					params: { root: 'G', mode: 'Maj', bpm: '90' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3,
-					bpm: 90
-				},
-				{
-					id: 'l2-f-scale',
-					title: 'F Major Scale (90 BPM)',
-					type: 'exercise',
-					path: '/exercises/scales',
-					params: { root: 'F', mode: 'Maj', bpm: '90' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3,
-					bpm: 90
-				},
-				{
-					id: 'l2-g-chords',
-					title: 'G Major Chords',
-					type: 'exercise',
-					path: '/exercises/chords',
-					params: { root: 'G', quality: 'maj7' },
+					path: '/exercises/intervals',
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l2-dexterity-thirds',
-					title: 'Dexterity: Thirds',
-					type: 'exercise',
-					path: '/exercises/dexterity',
-					params: { mode: 'thirds' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l2-rhythm-basic',
-					title: 'Basic Rhythm: Pop Groove',
-					type: 'exercise',
-					path: '/exercises/rhythm',
-					params: { patternId: 'pop' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 2
 				}
 			]
 		},
+
+		// ── UNIT 6 ─ The Big One: ii-V-I ────────────────────────
+		// Milestone: Play ii-V-I in C, G, and F with both hands.
 		{
-			id: 'level-3',
-			title: 'Level 3: Faster & Split Chords',
-			description: 'Pick up the pace and learn split chord voicings.',
+			id: 'unit-6',
+			title: 'Unit 6: ii-V-I — The Heart of Jazz',
+			description: 'Dm7 → G7 → Cmaj7. The most important three chords in jazz.',
 			status: 'locked',
 			color: 'bg-orange-500',
 			lessons: [
 				{
-					id: 'l3-sight-reading',
-					title: 'Sight Reading Basics',
-					type: 'exercise',
-					path: '/exercises/partition',
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l3-c-scale-fast',
-					title: 'C Major Scale (120 BPM)',
-					type: 'exercise',
-					path: '/exercises/scales',
-					params: { root: 'C', mode: 'Maj', bpm: '120' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3,
-					bpm: 120
-				},
-				{
-					id: 'l3-split-chords',
-					title: 'Split Chords (1735)',
+					id: 'u6-ii-v-i-listen',
+					title: 'Hear the ii-V-I Resolution',
 					type: 'exercise',
 					path: '/exercises/chords',
-					params: { voicing: '1735' },
+					params: { root: 'C', quality: 'ii-v-i-intro' },
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l3-guide-tones',
-					title: 'Guide Tones (3rd + 7th)',
+					id: 'u6-ii-v-i-c-rh',
+					title: 'ii-V-I in C — Right Hand',
+					type: 'exercise',
+					path: '/exercises/two_five_ones',
+					params: { key: 'C' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u6-shell-full',
+					title: 'Shell Voicings: Root + 3rd + 7th',
 					type: 'exercise',
 					path: '/exercises/chords',
 					params: { root: 'C', quality: 'maj7', voicing: 'guide-tones' },
@@ -299,7 +451,64 @@ export class JourneyService {
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l3-blues-shuffle-rhythm',
+					id: 'u6-ii-v-i-g',
+					title: 'ii-V-I in G',
+					type: 'exercise',
+					path: '/exercises/two_five_ones',
+					params: { key: 'G' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u6-ii-v-i-f',
+					title: 'ii-V-I in F',
+					type: 'exercise',
+					path: '/exercises/two_five_ones',
+					params: { key: 'F' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u6-charleston-rhythm',
+					title: 'Charleston Rhythm on ii-V-I',
+					type: 'exercise',
+					path: '/exercises/rhythm',
+					params: { patternId: 'jazz-charleston' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u6-g-scale-90',
+					title: 'G Major Scale (90 BPM)',
+					type: 'exercise',
+					path: '/exercises/scales',
+					params: { root: 'G', mode: 'Maj', bpm: '90' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3,
+					bpm: 90
+				}
+			]
+		},
+
+		// ── UNIT 7 ─ Feel: Swing & Blues Rhythm ─────────────────
+		// Milestone: Play a blues shuffle and jazz comping pattern with both hands.
+		{
+			id: 'unit-7',
+			title: 'Unit 7: Feel — Swing & Blues',
+			description: 'Grooves, shuffles, and the boogie. This is where jazz breathes.',
+			status: 'locked',
+			color: 'bg-red-500',
+			lessons: [
+				{
+					id: 'u7-blues-shuffle',
 					title: 'Blues Shuffle Rhythm',
 					type: 'exercise',
 					path: '/exercises/rhythm',
@@ -310,29 +519,7 @@ export class JourneyService {
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l3-f-chords',
-					title: 'F Major Chords',
-					type: 'exercise',
-					path: '/exercises/chords',
-					params: { root: 'F', quality: 'maj7' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l3-minor-chords',
-					title: 'Minor 7th Chords',
-					type: 'exercise',
-					path: '/exercises/chords',
-					params: { root: 'C', quality: 'min7' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l3-blues-lick',
+					id: 'u7-blues-walking-bass',
 					title: 'Blues Walking Bass Lick',
 					type: 'exercise',
 					path: '/exercises/licks',
@@ -343,7 +530,18 @@ export class JourneyService {
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l3-pentatonic-blues-riff',
+					id: 'u7-blues-shells-rhythm',
+					title: 'Blues Shells: Root-Fifth + Voicings',
+					type: 'exercise',
+					path: '/exercises/rhythm',
+					params: { patternId: 'blues-shells' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u7-pentatonic-blues-riff',
 					title: 'Pentatonic Blues Riff',
 					type: 'exercise',
 					path: '/exercises/licks',
@@ -352,29 +550,9 @@ export class JourneyService {
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
-				}
-			]
-		},
-		{
-			id: 'level-4',
-			title: 'Level 4: II-V-I',
-			description: 'Master the II-V-I progression.',
-			status: 'locked',
-			color: 'bg-red-500',
-			lessons: [
-				{
-					id: 'l4-ii-v-i-c',
-					title: 'II-V-I in C',
-					type: 'exercise',
-					path: '/exercises/two_five_ones',
-					params: { key: 'C' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'hand-independence-1',
+					id: 'u7-hand-independence-1',
 					title: 'Hand Independence: Shells + Scale',
 					type: 'exercise',
 					path: '/exercises/hand_independence',
@@ -385,73 +563,7 @@ export class JourneyService {
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l4-stride-lick',
-					title: 'Stride Left Hand Lick',
-					type: 'exercise',
-					path: '/exercises/licks',
-					params: { lickId: 'stride-left-hand' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l4-jazz-charleston',
-					title: 'Jazz Charleston Rhythm',
-					type: 'exercise',
-					path: '/exercises/rhythm',
-					params: { patternId: 'jazz-charleston' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l4-bebop-lick',
-					title: 'Bebop Scale Run',
-					type: 'exercise',
-					path: '/exercises/licks',
-					params: { lickId: 'bebop-scale-run' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l4-jazz-turnaround-lh',
-					title: 'Jazz Turnaround Left Hand',
-					type: 'exercise',
-					path: '/exercises/licks',
-					params: { lickId: 'jazz-turnaround-lh' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l4-gospel-chord-run',
-					title: 'Gospel Chord Run',
-					type: 'exercise',
-					path: '/exercises/licks',
-					params: { lickId: 'gospel-chord-run' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l4-dorian-mode-run',
-					title: 'Dorian Mode Run',
-					type: 'exercise',
-					path: '/exercises/licks',
-					params: { lickId: 'dorian-mode-run' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l4-boogie',
+					id: 'u7-boogie',
 					title: 'Boogie-Woogie Pattern',
 					type: 'exercise',
 					path: '/exercises/boogie',
@@ -463,82 +575,108 @@ export class JourneyService {
 				}
 			]
 		},
+
+		// ── UNIT 8 ─ Improvisation I: Blues Scale ────────────────
+		// Milestone: Improvise a short phrase over the blues using the blues scale.
 		{
-			id: 'level-5',
-			title: 'Level 5: Songs',
-			description: 'Apply your skills to real jazz standards.',
+			id: 'unit-8',
+			title: 'Unit 8: Improv I — The Blues Scale',
+			description: 'The six notes that built jazz and rock. C and G blues scales.',
 			status: 'locked',
-			color: 'bg-purple-500',
+			color: 'bg-rose-600',
 			lessons: [
 				{
-					id: 'l5-fly-me',
-					title: 'Fly Me To The Moon',
+					id: 'u8-c-blues-scale',
+					title: 'C Blues Scale',
 					type: 'exercise',
-					path: '/exercises/songs',
-					params: { song: 'fly_me_to_the_moon' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 1
-				},
-				{
-					id: 'l5-autumn-leaves',
-					title: 'Autumn Leaves',
-					type: 'exercise',
-					path: '/exercises/songs',
-					params: { song: 'autumn_leaves' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 1
-				},
-				{
-					id: 'l5-blue-bossa',
-					title: 'Blue Bossa',
-					type: 'exercise',
-					path: '/exercises/songs',
-					params: { song: 'blue_bossa' },
+					path: '/exercises/scales',
+					params: { root: 'C', mode: 'Blues' },
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l5-summertime',
-					title: 'Summertime',
+					id: 'u8-g-blues-scale',
+					title: 'G Blues Scale',
 					type: 'exercise',
-					path: '/exercises/songs',
-					params: { song: 'summertime' },
+					path: '/exercises/scales',
+					params: { root: 'G', mode: 'Blues' },
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l5-all-the-things',
-					title: 'All The Things You Are',
-					type: 'exercise',
-					path: '/exercises/songs',
-					params: { song: 'all_the_things_you_are' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l5-bebop-enclosure',
-					title: 'Bebop Enclosure Lick',
+					id: 'u8-blues-shuffle-right',
+					title: 'Blues Shuffle Right-Hand Lick',
 					type: 'exercise',
 					path: '/exercises/licks',
-					params: { lickId: 'bebop-enclosure' },
+					params: { lickId: 'blues-shuffle-right' },
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
-					requiredPerfectCompletions: 5
+					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l5-swing-eighth-riff',
-					title: 'Swing Eighth Riff',
+					id: 'u8-minor-blues-head',
+					title: 'Minor Blues Head',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'minor-blues-head' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u8-hand-independence-2',
+					title: 'Hand Independence: Walking Bass + Melody',
+					type: 'exercise',
+					path: '/exercises/hand_independence',
+					params: { level: '2' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u8-sight-reading',
+					title: 'Sight Reading: Lead Sheet Basics',
+					type: 'exercise',
+					path: '/exercises/partition',
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u8-f-scale-120',
+					title: 'F Major Scale (120 BPM)',
+					type: 'exercise',
+					path: '/exercises/scales',
+					params: { root: 'F', mode: 'Maj', bpm: '120' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3,
+					bpm: 120
+				}
+			]
+		},
+
+		// ── UNIT 9 ─ Improvisation II: Jazz Licks & Vocabulary ──
+		// Milestone: Have 5 memorised jazz phrases ready to use over a ii-V-I.
+		{
+			id: 'unit-9',
+			title: 'Unit 9: Improv II — Jazz Licks',
+			description: 'Learn 5 essential jazz phrases. Bebop, swing, enclosures.',
+			status: 'locked',
+			color: 'bg-amber-500',
+			lessons: [
+				{
+					id: 'u9-swing-eighth-riff',
+					title: 'Swing Eighth-Note Riff',
 					type: 'exercise',
 					path: '/exercises/licks',
 					params: { lickId: 'swing-eighth-riff' },
@@ -548,18 +686,51 @@ export class JourneyService {
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l5-funky-bass-line',
-					title: 'Funky Bass Line',
+					id: 'u9-jazz-turnaround-lh',
+					title: 'ii-V-I Turnaround Left Hand',
 					type: 'exercise',
 					path: '/exercises/licks',
-					params: { lickId: 'funky-bass-line' },
+					params: { lickId: 'jazz-turnaround-lh' },
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'hand-independence-3',
+					id: 'u9-bebop-scale-run',
+					title: 'Bebop Scale Run',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'bebop-scale-run' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u9-bebop-enclosure',
+					title: 'Bebop Enclosure Lick',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'bebop-enclosure' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u9-dorian-mode-run',
+					title: 'Dorian Mode Run (ii chord)',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'dorian-mode-run' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u9-hand-independence-3',
 					title: 'Hand Independence: Chord Melody',
 					type: 'exercise',
 					path: '/exercises/hand_independence',
@@ -570,18 +741,63 @@ export class JourneyService {
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l5-funk-rhythm',
-					title: 'Funk Groove Rhythm',
+					id: 'u9-ii-v-i-d',
+					title: 'ii-V-I in D major',
 					type: 'exercise',
-					path: '/exercises/rhythm',
-					params: { patternId: 'funk-basic' },
+					path: '/exercises/two_five_ones',
+					params: { key: 'D' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				}
+			]
+		},
+
+		// ── UNIT 10 ─ Songs I: First Standards ──────────────────
+		// Milestone: Play Fly Me To The Moon and Autumn Leaves with chord changes.
+		{
+			id: 'unit-10',
+			title: 'Unit 10: Songs I — First Standards',
+			description: 'Real jazz tunes. Fly Me, Autumn Leaves, Summertime, Blue Bossa.',
+			status: 'locked',
+			color: 'bg-purple-500',
+			lessons: [
+				{
+					id: 'u10-fly-me',
+					title: 'Fly Me To The Moon',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'fly_me_to_the_moon' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 1
+				},
+				{
+					id: 'u10-autumn-leaves',
+					title: 'Autumn Leaves',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'autumn_leaves' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 1
+				},
+				{
+					id: 'u10-summertime',
+					title: 'Summertime',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'summertime' },
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l5-latin-montuno',
+					id: 'u10-latin-montuno-rhythm',
 					title: 'Latin Montuno Rhythm',
 					type: 'exercise',
 					path: '/exercises/rhythm',
@@ -590,18 +806,65 @@ export class JourneyService {
 					stars: 0,
 					perfectCompletions: 0,
 					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u10-blue-bossa',
+					title: 'Blue Bossa',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'blue_bossa' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u10-gospel-chord-run',
+					title: 'Gospel Chord Run Lick',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'gospel-chord-run' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u10-ii-v-i-bb',
+					title: 'ii-V-I in Bb',
+					type: 'exercise',
+					path: '/exercises/two_five_ones',
+					params: { key: 'Bb' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
 				}
 			]
 		},
+
+		// ── UNIT 11 ─ Songs II: Standards + Hand Mastery ────────
+		// Milestone: Play All The Things You Are and Misty with a steady LH comp.
 		{
-			id: 'level-6',
-			title: 'Level 6: Jazz Master',
-			description: 'Advanced jazz vocabulary — complex rhythms, bebop licks, and stylistic mastery.',
-			color: '#8b5cf6',
+			id: 'unit-11',
+			title: 'Unit 11: Songs II — Standards & Mastery',
+			description: 'All The Things You Are, Misty, stride piano, and Herbie grooves.',
 			status: 'locked',
+			color: 'bg-violet-600',
 			lessons: [
 				{
-					id: 'l6-misty',
+					id: 'u11-all-the-things',
+					title: 'All The Things You Are',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'all_the_things_you_are' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u11-misty',
 					title: 'Misty',
 					type: 'exercise',
 					path: '/exercises/songs',
@@ -612,40 +875,7 @@ export class JourneyService {
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l6-so-what',
-					title: 'So What',
-					type: 'exercise',
-					path: '/exercises/songs',
-					params: { song: 'so_what' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l6-herbie-funk',
-					title: 'Herbie Hancock Funk',
-					type: 'exercise',
-					path: '/exercises/rhythm',
-					params: { patternId: 'herbie-funk' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 5
-				},
-				{
-					id: 'l6-hand-independence-2',
-					title: 'Hand Independence: Walking Bass',
-					type: 'exercise',
-					path: '/exercises/hand_independence',
-					params: { level: '2' },
-					completed: false,
-					stars: 0,
-					perfectCompletions: 0,
-					requiredPerfectCompletions: 3
-				},
-				{
-					id: 'l6-hand-independence-4',
+					id: 'u11-hand-independence-4',
 					title: 'Hand Independence: Stride Piano',
 					type: 'exercise',
 					path: '/exercises/hand_independence',
@@ -656,7 +886,95 @@ export class JourneyService {
 					requiredPerfectCompletions: 5
 				},
 				{
-					id: 'l6-latin-lick',
+					id: 'u11-herbie-funk',
+					title: 'Herbie Hancock Funk Groove',
+					type: 'exercise',
+					path: '/exercises/rhythm',
+					params: { patternId: 'herbie-funk' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 5
+				},
+				{
+					id: 'u11-whole-tone-lick',
+					title: 'Whole Tone Lick',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'whole-tone-lick' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 5
+				},
+				{
+					id: 'u11-funky-bass-line',
+					title: 'Funky Bass Line',
+					type: 'exercise',
+					path: '/exercises/licks',
+					params: { lickId: 'funky-bass-line' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u11-sight-reading-8ths',
+					title: 'Sight Reading: Eighth-Note Melodies',
+					type: 'exercise',
+					path: '/exercises/partition',
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				}
+			]
+		},
+
+		// ── UNIT 12 ─ Modal Jazz & Free Vocabulary ───────────────
+		// Milestone: Improvise over So What; understand Dorian and Mixolydian.
+		{
+			id: 'unit-12',
+			title: 'Unit 12: Modal Jazz — So What',
+			description: 'D Dorian, G Mixolydian, So What, and all 12 ii-V-I keys.',
+			status: 'locked',
+			color: 'bg-fuchsia-600',
+			lessons: [
+				{
+					id: 'u12-d-dorian',
+					title: 'D Dorian Scale',
+					type: 'exercise',
+					path: '/exercises/scales',
+					params: { root: 'D', mode: 'Dorian' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u12-g-mixolydian',
+					title: 'G Mixolydian Scale',
+					type: 'exercise',
+					path: '/exercises/scales',
+					params: { root: 'G', mode: 'Mixolydian' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u12-so-what',
+					title: 'So What',
+					type: 'exercise',
+					path: '/exercises/songs',
+					params: { song: 'so_what' },
+					completed: false,
+					stars: 0,
+					perfectCompletions: 0,
+					requiredPerfectCompletions: 3
+				},
+				{
+					id: 'u12-latin-montuno-lick',
 					title: 'Latin Montuno Bass Lick',
 					type: 'exercise',
 					path: '/exercises/licks',
@@ -667,8 +985,8 @@ export class JourneyService {
 					requiredPerfectCompletions: 3
 				},
 				{
-					id: 'l6-funk-lick',
-					title: 'Funk 16th Note Bass',
+					id: 'u12-funk-16th-bass',
+					title: 'Funk 16th-Note Bass Lick',
 					type: 'exercise',
 					path: '/exercises/licks',
 					params: { lickId: 'funk-sixteenth-bass' },
@@ -678,8 +996,8 @@ export class JourneyService {
 					requiredPerfectCompletions: 5
 				},
 				{
-					id: 'l6-minor-blues-head',
-					title: 'Minor Blues Head',
+					id: 'u12-minor-blues-head',
+					title: 'Minor Blues Head (Advanced)',
 					type: 'exercise',
 					path: '/exercises/licks',
 					params: { lickId: 'minor-blues-head' },
@@ -689,15 +1007,15 @@ export class JourneyService {
 					requiredPerfectCompletions: 5
 				},
 				{
-					id: 'l6-whole-tone-lick',
-					title: 'Whole Tone Lick',
+					id: 'u12-ii-v-i-all-keys',
+					title: 'ii-V-I — The Full Cycle',
 					type: 'exercise',
-					path: '/exercises/licks',
-					params: { lickId: 'whole-tone-lick' },
+					path: '/exercises/two_five_ones',
+					params: { key: 'cycle' },
 					completed: false,
 					stars: 0,
 					perfectCompletions: 0,
-					requiredPerfectCompletions: 5
+					requiredPerfectCompletions: 3
 				}
 			]
 		}

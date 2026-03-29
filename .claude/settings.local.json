@@ -1,10 +1,5 @@
 {
-  "env": {
-    "ANTHROPIC_AUTH_TOKEN": "",
-    "ANTHROPIC_BASE_URL": "",
-    "ANTHROPIC_MODEL": ""
-  },
-  "model": "claude-sonnet-4-6",
+  "env": {},
   "permissions": {
     "allow": [
       "WebFetch(domain:docs.pytorch.org)",

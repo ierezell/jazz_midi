@@ -704,4 +704,8 @@
 			font-size: 0.95rem;
 		}
 	}
+
+	@media (orientation: landscape) and (max-height: 500px) {
+		.scale-controls { gap: 0.5rem; }
+	}
 </style>

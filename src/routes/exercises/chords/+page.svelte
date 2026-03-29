@@ -448,4 +448,8 @@
 			max-width: 200px;
 		}
 	}
+
+	@media (orientation: landscape) and (max-height: 500px) {
+		.controls { flex-direction: row; gap: 0.5rem; padding: 0.5rem; margin: 0.5rem 0; }
+	}
 </style>

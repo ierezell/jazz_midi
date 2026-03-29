@@ -121,6 +121,13 @@
 		return inversion;
 	}
 
+	/** Clamp a MIDI note to stay within C3–B4 (MIDI 48–71) by shifting octaves */
+	function clampToRange(midi: MidiNote, low = 48, high = 71): MidiNote {
+		while (midi > high) midi = (midi - 12) as MidiNote;
+		while (midi < low) midi = (midi + 12) as MidiNote;
+		return midi;
+	}
+
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
 		const currentChord = getCurrentChord();
 		const rootNote = (currentChord.note + '3') as NoteFullName;
@@ -128,9 +135,9 @@
 		const effectiveInv = getEffectiveInversion();
 		const chord = chords(rootMidi, currentChord.type, effectiveInv);
 
-		const allChordNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(
-			(note) => note !== undefined
-		) as MidiNote[];
+		const allChordNotes = [chord.root, chord.third, chord.fifth, chord.seventh]
+			.filter((note) => note !== undefined)
+			.map((note) => clampToRange(note as MidiNote)) as MidiNote[];
 
 		return allChordNotes;
 	}
@@ -483,5 +490,10 @@
 		.control-group select {
 			min-width: 100%;
 		}
+	}
+
+	@media (orientation: landscape) and (max-height: 500px) {
+		.chord-progression { padding: 0.4rem; gap: 0.3rem; }
+		.chord-box { padding: 0.35rem 0.5rem; min-width: 50px; }
 	}
 </style>

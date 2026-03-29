@@ -339,11 +339,14 @@ export function getNoteRole(noteNumber: MidiNote, rootNumber: MidiNote): NoteRol
 	switch (difference) {
 		case 0:
 			return 'root';
-		case 4:
+		case 3: // minor third
+		case 4: // major third
 			return 'third';
-		case 7:
+		case 6: // diminished fifth / tritone
+		case 7: // perfect fifth
 			return 'fifth';
-		case 11:
+		case 10: // minor seventh (dom7, min7, half-dim)
+		case 11: // major seventh
 			return 'seventh';
 		case 2:
 			return 'ninth';

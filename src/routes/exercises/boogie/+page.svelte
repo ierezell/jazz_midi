@@ -27,8 +27,8 @@
 	let currentKey: Note = $state(propKey);
 
 	// Bass pattern notes relative to root (in semitones)
-	const bassPattern = [0, 9, 0, 7, 0, 9, 7]; // C, A, C, G, C, A, G
-	const bassPositions = [0, 1, 2, 3, 4, 5, 6]; // Which eighth note positions
+	const bassPattern = [0, 9, 0, 7, 0, 9, 7, 0]; // C, A, C, G, C, A, G, C
+	const bassPositions = [0, 1, 2, 3, 4, 5, 6, 7]; // Which eighth note positions
 
 	// Right hand plays C6 on positions 0 (beat 1) and 5 (& of 3)
 	const chordPositions = [0, 5];
@@ -333,5 +333,16 @@
 		.note-label {
 			font-size: 0.9rem;
 		}
+	}
+
+	@media (orientation: landscape) and (max-height: 500px) {
+		.boogie-content { padding: 0.25rem; gap: 0.75rem; }
+		.pattern-guide { padding: 0.5rem; }
+		.pattern-guide h3 { font-size: 1rem; margin-bottom: 0.75rem; }
+		.pattern-breakdown { flex-direction: row; gap: 0.75rem; }
+		.beat-box { min-width: 36px; padding: 0.35rem; }
+		.beat-label { font-size: 0.65rem; }
+		.note-label { font-size: 0.8rem; }
+		.tips { display: none; }
 	}
 </style>

@@ -545,6 +545,10 @@ export class UserStatsService {
 				return this.statistics.partitionStats;
 			case 'rhythm':
 				return this.statistics.rhythmStats;
+			case 'hand_independence':
+			case 'dexterity':
+				// Map to rhythm stats bucket (closest fit for motor-skill exercises)
+				return this.statistics.rhythmStats;
 			default:
 				throw new Error(`Unknown exercise type: ${type}`);
 		}

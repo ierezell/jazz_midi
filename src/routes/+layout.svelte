@@ -161,4 +161,10 @@
 			display: none; /* Hide tools on mobile header to save space, maybe move them elsewhere later */
 		}
 	}
+
+	@media (orientation: landscape) and (max-height: 500px) {
+		header { display: none; }
+		main { padding-top: 0.5rem; }
+		footer { display: none; }
+	}
 </style>

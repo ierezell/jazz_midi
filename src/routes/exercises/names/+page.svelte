@@ -71,10 +71,12 @@
 	let currentTargetNote: Note = $state('C');
 	let playedCorrectly = $state(false);
 	let exerciseCompleted = $state(false);
+	let coveredPitchClasses: Set<number> = $state(new Set());
 
 	function handleParentReset(): void {
 		playedCorrectly = false;
 		exerciseCompleted = false;
+		coveredPitchClasses = new Set();
 		generateNewNote();
 	}
 
@@ -129,6 +131,7 @@
 	): ValidationResult {
 		if (expectedNotes.includes(event.noteNumber)) {
 			playedCorrectly = true;
+			coveredPitchClasses = new Set([...coveredPitchClasses, event.noteNumber % 12]);
 			const sourceNotation = englishToLatin ? 'English' : 'Latin';
 			const targetNotation = englishToLatin ? 'Latin' : 'English';
 			const correctAnswer = englishToLatin
@@ -164,8 +167,8 @@
 		currentNotes: ReadonlyArray<MidiNote>,
 		expectedNotes: ReadonlyArray<MidiNote>
 	): boolean {
-		// Never complete - continuous practice
-		return false;
+		// Complete once all 12 chromatic pitch classes have been correctly played
+		return coveredPitchClasses.size >= 12;
 	}
 
 	function handleDirectionToggle(event: Event): void {
@@ -209,6 +212,7 @@
 	showScore={false}
 	initialNote={propKey || 'C'}
 	{description}
+	exerciseType="note"
 	showTempoControl={false}
 	showTrainingControl={false}
 >
@@ -468,5 +472,14 @@
 		.note-name {
 			font-size: 2rem;
 		}
+	}
+
+	@media (orientation: landscape) and (max-height: 500px) {
+		.note-name-exercise { flex-direction: row; align-items: flex-start; gap: 1rem; padding: 0.25rem; flex-wrap: wrap; }
+		.note-card { padding: 0.75rem 1.25rem; min-width: 80px; }
+		.note-name { font-size: 1.75rem; }
+		.note-display { flex-direction: row; gap: 1rem; flex-wrap: wrap; }
+		.answer-display { flex-direction: row; }
+		.arrow { font-size: 1.25rem; }
 	}
 </style>

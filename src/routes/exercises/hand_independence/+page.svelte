@@ -1,3 +1,5 @@
+<svelte:options runes={true} />
+
 <script lang="ts">
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
@@ -85,7 +87,7 @@
 	timingModeLabel="Play with rhythm"
 >
 	{#snippet children(_api: import('$lib/types/exercise-api').ExerciseAPI)}
-		<div class="hand-independence-content">
+		<div class="hi-content">
 			<!-- Level selector -->
 			<div class="level-selector card-premium">
 				<span class="section-label">Level</span>
@@ -109,55 +111,75 @@
 				</div>
 			</div>
 
-			<!-- Hand progress -->
-			<div class="hand-progress">
-				<!-- Left hand -->
-				<div class="hand-card card-premium lh-card">
-					<div class="hand-header">
-						<span class="hand-label lh-label">Left Hand</span>
-						<span class="hand-detail">
-							{level === 1 ? 'Cm7 shell: root + minor 7th' : 'Cmaj7 walking bass: 1-3-5-7'}
-						</span>
+			<!-- Pattern guide -->
+			<div class="pattern-guide card-premium">
+				<h3 class="pattern-title">
+					{level === 1 ? 'Cm7 Shell + C Major Scale' : 'Cmaj7 Walking Bass + Pentatonic'}
+				</h3>
+
+				<div class="pattern-breakdown">
+					<!-- Left hand beat boxes -->
+					<div class="hand-section">
+						<h4 class="hand-label lh-label">Left Hand</h4>
+						<p class="hand-detail">
+							{level === 1 ? 'Cm7 shell — root + minor 7th (any order)' : 'Cmaj7 arpeggio — 1-3-5-7 in sequence'}
+						</p>
+						<div class="pattern-beats">
+							{#each lhExpected as note, i}
+								{@const isFilled = Array.from(lhCollected).some((c) => c % 12 === note % 12)}
+								{@const isCurrent = !isFilled && Array.from(lhCollected).filter((c) => lhExpected.some((n) => n % 12 === c % 12)).length === i}
+								<div
+									class="beat-box lh-beat"
+									class:current={isCurrent}
+									class:filled={isFilled}
+								>
+									<div class="beat-label">{i + 1}</div>
+									<div class="note-label">{midiToNoteName(note).slice(0, -1)}</div>
+								</div>
+							{/each}
+						</div>
+						<div class="completion-bar">
+							<div
+								class="completion-fill lh-fill"
+								style="width: {(Array.from(new Set(Array.from(lhCollected).map((c) => c % 12))).filter((pc) => lhExpected.some((n) => n % 12 === pc)).length / lhExpected.length) * 100}%"
+							></div>
+						</div>
 					</div>
-					<div class="progress-dots">
-						{#each lhExpected as note}
-							{@const filled = Array.from(lhCollected).some((c) => c % 12 === note % 12)}
-							<div class="dot-wrapper">
-								<span class="dot" class:filled></span>
-								<span class="dot-label">{midiToNoteName(note)}</span>
-							</div>
-						{/each}
-					</div>
-					<div class="completion-bar">
-						<div
-							class="completion-fill lh-fill"
-							style="width: {(Array.from(new Set(Array.from(lhCollected).map((c) => c % 12))).filter((pc) => lhExpected.some((n) => n % 12 === pc)).length / lhExpected.length) * 100}%"
-						></div>
+
+					<!-- Right hand beat boxes -->
+					<div class="hand-section">
+						<h4 class="hand-label rh-label">Right Hand</h4>
+						<p class="hand-detail">
+							{level === 1 ? 'C major scale ascending — C4 to C5 in order' : 'C major pentatonic ascending — C4 to C5 in order'}
+						</p>
+						<div class="pattern-beats">
+							{#each rhExpected as note, i}
+								<div
+									class="beat-box rh-beat"
+									class:current={rhProgress === i}
+									class:filled={i < rhProgress}
+								>
+									<div class="beat-label">{i + 1}</div>
+									<div class="note-label">{midiToNoteName(note).slice(0, -1)}</div>
+								</div>
+							{/each}
+						</div>
+						<div class="completion-bar">
+							<div
+								class="completion-fill rh-fill"
+								style="width: {(rhProgress / rhExpected.length) * 100}%"
+							></div>
+						</div>
 					</div>
 				</div>
 
-				<!-- Right hand -->
-				<div class="hand-card card-premium rh-card">
-					<div class="hand-header">
-						<span class="hand-label rh-label">Right Hand</span>
-						<span class="hand-detail">
-							{level === 1 ? 'C major scale ascending (C4 → C5)' : 'C major pentatonic (C4 → C5)'}
-						</span>
-					</div>
-					<div class="progress-dots">
-						{#each rhExpected as note, i}
-							<div class="dot-wrapper">
-								<span class="dot" class:filled={i < rhProgress}></span>
-								<span class="dot-label">{midiToNoteName(note)}</span>
-							</div>
-						{/each}
-					</div>
-					<div class="completion-bar">
-						<div
-							class="completion-fill rh-fill"
-							style="width: {(rhProgress / rhExpected.length) * 100}%"
-						></div>
-					</div>
+				<!-- Tips -->
+				<div class="tips">
+					{#if level === 1}
+						<p>Both hands must complete their pattern before the exercise finishes. Left hand notes can be played in any order.</p>
+					{:else}
+						<p>Both sequences must be played in order. Try to overlap both hands as you would in real playing.</p>
+					{/if}
 				</div>
 			</div>
 
@@ -194,12 +216,13 @@
 </BaseExercise>
 
 <style>
-	.hand-independence-content {
+	.hi-content {
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
 		max-width: 960px;
 		margin: 0 auto;
+		padding: 1rem;
 	}
 
 	/* ── Level selector ─────────────────────────────────────── */
@@ -261,32 +284,30 @@
 		font-size: 0.85rem;
 	}
 
-	/* ── Hand progress cards ────────────────────────────────── */
-	.hand-progress {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1.25rem;
-	}
-
-	.hand-card {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
+	/* ── Pattern guide ──────────────────────────────────────── */
+	.pattern-guide {
+		border-radius: 12px;
 		padding: 1.5rem;
 	}
 
-	.lh-card {
-		border-top: 3px solid var(--color-level-3, #3b82f6);
+	.pattern-title {
+		text-align: center;
+		color: var(--color-primary, #9b59b6);
+		margin: 0 0 1.5rem 0;
+		font-size: 1.4rem;
+		font-weight: 700;
 	}
 
-	.rh-card {
-		border-top: 3px solid var(--color-level-5, #f59e0b);
-	}
-
-	.hand-header {
+	.pattern-breakdown {
 		display: flex;
 		flex-direction: column;
-		gap: 0.3rem;
+		gap: 1.75rem;
+	}
+
+	.hand-section {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
 	}
 
 	.hand-label {
@@ -294,6 +315,7 @@
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
+		margin: 0;
 	}
 
 	.lh-label {
@@ -307,44 +329,66 @@
 	.hand-detail {
 		font-size: 0.8rem;
 		color: var(--color-text-muted);
+		margin: 0;
 		line-height: 1.4;
 	}
 
-	/* ── Progress dots ──────────────────────────────────────── */
-	.progress-dots {
+	/* ── Beat boxes ─────────────────────────────────────────── */
+	.pattern-beats {
 		display: flex;
+		gap: 0.5rem;
 		flex-wrap: wrap;
-		gap: 0.75rem;
 	}
 
-	.dot-wrapper {
+	.beat-box {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.3rem;
+		gap: 0.25rem;
+		padding: 0.75rem;
+		border: 2px solid var(--color-border, rgba(255, 255, 255, 0.15));
+		border-radius: 8px;
+		background: var(--color-surface-raised, rgba(255, 255, 255, 0.05));
+		min-width: 56px;
+		transition: all 0.3s ease;
 	}
 
-	.dot {
-		display: block;
-		width: 16px;
-		height: 16px;
-		border-radius: 50%;
-		background: var(--color-border, rgba(255, 255, 255, 0.15));
-		border: 2px solid var(--color-border, rgba(255, 255, 255, 0.2));
-		transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+	.beat-box.filled {
+		opacity: 0.45;
 	}
 
-	.dot.filled {
-		background: var(--color-success, #22c55e);
-		border-color: var(--color-success, #22c55e);
-		box-shadow: 0 0 8px var(--color-success, #22c55e);
+	/* Left hand current beat — blue glow */
+	.lh-beat.current {
+		border-color: var(--color-level-3, #3b82f6);
+		background: rgba(59, 130, 246, 0.18);
+		transform: scale(1.1);
+		box-shadow: 0 0 15px rgba(59, 130, 246, 0.45);
 	}
 
-	.dot-label {
-		font-size: 0.65rem;
+	/* Right hand current beat — amber glow */
+	.rh-beat.current {
+		border-color: var(--color-level-5, #f59e0b);
+		background: rgba(245, 158, 11, 0.18);
+		transform: scale(1.1);
+		box-shadow: 0 0 15px rgba(245, 158, 11, 0.45);
+	}
+
+	.beat-label {
+		font-size: 0.75rem;
+		font-weight: 600;
 		color: var(--color-text-muted);
-		font-family: monospace;
-		white-space: nowrap;
+	}
+
+	.lh-beat .note-label {
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--color-level-3, #3b82f6);
+	}
+
+	.rh-beat .note-label {
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--color-level-5, #f59e0b);
 	}
 
 	/* ── Completion bar ─────────────────────────────────────── */
@@ -367,6 +411,22 @@
 
 	.rh-fill {
 		background: var(--color-level-5, #f59e0b);
+	}
+
+	/* ── Tips ───────────────────────────────────────────────── */
+	.tips {
+		margin-top: 1.5rem;
+		padding: 1rem;
+		background: rgba(155, 89, 182, 0.08);
+		border-radius: 8px;
+		border-left: 4px solid var(--color-primary, #9b59b6);
+	}
+
+	.tips p {
+		margin: 0;
+		color: var(--color-text-muted);
+		font-size: 0.9rem;
+		line-height: 1.6;
 	}
 
 	/* ── Instructions ───────────────────────────────────────── */
@@ -403,8 +463,25 @@
 
 	/* ── Responsive ─────────────────────────────────────────── */
 	@media (max-width: 640px) {
-		.hand-progress {
-			grid-template-columns: 1fr;
+		.hi-content {
+			padding: 0.5rem;
+		}
+
+		.pattern-guide {
+			padding: 1rem;
+		}
+
+		.pattern-beats {
+			gap: 0.25rem;
+		}
+
+		.beat-box {
+			min-width: 44px;
+			padding: 0.5rem;
+		}
+
+		.beat-box .note-label {
+			font-size: 0.9rem;
 		}
 
 		.level-toggle {

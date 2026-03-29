@@ -40,7 +40,7 @@ describe('User Journey Integration', () => {
 		const units = journeyService.getUnits();
 		const activeUnit = units.find(u => u.status === 'active');
 		expect(activeUnit).toBeDefined();
-		expect(activeUnit?.id).toBe('level-0'); // First unit is level-0
+		expect(activeUnit?.id).toBe('unit-1'); // First unit is unit-1
 
 		// 4. User starts a lesson (Daily Practice)
 		const lessonToPractice = journeyService.getPracticeLesson(activeUnit!.id);

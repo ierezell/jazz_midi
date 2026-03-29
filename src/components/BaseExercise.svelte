@@ -27,6 +27,7 @@
 	import Metronome from './Metronome.svelte';
 	import Score from './Score.svelte';
 	import LessonCompleteModal from './LessonCompleteModal.svelte';
+	import AudioOutputSelector from './AudioOutputSelector.svelte';
 
 	interface BaseExerciseProps {
 		randomMode: boolean;
@@ -284,6 +285,8 @@
 					mistakes++;
 					isOffBeat = true;
 					audioManager.playError();
+					// Don't process the note further — off-beat notes don't count
+					return;
 				}
 			}
 		}
@@ -366,8 +369,7 @@
 			);
 		}
 
-		const updatedCurrentNotes = [...currentNotes, note.noteNumber];
-		if (isCompleted(updatedCurrentNotes, expectedNotes)) {
+		if (isCompleted(currentNotes, expectedNotes)) {
 			onCompleteExercise();
 		}
 	}
@@ -581,6 +583,8 @@
 					{debugMode ? 'Visible' : 'Hidden'}
 				</button>
 			</div>
+
+			<AudioOutputSelector />
 
 			<div class="sidebar-spacer"></div>
 
@@ -1050,6 +1054,32 @@
 			min-width: 150px;
 			margin-bottom: 0;
 		}
+	}
+
+	@media (orientation: landscape) and (max-height: 500px) {
+		:global(.exercise-layout) {
+			height: calc(100vh - 52px);
+			padding: 0.25rem;
+			gap: 0.25rem;
+			overflow: hidden;
+		}
+		.sidebar {
+			max-width: 180px;
+			padding: 0.5rem;
+			overflow-y: auto;
+		}
+		.sidebar-header h3 { font-size: 0.7rem; margin-bottom: 0.75rem; }
+		.control-group { margin-bottom: 0.75rem; gap: 0.3rem; }
+		.control-group label { font-size: 0.7rem; }
+		select, .toggle-btn { padding: 0.4rem 0.5rem; font-size: 0.75rem; }
+		.reset-btn { padding: 0.4rem 0.5rem; font-size: 0.75rem; }
+		.info-group h1 { font-size: 1rem; }
+		.stat-pill { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
+		.prompt-card { padding: 1rem; }
+		.prompt-text { font-size: 2rem; }
+		.score-container { min-height: 120px; }
+		.focus-area { gap: 0.5rem; overflow-y: auto; }
+		.feedback-toast { top: 60px; padding: 0.5rem 1rem; font-size: 0.8rem; }
 	}
 
 	.back-btn {

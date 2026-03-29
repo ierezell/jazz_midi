@@ -243,7 +243,9 @@
 				<span class="section-label">Upcoming</span>
 				<div class="note-row">
 					{#each currentSequence.slice(playedCount, playedCount + 8) as note, i}
-						<span class="note-chip" class:next={i === 0}>{note}</span>
+						<span class="note-chip" class:next={i === 0}>
+							{note.slice(0, -1)}<sup class="octave-num">{note.slice(-1)}</sup>
+						</span>
 					{/each}
 					{#if playedCount === currentSequence.length}
 						<span class="done-chip">Complete!</span>
@@ -408,6 +410,13 @@
 		transform: scale(1.1);
 	}
 
+	.octave-num {
+		font-size: 0.6em;
+		opacity: 0.65;
+		vertical-align: super;
+		line-height: 0;
+	}
+
 	.done-chip {
 		padding: 0.2rem 0.75rem;
 		border-radius: 6px;
@@ -424,5 +433,13 @@
 		font-style: italic;
 		text-align: center;
 		margin: 0;
+	}
+
+	@media (orientation: landscape) and (max-height: 500px) {
+		.dexterity-content { gap: 0.75rem; }
+		.mode-tab { padding: 0.25rem 0.6rem; font-size: 0.72rem; }
+		.progress-num { font-size: 1.2rem; }
+		.next-notes { padding: 0.5rem 0.75rem; gap: 0.5rem; }
+		.hint { font-size: 0.75rem; }
 	}
 </style>

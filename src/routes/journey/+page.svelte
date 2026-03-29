@@ -511,4 +511,14 @@
 			display: none;
 		}
 	}
+
+	@media (orientation: landscape) and (max-height: 500px) {
+		.stats-header { top: 0; height: 44px; gap: 0.75rem; }
+		.stat-label { display: none; }
+		.stat-value { font-size: 0.8rem; }
+		.journey-header h1 { font-size: 1.5rem; }
+		.journey-header p { display: none; }
+		.lessons-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.5rem; }
+		.lesson-card { padding: 0.5rem; gap: 0.5rem; }
+	}
 </style>

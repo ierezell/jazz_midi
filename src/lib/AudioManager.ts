@@ -1,3 +1,5 @@
+import { audioOutputService } from './AudioOutputService';
+
 export class AudioManager {
 	private audioElements: Map<string, HTMLAudioElement> = new Map();
 	private enabled = true;
@@ -27,6 +29,7 @@ export class AudioManager {
 			const audio = new Audio();
 			audio.addEventListener('canplaythrough', () => {
 				this.audioElements.set(name, audio);
+				audioOutputService.registerElement(audio);
 				resolve();
 			});
 			audio.addEventListener('error', (e) => {

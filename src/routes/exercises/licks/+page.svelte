@@ -2,6 +2,7 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 	import type { MidiNote, Note, NoteEvent, ScoreProps, Lick } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
@@ -81,9 +82,14 @@
 		}
 	}
 
-	// Initialize first lick
+	// Initialize first lick — honor ?lickId= URL param from Journey mode
 	onMount(() => {
-		selectRandomLick();
+		const lickId = page.url.searchParams.get('lickId');
+		if (lickId) {
+			selectSpecificLick(lickId);
+		} else {
+			selectRandomLick();
+		}
 	});
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
@@ -204,7 +210,9 @@
 		}
 	}
 
-	function generateScoreProps(selectedNote: Note): ScoreProps {
+	// $derived so the function reference changes when currentLick changes,
+	// forcing BaseExercise's scoreProps to re-derive with the new lick's notes.
+	let generateScoreProps = $derived((selectedNote: Note): ScoreProps => {
 		if (!currentLick) {
 			return {
 				selectedNote,
@@ -223,7 +231,7 @@
 			leftHand: currentLick.hand === 'left' ? formattedNotes : [],
 			rightHand: currentLick.hand === 'right' ? formattedNotes : []
 		};
-	}
+	});
 
 	function isCompleted(
 		currentNotes: ReadonlyArray<MidiNote>,
@@ -645,5 +653,10 @@
 		.new-lick-btn {
 			width: 100%;
 		}
+	}
+
+	@media (orientation: landscape) and (max-height: 500px) {
+		.lick-header h2 { font-size: 1.2rem; }
+		.meta-badge { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 	}
 </style>
