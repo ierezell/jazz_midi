@@ -26,15 +26,16 @@ test.describe('Progression Flow', () => {
             userStatsService.trackMissedNote('D4', 'scale');
             userStatsService.updateProfile({ experiencePoints: 90 });
 
+            // Save progress in the format JourneyService expects (unit/lesson ids)
             localStorage.setItem(
                 'journey_progress_v2',
                 JSON.stringify([
                     {
-                        id: 'level-0',
+                        id: 'unit-2',
                         status: 'active',
                         lessons: [
                             {
-                                id: 'l0-c-scale',
+                                id: 'u2-c-scale-60',
                                 completed: false,
                                 stars: 3,
                                 perfectCompletions: 1

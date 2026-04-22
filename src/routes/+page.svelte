@@ -254,8 +254,8 @@
 	}
 
 	.level-badge {
-		background: #4caf50;
-		color: white;
+		background: var(--color-success);
+		color: var(--color-bg);
 		padding: 0.25rem 0.75rem;
 		border-radius: 1rem;
 		font-size: 0.8rem;
@@ -465,7 +465,7 @@
 		margin-top: auto;
 		padding: 0.85rem 1rem;
 		background: var(--color-primary);
-		color: #fff;
+		color: var(--color-on-primary);
 		border: none;
 		border-radius: 8px;
 		font-weight: 700;

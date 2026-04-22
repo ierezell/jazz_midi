@@ -295,7 +295,12 @@ export type Chord = {
 	chordType: ChordType;
 };
 
-export type ScaleMode = 'Maj' | 'Min' | 'Blues';
+export type ScaleMode =
+	| 'Maj'
+	| 'Min'
+	| 'Blues'
+	| 'MinHar'
+	| 'MinMel';
 export type ChordVoicing =
 	| 'full-right'
 	| 'full-left'

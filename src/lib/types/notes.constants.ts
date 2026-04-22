@@ -319,7 +319,13 @@ export const AllChordVoicings: ChordVoicing[] = [
 	'rootless-b'
 ];
 
-export const AllScaleModes: ScaleMode[] = ['Maj', 'Min', 'Blues'];
+export const AllScaleModes: ScaleMode[] = [
+	'Maj',
+	'Min',
+	'MinHar',
+	'MinMel',
+	'Blues',
+];
 
 export const DEFAULT_OCTAVE = '3';
 export const DEFAULT_MIDDLE_C: MidiNote = NoteToMidi['C3'];
@@ -338,7 +344,14 @@ export const SCALE_INTERVALS: Record<ScaleMode, number[]> = {
 	// Include the octave (12) so scales start on the root and can end on the octave
 	Maj: [0, 2, 4, 5, 7, 9, 11, 12],
 	Min: [0, 2, 3, 5, 7, 8, 10, 12],
-	Blues: [0, 3, 5, 6, 7, 10, 12]
+	Blues: [0, 3, 5, 6, 7, 10, 12],
+	HarMin: [0, 2, 3, 5, 7, 8, 11, 12],
+	MelMin: [0, 2, 3, 5, 7, 9, 11, 12],
+	Dor: [0, 2, 3, 5, 7, 9, 10, 12],
+	Phr: [0, 1, 3, 5, 7, 8, 10, 12],
+	Lyd: [0, 2, 4, 6, 7, 9, 11, 12],
+	Mix: [0, 2, 4, 5, 7, 9, 10, 12],
+	Loc: [0, 1, 3, 5, 6, 8, 10, 12]
 };
 
 export const AllIntervals: IntervalType[] = [

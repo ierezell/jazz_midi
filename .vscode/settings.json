@@ -13,5 +13,10 @@
 		"vexflow",
 		"voicings",
 		"webmidi"
-	]
+	],
+	"chat.tools.terminal.autoApprove": {
+		"npm install": true,
+		"npx --yes svelte-check": true,
+		"npx playwright": true
+	}
 }

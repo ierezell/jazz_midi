@@ -29,6 +29,10 @@ export class MIDIManager {
 
 	async initialize(): Promise<boolean> {
 		try {
+			// Ensure Playwright's MIDI injection hook exists after hydration.
+			// The constructor runs during SSR too, so we install it here (client-only).
+			this.ensurePlaywrightMidiDispatchHook();
+
 			await this.connectMIDI();
 			this.setupAudioInput();
 			return true;
@@ -36,6 +40,21 @@ export class MIDIManager {
 			this.handleError(error as Error);
 			return false;
 		}
+	}
+
+	public ensurePlaywrightMidiDispatchHook(): void {
+		if (typeof window === 'undefined') return;
+		const w = window as any;
+		if (typeof w.__dispatchMidi === 'function') return;
+
+		w.__dispatchMidi = (data: Uint8Array) => {
+			const event = {
+				data,
+				timeStamp: performance.now(),
+				type: 'midimessage'
+			} as MIDIMessageEvent;
+			this.handleMIDIMessage(event);
+		};
 	}
 
 	async connectMIDI(): Promise<boolean> {

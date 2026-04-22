@@ -67,28 +67,27 @@
 	}
 
 	.login-card {
-		background: rgba(255, 255, 255, 0.05);
-		backdrop-filter: blur(10px);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
 		padding: 3rem;
 		border-radius: 1.5rem;
 		width: 100%;
 		max-width: 400px;
 		text-align: center;
-		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+		box-shadow: var(--shadow-lg);
 	}
 
 	h1 {
 		font-size: 2rem;
 		margin-bottom: 0.5rem;
-		background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+		background: linear-gradient(135deg, var(--color-text) 0%, var(--color-primary) 100%);
 		background-clip: text;
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 	}
 
 	.subtitle {
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--color-text-muted);
 		margin-bottom: 2rem;
 	}
 
@@ -100,7 +99,7 @@
 		flex-direction: column;
 		gap: 0.5rem;
 		font-size: 0.9rem;
-		color: rgba(255, 255, 255, 0.6);
+		color: var(--color-text-muted);
 	}
 
 	.features-list li {
@@ -117,17 +116,17 @@
 	label {
 		display: block;
 		margin-bottom: 0.5rem;
-		color: rgba(255, 255, 255, 0.8);
+		color: var(--color-text);
 		font-size: 0.9rem;
 	}
 
 	input {
 		width: 100%;
 		padding: 0.75rem 1rem;
-		background: rgba(0, 0, 0, 0.2);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
 		border-radius: 0.5rem;
-		color: white;
+		color: var(--color-text);
 		font-size: 1rem;
 		transition: all 0.2s;
 		box-sizing: border-box;
@@ -135,8 +134,8 @@
 
 	input:focus {
 		outline: none;
-		border-color: #a5b4fc;
-		background: rgba(0, 0, 0, 0.3);
+		border-color: var(--color-primary);
+		background: var(--color-bg);
 	}
 
 	.error {
@@ -148,10 +147,10 @@
 	.start-btn {
 		width: 100%;
 		padding: 1rem;
-		background: linear-gradient(135deg, #6366f1 0%, #a5b4fc 100%);
+		background: var(--color-primary);
 		border: none;
 		border-radius: 0.5rem;
-		color: white;
+		color: var(--color-on-primary);
 		font-weight: bold;
 		font-size: 1.1rem;
 		cursor: pointer;

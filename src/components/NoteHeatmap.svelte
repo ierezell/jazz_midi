@@ -82,7 +82,8 @@
 
 <style>
 	.heatmap-container {
-		background: rgba(255, 255, 255, 0.05);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
 		border-radius: 1rem;
 		padding: 1.5rem;
 		margin-bottom: 2rem;
@@ -105,15 +106,15 @@
 		display: flex;
 		gap: 2px;
 		height: 120px;
-		background: rgba(0, 0, 0, 0.3);
+		background: var(--color-bg);
 		border-radius: 0.5rem;
 		padding: 0.5rem;
 	}
 
 	.white-key {
 		flex: 1;
-		background: rgba(255, 255, 255, 0.1);
-		border: 1px solid rgba(255, 255, 255, 0.2);
+		background: var(--color-surface-raised);
+		border: 1px solid var(--color-border);
 		border-radius: 0 0 0.25rem 0.25rem;
 		position: relative;
 		display: flex;
@@ -132,15 +133,14 @@
 
 	.note-label {
 		font-size: 0.7rem;
-		color: rgba(255, 255, 255, 0.7);
+		color: var(--color-text-muted);
 		margin-top: auto;
 	}
 
 	.miss-count {
 		font-size: 1rem;
 		font-weight: bold;
-		color: white;
-		text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+		color: var(--color-text);
 	}
 
 	.black-keys {
@@ -156,8 +156,8 @@
 		position: absolute;
 		width: 8%;
 		height: 70px;
-		background: rgba(0, 0, 0, 0.8);
-		border: 1px solid rgba(255, 255, 255, 0.3);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
 		border-radius: 0 0 0.25rem 0.25rem;
 		display: flex;
 		align-items: flex-end;
@@ -176,8 +176,7 @@
 	.miss-count-black {
 		font-size: 0.8rem;
 		font-weight: bold;
-		color: white;
-		text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+		color: var(--color-text);
 	}
 
 	.no-data {

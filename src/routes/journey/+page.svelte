@@ -391,7 +391,7 @@
 
 	.lesson-card.completed .lesson-icon {
 		background: var(--color-success);
-		color: #fff;
+		color: var(--color-bg);
 		border-color: var(--color-success);
 		box-shadow: 0 0 10px var(--color-success);
 	}

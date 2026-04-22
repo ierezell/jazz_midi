@@ -149,8 +149,8 @@
 	padding: clamp(0.75rem, 3vw, 2rem);
 	border-radius: clamp(4px, 1vw, 12px);
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-	background: white;
-	border: 1px solid #e1e5e9;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
 }
 .keyboard-responsive {
 	width: 100%;
@@ -186,7 +186,7 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	background: white;
+	background: var(--color-surface);
 	border-radius: clamp(4px, 1vw, 8px);
-	border: 1px solid #e1e5e9;
+	border: 1px solid var(--color-border);
 }

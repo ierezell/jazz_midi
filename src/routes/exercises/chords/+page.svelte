@@ -26,6 +26,7 @@
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
 	import { page } from '$app/state';
+	import { browser } from '$app/environment';
 	import { BeatValidator } from '$lib/BeatValidator.js';
 	import { rhythmPatterns } from '$lib/data/rhythmPatterns.js';
 	import BeatIndicator from '$lib/../components/BeatIndicator.svelte';
@@ -34,7 +35,7 @@
 		'Play the notes of the displayed chord on your MIDI keyboard. Try to match the voicing and inversion shown.';
 
 	interface Props {
-		randomMode: boolean;
+		randomMode?: boolean;
 		onComplete: () => void;
 		chordType: ChordType;
 		inversion: Inversion;
@@ -45,7 +46,7 @@
 	}
 
 	let {
-		randomMode,
+		randomMode = false,
 		onComplete,
 		chordType: propChordType,
 		inversion: propInversion,
@@ -57,15 +58,24 @@
 
 	let possibleChordTypes = ['maj7', 'min7', '7', 'dom7', 'half-dim7', 'dim7'] as ChordType[];
 
-	// Local State - read URL params directly to avoid state_referenced_locally warning
+	/** Voicing options shown on the chords gym page (subset may appear in URL). */
+	const URL_VOICINGS: ChordVoicing[] = [
+		'full-right',
+		'full-left',
+		'1735',
+		'1537',
+		'rootless-a',
+		'rootless-b',
+		'shell',
+		'guide-tones'
+	];
+
+	// Local state — gym deep-links sync from the URL in `afterNavigate` / `onMount` (see below).
 	let currentRoot: Note = $state(
-		(page.url.searchParams.get('root') as Note) ??
-			propKey ??
-			(randomMode ? AllNotes[Math.floor(Math.random() * AllNotes.length)] : 'C')
+		propKey ?? (randomMode ? AllNotes[Math.floor(Math.random() * AllNotes.length)] : 'C')
 	);
 	let currentChordType: ChordType = $state(
-		(page.url.searchParams.get('quality') as ChordType) ??
-			propChordType ??
+		propChordType ??
 			(randomMode
 				? possibleChordTypes[Math.floor(Math.random() * possibleChordTypes.length)]
 				: 'maj7')
@@ -79,6 +89,46 @@
 				? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
 				: 'full-right')
 	);
+
+	function applyChordQuery(sp: URLSearchParams): void {
+		const rootParam = sp.get('root');
+		if (rootParam && (AllNotes as readonly string[]).includes(rootParam)) {
+			currentRoot = rootParam as Note;
+		}
+
+		const qualityParam = sp.get('quality');
+		if (qualityParam && (AllChordTypes as readonly string[]).includes(qualityParam)) {
+			currentChordType = qualityParam as ChordType;
+		}
+
+		const invParam = sp.get('inversion');
+		if (invParam !== null && invParam !== '') {
+			const n = Number.parseInt(invParam, 10);
+			if (Number.isFinite(n) && n >= 0 && n <= 3) {
+				currentInversion = n as Inversion;
+			}
+		}
+
+		const voicingParam = sp.get('voicing');
+		if (voicingParam && (URL_VOICINGS as readonly string[]).includes(voicingParam)) {
+			currentVoicing = voicingParam as ChordVoicing;
+		}
+	}
+
+	function isChordsGymPathname(pathname: string): boolean {
+		const normalized = pathname.replace(/\/$/, '') || '/';
+		return normalized.endsWith('/exercises/chords');
+	}
+
+	// Apply gym deep-link params from the real browser URL (query is authoritative for E2E).
+	// Key off `page.url.href` so this re-runs on navigations; read `window.location.search` because
+	// `page.url` can briefly lag the actual address bar during client hydration.
+	$effect(() => {
+		void page.url.href;
+		if (!browser) return;
+		if (!isChordsGymPathname(window.location.pathname)) return;
+		applyChordQuery(new URLSearchParams(window.location.search));
+	});
 	let useOptimizedVoicing = $state(false);
 	let previousChordNotes: MidiNote[] = $state([]);
 
@@ -125,7 +175,12 @@
 		const notes = generateExpectedNotes(currentRoot);
 		previousChordNotes = notes;
 
-		generateNewChallenge();
+		// Gym / URL-driven mode: keep the same chord. Randomizing here changes `initialNote`,
+		// which triggers BaseExercise's `initialNote` effect → `resetExercise()` and wipes
+		// completion feedback (and breaks E2E that deep-links a chord).
+		if (randomMode) {
+			generateNewChallenge();
+		}
 		onComplete?.();
 	}
 
@@ -153,11 +208,11 @@
 			'Bb',
 			'B'
 		];
-		const noteIndex = notes.indexOf(currentRoot);
+		const noteIndex = notes.indexOf(selectedNote);
 		// G is index 10. G, G#, A... B are high.
 		const octave = noteIndex >= 10 ? '3' : DEFAULT_OCTAVE;
 
-		const rootNote = (currentRoot + octave) as NoteFullName;
+		const rootNote = (selectedNote + octave) as NoteFullName;
 		const rootMidi = NoteToMidi[rootNote];
 		const currentChord = chords(rootMidi, currentChordType, currentInversion);
 
@@ -215,26 +270,11 @@
 		};
 	}
 
-	function handleChordTypeChange(event: Event): void {
-		const target = event.target as HTMLSelectElement;
-		currentChordType = target.value as ChordType;
-	}
-
-	function handleInversionChange(event: Event): void {
-		const target = event.target as HTMLSelectElement;
-		currentInversion = parseInt(target.value) as Inversion;
-	}
-
-	function handleVoicingChange(event: Event): void {
-		const target = event.target as HTMLSelectElement;
-		currentVoicing = target.value as typeof currentVoicing;
-	}
-
 	function generateScoreProps(selectedNote: Note): ScoreProps {
 		void selectedNote;
 		try {
 			const scoreData = generateChordNotesData(
-				currentRoot,
+				selectedNote,
 				currentChordType,
 				currentInversion,
 				currentVoicing
@@ -319,7 +359,10 @@
 			<div class="controls">
 				<div class="control-group">
 					<label for="chord-type">Chord Type</label>
-					<select id="chord-type" value={currentChordType} onchange={handleChordTypeChange}>
+					<select
+						id="chord-type"
+						bind:value={currentChordType}
+					>
 						{#each AllChordTypes as type}
 							<option value={type}>{type}</option>
 						{/each}
@@ -328,7 +371,7 @@
 
 				<div class="control-group">
 					<label for="inversion">Inversion</label>
-					<select id="inversion" value={currentInversion} onchange={handleInversionChange}>
+					<select id="inversion" bind:value={currentInversion}>
 						<option value={0}>Root</option>
 						<option value={1}>1st</option>
 						<option value={2}>2nd</option>
@@ -365,7 +408,7 @@
 
 				<div class="control-group">
 					<label for="voicing">Voicing</label>
-					<select id="voicing" value={currentVoicing} onchange={handleVoicingChange}>
+					<select id="voicing" bind:value={currentVoicing}>
 						<option value="full-right">Full Right Hand</option>
 						<option value="full-left">Full Left Hand</option>
 						<option value="1735">1 & 7 Left / 3 & 5 Right</option>

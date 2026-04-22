@@ -5,7 +5,7 @@
 	import { calculateOptimalRange, getNoteRole } from '$lib/MusicTheoryUtils';
 	import { validateNoteTiming } from '$lib/music-validation';
 	import type { ExerciseAPI, BeatTiming, TempoValidation } from '$lib/types/exercise-api';
-	import { AllNotes, NoteToMidi, DEFAULT_OCTAVE } from '$lib/types/notes.constants';
+	import { AllNotes, NoteToMidi, DEFAULT_OCTAVE, MidiToNote } from '$lib/types/notes.constants';
 	import {
 		type KeyboardProps,
 		type MidiNote,
@@ -93,10 +93,17 @@
 
 	let selectedNote: Note = $state(initialNote ?? 'C');
 
+	// Only react to *prop* changes of initialNote (e.g. parent generates a new challenge).
+	// Do NOT force-reset when the user changes the selected note locally via the UI.
+	let lastInitialNote: Note | undefined = $state(initialNote);
+
 	$effect(() => {
-		if (initialNote !== undefined && initialNote !== selectedNote) {
-			selectedNote = initialNote;
-			resetExercise();
+		if (initialNote !== lastInitialNote) {
+			lastInitialNote = initialNote;
+			if (initialNote !== undefined && initialNote !== selectedNote) {
+				selectedNote = initialNote;
+				resetExercise();
+			}
 		}
 	});
 
@@ -107,6 +114,8 @@
 	let startTime = $state(0);
 	let completed = $state(false);
 	let debugMode = $state(false);
+
+    
 	let feedbackMessage = $state('');
 	let showNotesRoles = $state(false);
 
@@ -222,6 +231,9 @@
 	});
 
 	onDestroy(() => {
+		if (typeof window !== 'undefined') {
+			(window as any).__midiExerciseReady = false;
+		}
 		midiManager.cleanup();
 	});
 
@@ -232,6 +244,9 @@
 			onNoteOn: handleNoteOn,
 			onNoteOff: handleNoteOff
 		});
+		if (typeof window !== 'undefined') {
+			(window as any).__midiExerciseReady = true;
+		}
 		startTime = Date.now();
 
 		// Unlock audio playback on first user gesture (some browsers block play() before a gesture)
@@ -239,15 +254,17 @@
 			if (audioManager.needsUserGesture()) {
 				const ok = await audioManager.unlock();
 				if (ok) {
-					showFeedback('Audio enabled', 'info');
+					console.log('Audio enabled');
 				} else {
-					showFeedback('Click or press any key to enable audio', 'info');
+					console.log('Failed to enable audio');
 				}
 			}
 		};
 
 		window.addEventListener('pointerdown', attemptUnlock, { once: true });
 		window.addEventListener('keydown', attemptUnlock, { once: true });
+
+		// no test-only hooks here
 	});
 
 	function handleNoteOn(note: NoteEvent): void {
@@ -293,7 +310,9 @@
 
 		lastVelocity = note.velocity;
 		noteEvents = [...noteEvents, note];
-		const result = validateNoteEvent(selectedNote, note, expectedNotes, currentNotes);
+		// Compute the live note list immediately (before $derived re-evaluates)
+		const updatedNotes = noteEvents.map((e) => e.noteNumber);
+		const result = validateNoteEvent(selectedNote, note, expectedNotes, updatedNotes);
 
 		if (result.resetCollected) {
 			collectedNotes = new Set();
@@ -369,7 +388,8 @@
 			);
 		}
 
-		if (isCompleted(currentNotes, expectedNotes)) {
+		// Pass updatedNotes (not the stale $derived `currentNotes`) to isCompleted
+		if (isCompleted(updatedNotes, expectedNotes)) {
 			onCompleteExercise();
 		}
 	}
@@ -378,16 +398,13 @@
 		noteEvents = noteEvents.filter((e) => e.noteNumber !== note.noteNumber);
 	}
 
-	function handleNoteSelect(note: Note): void {
-		selectedNote = note;
-		resetExercise();
-	}
-
-	function resetExercise(): void {
+	function resetExercise(options?: { preserveFeedback?: boolean }): void {
 		noteEvents = [];
 		mistakes = 0;
 		completed = false;
-		feedbackMessage = '';
+		if (!options?.preserveFeedback) {
+			feedbackMessage = '';
+		}
 		startTime = Date.now();
 		selectedNote = selectedNote;
 		collectedNotes = new Set();
@@ -447,7 +464,9 @@
 		} else {
 			// Non-journey mode: just call onComplete and reset
 			onComplete?.();
-			resetExercise();
+			// Keep the completion toast visible — an immediate full reset clears `feedbackMessage`
+			// synchronously, which makes success feedback impossible to observe (and breaks E2E).
+			resetExercise({ preserveFeedback: true });
 		}
 	}
 
@@ -464,12 +483,6 @@
 	function toggleDebug(): void {
 		debugMode = !debugMode;
 		midiManager.setDebugMode(debugMode);
-	}
-
-	function handleNoteSelectEvent(event: Event) {
-		const target = event.target as HTMLSelectElement;
-		const note = target.value as Note;
-		handleNoteSelect(note);
 	}
 
 	function handleTick(timestamp: number, beatNumber: number, isDownbeat: boolean) {
@@ -522,7 +535,7 @@
 			{#if !randomMode}
 				<div class="control-group">
 					<label for="note-select">Root Key</label>
-					<select id="note-select" value={selectedNote} onchange={handleNoteSelectEvent}>
+					<select id="note-select" bind:value={selectedNote} onchange={() => resetExercise()}>
 						{#each AllNotes as note}
 							<option value={note}>{note}</option>
 						{/each}
@@ -588,7 +601,7 @@
 
 			<div class="sidebar-spacer"></div>
 
-			<button onclick={resetExercise} class="reset-btn"> Reset Session </button>
+				<button onclick={() => resetExercise()} class="reset-btn"> Reset Session </button>
 		</div>
 	</aside>
 
@@ -701,6 +714,12 @@
 			{#if helpMessage}
 				<div class="adaptive-help-text">
 					{helpMessage}
+				</div>
+			{/if}
+
+			{#if expectedNotes.length > 0}
+				<div class="expected-notes visually-hidden" aria-live="polite">
+					{expectedNotes.map((n) => MidiToNote[n]).join(', ')}
 				</div>
 			{/if}
 
@@ -1119,4 +1138,17 @@
 	}
 	.star-chip { opacity: 0.7; }
 	.star-sep { opacity: 0.4; }
+
+	/* Visually hidden utility for accessible expected notes (readable by tests/screen readers) */
+	.visually-hidden {
+		position: absolute !important;
+		width: 1px !important;
+		height: 1px !important;
+		padding: 0 !important;
+		margin: -1px !important;
+		overflow: hidden !important;
+		clip: rect(0 0 0 0) !important;
+		white-space: nowrap !important;
+		border: 0 !important;
+	}
 </style>

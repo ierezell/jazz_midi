@@ -323,9 +323,9 @@
 		flex-direction: column;
 		align-items: center;
 		padding: 2rem 3rem;
-		border: 3px solid var(--color-border, #ddd);
+		border: 3px solid var(--color-border);
 		border-radius: 1rem;
-		background: var(--color-bg, white);
+		background: var(--color-surface);
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 		transition: all 0.3s ease;
 		min-width: 120px;
@@ -382,8 +382,8 @@
 		padding: 0.75rem 1.5rem;
 		font-size: 1rem;
 		font-weight: bold;
-		color: white;
-		background: var(--color-primary, #3498db);
+		color: var(--color-on-primary);
+		background: var(--color-primary);
 		border: none;
 		border-radius: 0.5rem;
 		cursor: pointer;

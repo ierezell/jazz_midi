@@ -477,7 +477,7 @@
 	}
 
 	.icon-btn:hover {
-		background: rgba(255, 255, 255, 0.2);
+		background: var(--color-surface);
 	}
 
 	.profile-meta {
@@ -490,7 +490,7 @@
 
 	.level-tag {
 		background: var(--color-success);
-		color: white;
+		color: var(--color-bg);
 		padding: 0.25rem 0.75rem;
 		border-radius: 1rem;
 		font-weight: bold;
@@ -499,7 +499,7 @@
 
 	.progress-bar {
 		height: 8px;
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--color-border);
 		border-radius: 4px;
 		overflow: hidden;
 	}
@@ -619,7 +619,7 @@
 		font-size: 0.7rem;
 		padding: 0.2rem 0.5rem;
 		border-radius: 1rem;
-		color: white;
+		color: var(--color-bg);
 		text-transform: uppercase;
 		font-weight: bold;
 	}
@@ -717,9 +717,9 @@
 	.export-textarea {
 		width: 100%;
 		height: 200px;
-		background: rgba(0, 0, 0, 0.2);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		color: white;
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+		color: var(--color-text);
 		padding: 0.5rem;
 		margin-bottom: 1rem;
 		border-radius: 0.5rem;
@@ -762,7 +762,7 @@
 		justify-content: center;
 	}
 	.close-btn:hover {
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--color-surface-raised);
 	}
 	.modal-content {
 		padding: 1.5rem;

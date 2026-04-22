@@ -11,6 +11,7 @@
 	import ThemeToggle from '../components/ThemeToggle.svelte';
 	import { page } from '$app/stores';
 	import { themeService } from '$lib/ThemeService.svelte';
+	import { midiManager } from '$lib/MIDIManager';
 
 	let { children } = $props();
 
@@ -18,6 +19,8 @@
 
 	onMount(() => {
 		userStatsService.startSession();
+		// Make Playwright's MIDI injection hook available as early as possible (after hydration).
+		midiManager.ensurePlaywrightMidiDispatchHook();
 	});
 
 	onDestroy(() => {

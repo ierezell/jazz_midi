@@ -107,7 +107,7 @@
 		border: none;
 		cursor: pointer;
 		padding: 0.5rem;
-		color: var(--color-text, white);
+		color: var(--color-text);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -116,7 +116,7 @@
 	}
 
 	.menu-btn:hover {
-		background-color: rgba(255, 255, 255, 0.1);
+		background-color: var(--color-surface-raised);
 	}
 
 	.menu-overlay {
@@ -135,8 +135,7 @@
 		left: 0;
 		width: 280px;
 		height: 100vh;
-		background: #2c3e50; /* Fallback */
-		background: var(--color-bg-2, #2c3e50);
+		background: var(--color-surface);
 		z-index: 100;
 		box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
 		display: flex;
@@ -148,13 +147,13 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1.5rem 1rem;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		border-bottom: 1px solid var(--color-border);
 		flex-shrink: 0;
 	}
 
 	.menu-header h2 {
 		margin: 0;
-		color: white;
+		color: var(--color-text);
 		font-size: 1.5rem;
 	}
 
@@ -162,12 +161,12 @@
 		background: none;
 		border: none;
 		cursor: pointer;
-		color: rgba(255, 255, 255, 0.7);
+		color: var(--color-text-muted);
 		transition: color 0.2s;
 	}
 
 	.close-btn:hover {
-		color: white;
+		color: var(--color-text);
 	}
 
 	.menu-scroll {
@@ -182,7 +181,7 @@
 	.menu-group h3 {
 		font-size: 0.8rem;
 		text-transform: uppercase;
-		color: rgba(255, 255, 255, 0.5);
+		color: var(--color-text-muted);
 		margin: 0 0 0.5rem 0.5rem;
 		letter-spacing: 0.05em;
 	}
@@ -201,20 +200,20 @@
 		align-items: center;
 		gap: 1rem;
 		padding: 0.75rem 1rem;
-		color: rgba(255, 255, 255, 0.8);
+		color: var(--color-text);
 		text-decoration: none;
 		border-radius: 0.5rem;
 		transition: all 0.2s;
 	}
 
 	li a:hover {
-		background: rgba(255, 255, 255, 0.1);
-		color: white;
+		background: var(--color-surface-raised);
+		color: var(--color-text);
 	}
 
 	li.active a {
-		background: var(--color-theme-1, #4caf50);
-		color: white;
+		background: var(--color-primary);
+		color: var(--color-on-primary);
 		font-weight: bold;
 	}
 

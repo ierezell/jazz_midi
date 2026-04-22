@@ -1,7 +1,7 @@
-import level1 from './level1-shells-scale.json' assert { type: 'json' };
-import level2 from './level2-walking-melody.json' assert { type: 'json' };
-import level3 from './level3-chord-melody.json' assert { type: 'json' };
-import level4 from './level4-stride-pattern.json' assert { type: 'json' };
+import level1 from './level1-shells-scale.json' with { type: 'json' };
+import level2 from './level2-walking-melody.json' with { type: 'json' };
+import level3 from './level3-chord-melody.json' with { type: 'json' };
+import level4 from './level4-stride-pattern.json' with { type: 'json' };
 
 export interface HandIndependenceLevel {
   id: string;

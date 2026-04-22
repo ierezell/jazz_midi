@@ -480,7 +480,7 @@
 
 	.action-btn.playing {
 		background: var(--color-error);
-		color: #fff;
+		color: var(--color-on-primary);
 	}
 
 	/* Timeline Styles */
@@ -501,7 +501,7 @@
 
 	.timeline-track {
 		height: 80px;
-		background: rgba(255, 255, 255, 0.03);
+		background: var(--color-surface-raised);
 		border-radius: 12px;
 		position: relative;
 		display: flex;
@@ -511,16 +511,16 @@
 	.subdivision-mark {
 		flex: 1;
 		height: 8px;
-		border-right: 1px solid rgba(255, 255, 255, 0.05);
+		border-right: 1px solid var(--color-border);
 	}
 
 	.subdivision-mark.half {
 		height: 16px;
-		border-color: rgba(255, 255, 255, 0.1);
+		border-color: var(--color-text-muted);
 	}
 	.subdivision-mark.whole {
 		height: 32px;
-		border-color: rgba(255, 255, 255, 0.2);
+		border-color: var(--color-text);
 	}
 
 	.hit-marker {
@@ -566,8 +566,8 @@
 		top: 0;
 		height: 100%;
 		width: 2px;
-		background: #fff;
-		box-shadow: 0 0 15px #fff;
+		background: var(--color-primary);
+		box-shadow: 0 0 15px var(--color-primary);
 		z-index: 5;
 		transition: left 0.05s linear;
 	}

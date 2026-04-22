@@ -491,8 +491,8 @@
 
 	.tag {
 		padding: 0.25rem 0.75rem;
-		background: var(--color-theme-1, #9b59b6);
-		color: white;
+		background: var(--color-primary);
+		color: var(--color-on-primary);
 		border-radius: 12px;
 		font-size: 0.85rem;
 		font-weight: 500;
@@ -555,12 +555,12 @@
 	}
 
 	.control-group select {
-		padding: 0.5rem 1rem;
-		border: 2px solid rgba(155, 89, 182, 0.3);
+		padding: 0.5rem;
+		border: 1px solid var(--color-border);
 		border-radius: 8px;
 		font-size: 0.95rem;
-		background: var(--color-bg-1, #1a1a1a);
-		color: var(--color-text, white);
+		background: var(--color-surface);
+		color: var(--color-text);
 		cursor: pointer;
 		transition: all 0.2s;
 	}
@@ -575,13 +575,13 @@
 		box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
 	}
 
-	.repetitions-input {
-		padding: 0.5rem 1rem;
-		border: 2px solid rgba(155, 89, 182, 0.3);
+	.repetitions-input[type='number'] {
+		padding: 0.5rem;
+		border: 1px solid var(--color-border);
 		border-radius: 8px;
 		font-size: 0.95rem;
-		background: var(--color-bg-1, #1a1a1a);
-		color: var(--color-text, white);
+		background: var(--color-surface);
+		color: var(--color-text);
 		width: 80px;
 		transition: all 0.2s;
 	}
@@ -595,8 +595,8 @@
 
 	.new-lick-btn {
 		padding: 0.5rem 1.5rem;
-		background: var(--color-theme-1, #9b59b6);
-		color: white;
+		background: var(--color-primary);
+		color: var(--color-on-primary);
 		border: none;
 		border-radius: 8px;
 		font-size: 1rem;

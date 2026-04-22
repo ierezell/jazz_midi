@@ -54,15 +54,15 @@
 	}
 
 	.mic-btn.active {
-		background: #4caf50;
-		color: white;
-		border-color: #4caf50;
-		box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+		background: var(--color-success);
+		color: var(--color-bg);
+		border-color: var(--color-success);
+		box-shadow: 0 0 10px var(--color-success);
 	}
 
 	.mic-btn.error {
-		background: #f44336;
-		border-color: #f44336;
-		color: white;
+		background: var(--color-error);
+		border-color: var(--color-error);
+		color: var(--color-bg);
 	}
 </style>

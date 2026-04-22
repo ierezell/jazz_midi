@@ -99,7 +99,9 @@
 	let scaleBeatValidator = $state<BeatValidator | null>(null);
 	let scaleCurrentBeat = $state(0);
 	let scaleSelectedPatternId = $state(rhythmPatterns[0]?.id ?? '');
-	let scaleSelectedPattern = $derived(rhythmPatterns.find(p => p.id === scaleSelectedPatternId) ?? rhythmPatterns[0]);
+	let scaleSelectedPattern = $derived(
+		rhythmPatterns.find((p) => p.id === scaleSelectedPatternId) ?? rhythmPatterns[0]
+	);
 
 	// Derived
 	let computedPrompt = $derived(
@@ -111,7 +113,9 @@
 		rhythmicMode = !rhythmicMode;
 		if (rhythmicMode) {
 			scaleBeatValidator = new BeatValidator();
-			scaleBeatValidator.start(scaleSelectedPattern.suggestedBpm, scaleSelectedPattern, (beat) => { scaleCurrentBeat = beat; });
+			scaleBeatValidator.start(scaleSelectedPattern.suggestedBpm, scaleSelectedPattern, (beat) => {
+				scaleCurrentBeat = beat;
+			});
 		} else {
 			scaleBeatValidator?.stop();
 			scaleBeatValidator = null;
@@ -212,7 +216,12 @@
 		if (rhythmicMode && scaleBeatValidator) {
 			const beatResult = scaleBeatValidator.validateHit(event);
 			if (!beatResult.isHit) {
-				return { isCorrect: false, message: `Off beat! (${beatResult.label})`, collected: false, resetCollected: false };
+				return {
+					isCorrect: false,
+					message: `Off beat! (${beatResult.label})`,
+					collected: false,
+					resetCollected: false
+				};
 			}
 		}
 
@@ -456,8 +465,11 @@
 					<div class="control-group">
 						<label for="scaleMode">Scale mode:</label>
 						<select id="scaleMode" value={scaleMode} onchange={handleScaleModeChange}>
-							<option value="Maj">Major</option>
-							<option value="Min">Minor</option>
+							{#each AllScaleModes as m}
+								<option value={m}>
+									{m === 'Maj' ? 'Major' : m === 'Min' ? 'Minor' : m}
+								</option>
+							{/each}
 						</select>
 					</div>
 					<div class="control-group">
@@ -549,19 +561,15 @@
 	.info-btn {
 		width: 100%;
 		padding: 0.75rem 1.5rem;
-		background: linear-gradient(
-			135deg,
-			var(--color-theme-1, #9b59b6),
-			var(--color-theme-2, #8e44ad)
-		);
-		color: white;
+		background: var(--color-primary);
+		color: var(--color-on-primary);
 		border: none;
 		border-radius: 12px;
 		font-size: 0.95rem;
 		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.3s ease;
-		box-shadow: 0 4px 12px rgba(155, 89, 182, 0.2);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
 	.info-btn:hover {
@@ -572,8 +580,8 @@
 	.unlock-panel {
 		margin-top: 1rem;
 		padding: 1.5rem;
-		background: var(--color-surface, #2a2a2a);
-		border: 2px solid var(--color-theme-1, #9b59b6);
+		background: var(--color-surface);
+		border: 2px solid var(--color-primary);
 		border-radius: 12px;
 		animation: slideDown 0.3s ease;
 	}
@@ -591,7 +599,7 @@
 
 	.unlock-panel h4 {
 		margin: 0 0 1rem 0;
-		color: var(--color-theme-1, #9b59b6);
+		color: var(--color-primary);
 		font-size: 1.1rem;
 		text-align: center;
 	}
@@ -706,6 +714,8 @@
 	}
 
 	@media (orientation: landscape) and (max-height: 500px) {
-		.scale-controls { gap: 0.5rem; }
+		.scale-controls {
+			gap: 0.5rem;
+		}
 	}
 </style>

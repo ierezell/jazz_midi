@@ -1,15 +1,39 @@
 class AudioOutputService {
-	devices = $state<MediaDeviceInfo[]>([]);
-	selectedDeviceId = $state<string>('');
-	isSinkIdSupported =
-		typeof (HTMLAudioElement.prototype as unknown as Record<string, unknown>)['setSinkId'] ===
-		'function';
+	private _devices: MediaDeviceInfo[] = [];
+	private _selectedDeviceId: string = '';
+	private _isSinkIdSupported: boolean | null = null;
+
+	get isSinkIdSupported(): boolean {
+		if (this._isSinkIdSupported === null) {
+			this._isSinkIdSupported =
+				typeof HTMLAudioElement !== 'undefined' &&
+				typeof (HTMLAudioElement.prototype as unknown as Record<string, unknown>)['setSinkId'] ===
+					'function';
+		}
+		return this._isSinkIdSupported;
+	}
 
 	private registeredElements = new Set<HTMLAudioElement>();
 
+	get devices(): MediaDeviceInfo[] {
+		return this._devices;
+	}
+
+	set devices(value: MediaDeviceInfo[]) {
+		this._devices = value;
+	}
+
+	get selectedDeviceId(): string {
+		return this._selectedDeviceId;
+	}
+
+	set selectedDeviceId(value: string) {
+		this._selectedDeviceId = value;
+	}
+
 	constructor() {
 		if (typeof localStorage !== 'undefined') {
-			this.selectedDeviceId = localStorage.getItem('audio_output_device_id') ?? '';
+			this._selectedDeviceId = localStorage.getItem('audio_output_device_id') ?? '';
 		}
 		if (typeof navigator !== 'undefined' && navigator.mediaDevices) {
 			navigator.mediaDevices.addEventListener('devicechange', () => this.refreshDevices());
