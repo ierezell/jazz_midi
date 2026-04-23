@@ -322,9 +322,14 @@ export const AllChordVoicings: ChordVoicing[] = [
 export const AllScaleModes: ScaleMode[] = [
 	'Maj',
 	'Min',
-	'MinHar',
-	'MinMel',
 	'Blues',
+	'HarMin',
+	'MelMin',
+	'Dor',
+	'Phr',
+	'Lyd',
+	'Mix',
+	'Loc'
 ];
 
 export const DEFAULT_OCTAVE = '3';

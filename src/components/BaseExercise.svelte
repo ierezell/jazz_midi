@@ -115,7 +115,6 @@
 	let completed = $state(false);
 	let debugMode = $state(false);
 
-    
 	let feedbackMessage = $state('');
 	let showNotesRoles = $state(false);
 
@@ -268,7 +267,6 @@
 	});
 
 	function handleNoteOn(note: NoteEvent): void {
-
 		let isOffBeat = false;
 
 		// Tempo Check - only validate timing for certain conditions
@@ -492,7 +490,9 @@
 		// Flash the beat indicator
 		if (tempoMode) {
 			beatFlash = true;
-			setTimeout(() => { beatFlash = false; }, 80);
+			setTimeout(() => {
+				beatFlash = false;
+			}, 80);
 		}
 	}
 
@@ -505,7 +505,10 @@
 		else history.back();
 	}
 
-	interface Breadcrumb { label: string; href: string | null; }
+	interface Breadcrumb {
+		label: string;
+		href: string | null;
+	}
 
 	let breadcrumbs = $derived.by((): Breadcrumb[] => {
 		if (isJourneyMode) {
@@ -601,7 +604,7 @@
 
 			<div class="sidebar-spacer"></div>
 
-				<button onclick={() => resetExercise()} class="reset-btn"> Reset Session </button>
+			<button onclick={() => resetExercise()} class="reset-btn"> Reset Session </button>
 		</div>
 	</aside>
 
@@ -852,7 +855,9 @@
 		height: 3px;
 		border-radius: 2px;
 		background: var(--color-border);
-		transition: background 0.05s ease, box-shadow 0.05s ease;
+		transition:
+			background 0.05s ease,
+			box-shadow 0.05s ease;
 		margin-bottom: 0.25rem;
 	}
 
@@ -867,7 +872,9 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.beat-indicator { transition: none; }
+		.beat-indicator {
+			transition: none;
+		}
 	}
 
 	.exercise-header {
@@ -935,9 +942,15 @@
 		transition: width 0.1s ease;
 	}
 
-	.velocity-fill.soft { background: #60a5fa; }
-	.velocity-fill.medium { background: #34d399; }
-	.velocity-fill.loud { background: #f87171; }
+	.velocity-fill.soft {
+		background: #60a5fa;
+	}
+	.velocity-fill.medium {
+		background: #34d399;
+	}
+	.velocity-fill.loud {
+		background: #f87171;
+	}
 
 	.feedback-toast {
 		position: fixed;
@@ -1087,18 +1100,51 @@
 			padding: 0.5rem;
 			overflow-y: auto;
 		}
-		.sidebar-header h3 { font-size: 0.7rem; margin-bottom: 0.75rem; }
-		.control-group { margin-bottom: 0.75rem; gap: 0.3rem; }
-		.control-group label { font-size: 0.7rem; }
-		select, .toggle-btn { padding: 0.4rem 0.5rem; font-size: 0.75rem; }
-		.reset-btn { padding: 0.4rem 0.5rem; font-size: 0.75rem; }
-		.info-group h1 { font-size: 1rem; }
-		.stat-pill { padding: 0.25rem 0.5rem; font-size: 0.7rem; }
-		.prompt-card { padding: 1rem; }
-		.prompt-text { font-size: 2rem; }
-		.score-container { min-height: 120px; }
-		.focus-area { gap: 0.5rem; overflow-y: auto; }
-		.feedback-toast { top: 60px; padding: 0.5rem 1rem; font-size: 0.8rem; }
+		.sidebar-header h3 {
+			font-size: 0.7rem;
+			margin-bottom: 0.75rem;
+		}
+		.control-group {
+			margin-bottom: 0.75rem;
+			gap: 0.3rem;
+		}
+		.control-group label {
+			font-size: 0.7rem;
+		}
+		select,
+		.toggle-btn {
+			padding: 0.4rem 0.5rem;
+			font-size: 0.75rem;
+		}
+		.reset-btn {
+			padding: 0.4rem 0.5rem;
+			font-size: 0.75rem;
+		}
+		.info-group h1 {
+			font-size: 1rem;
+		}
+		.stat-pill {
+			padding: 0.25rem 0.5rem;
+			font-size: 0.7rem;
+		}
+		.prompt-card {
+			padding: 1rem;
+		}
+		.prompt-text {
+			font-size: 2rem;
+		}
+		.score-container {
+			min-height: 120px;
+		}
+		.focus-area {
+			gap: 0.5rem;
+			overflow-y: auto;
+		}
+		.feedback-toast {
+			top: 60px;
+			padding: 0.5rem 1rem;
+			font-size: 0.8rem;
+		}
 	}
 
 	.back-btn {
@@ -1111,7 +1157,10 @@
 		cursor: pointer;
 		flex-shrink: 0;
 	}
-	.back-btn:hover { color: var(--color-text); border-color: var(--color-text-muted); }
+	.back-btn:hover {
+		color: var(--color-text);
+		border-color: var(--color-text-muted);
+	}
 
 	.breadcrumbs {
 		font-size: 0.8rem;
@@ -1121,10 +1170,20 @@
 		align-items: center;
 		gap: 0.15rem;
 	}
-	.breadcrumb-link { color: var(--color-primary); text-decoration: none; }
-	.breadcrumb-link:hover { text-decoration: underline; }
-	.breadcrumb-current { color: var(--color-text-muted); }
-	.breadcrumb-sep { color: var(--color-text-muted); opacity: 0.5; }
+	.breadcrumb-link {
+		color: var(--color-primary);
+		text-decoration: none;
+	}
+	.breadcrumb-link:hover {
+		text-decoration: underline;
+	}
+	.breadcrumb-current {
+		color: var(--color-text-muted);
+	}
+	.breadcrumb-sep {
+		color: var(--color-text-muted);
+		opacity: 0.5;
+	}
 
 	.star-criteria {
 		display: flex;
@@ -1136,8 +1195,12 @@
 		margin-bottom: 0.75rem;
 		flex-wrap: wrap;
 	}
-	.star-chip { opacity: 0.7; }
-	.star-sep { opacity: 0.4; }
+	.star-chip {
+		opacity: 0.7;
+	}
+	.star-sep {
+		opacity: 0.4;
+	}
 
 	/* Visually hidden utility for accessible expected notes (readable by tests/screen readers) */
 	.visually-hidden {
