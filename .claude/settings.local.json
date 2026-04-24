@@ -1,5 +1,9 @@
 {
-  "env": {},
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "",
+    "ANTHROPIC_BASE_URL": "",
+    "ANTHROPIC_MODEL": ""
+  },
   "permissions": {
     "allow": [
       "WebFetch(domain:docs.pytorch.org)",
@@ -64,9 +68,10 @@
       "Bash(grep -r ': any' /d/Misc/jazz_midi/src --include=*.svelte --include=*.ts)",
       "Bash(npm run:*)",
       "Bash(grep -r \"color:\\\\|background:\\\\|#[0-9a-fA-F]\\\\{3,6\\\\}\\\\|rgb\\(\" /d/Misc/jazz_midi/src/components --include=\"*.svelte\")",
-      "Bash(grep -r \"aria-label\\\\|aria-\" /d/Misc/jazz_midi/src/routes /d/Misc/jazz_midi/src/components --include=*.svelte)"
+      "Bash(grep -r \"aria-label\\\\|aria-\" /d/Misc/jazz_midi/src/routes /d/Misc/jazz_midi/src/components --include=*.svelte)",
+      "WebFetch(domain:effendi.me)"
     ],
-    "ask": [],
-    "deny": []
+    "deny": [],
+    "ask": []
   }
 }
