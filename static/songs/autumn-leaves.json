@@ -1,0 +1,37 @@
+{
+	"name": "Autumn Leaves",
+	"composer": "Joseph Kosma",
+	"year": 1945,
+	"key": "Gm",
+	"description": "The most-played jazz standard. Essential ii-V-I practice in G minor.",
+	"chords": [
+		{
+			"note": "C",
+			"type": "min7"
+		},
+		{
+			"note": "F",
+			"type": "7"
+		},
+		{
+			"note": "Bb",
+			"type": "maj7"
+		},
+		{
+			"note": "Eb",
+			"type": "maj7"
+		},
+		{
+			"note": "A",
+			"type": "half-dim7"
+		},
+		{
+			"note": "D",
+			"type": "7"
+		},
+		{
+			"note": "G",
+			"type": "min7"
+		}
+	]
+}

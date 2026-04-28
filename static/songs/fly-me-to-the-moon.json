@@ -1,0 +1,21 @@
+{
+	"name": "Fly Me To The Moon",
+	"composer": "Bart Howard",
+	"year": 1954,
+	"key": "C",
+	"description": "A swing era classic with clean diatonic ii-V-I progressions in C major. Ideal for beginners learning jazz harmony.",
+	"chords": [
+		{ "note": "A", "type": "min7" },
+		{ "note": "D", "type": "min7" },
+		{ "note": "G", "type": "7" },
+		{ "note": "C", "type": "maj7" },
+		{ "note": "C", "type": "maj7" },
+		{ "note": "F", "type": "maj7" },
+		{ "note": "D", "type": "min7" },
+		{ "note": "E", "type": "min7" },
+		{ "note": "A", "type": "7" },
+		{ "note": "D", "type": "min7" },
+		{ "note": "G", "type": "7" },
+		{ "note": "C", "type": "maj7" }
+	]
+}
