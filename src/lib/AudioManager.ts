@@ -6,9 +6,45 @@ export class AudioManager {
 	// Whether audio playback has been unlocked by a user gesture
 	private unlocked = false;
 	private volume = 0.7;
+	private audioContext: AudioContext | null = null;
 
 	constructor() {
 		this.preloadSounds();
+	}
+
+	private getAudioContext(): AudioContext | null {
+		if (typeof window === 'undefined') return null;
+		if (!this.audioContext) {
+			this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+		}
+		return this.audioContext;
+	}
+
+	/**
+	 * Play a MIDI note using Web Audio API oscillator
+	 */
+	playNote(midiNote: number, velocity: number = 100, duration: number = 0.3): void {
+		if (!this.enabled || !this.unlocked) return;
+		
+		const ctx = this.getAudioContext();
+		if (!ctx) return;
+
+		const frequency = 440 * Math.pow(2, (midiNote - 69) / 12);
+		const osc = ctx.createOscillator();
+		const gain = ctx.createGain();
+
+		osc.type = 'triangle';
+		osc.frequency.setValueAtTime(frequency, ctx.currentTime);
+
+		const vol = (velocity / 127) * this.volume;
+		gain.gain.setValueAtTime(vol, ctx.currentTime);
+		gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+		osc.connect(gain);
+		gain.connect(ctx.destination);
+
+		osc.start(ctx.currentTime);
+		osc.stop(ctx.currentTime + duration);
 	}
 
 	private async preloadSounds(): Promise<void> {

@@ -7,6 +7,7 @@
 	import type { NoteEvent } from '$lib/types/types';
 	import type { VirtualMidiInput } from '../lib/virtualMidi';
 	import { getKeyboardToMidi } from '../lib/virtualMidi';
+	import VelocityHeatmap from './VelocityHeatmap.svelte';
 	interface DebugPanelProps {
 		virtualMidi?: VirtualMidiInput;
 		debugMode?: boolean;
@@ -171,6 +172,9 @@
 							<div>Recent Events: {noteEvents.length}</div>
 						{/if}
 					</div>
+					{#if noteEvents.length > 0}
+						<VelocityHeatmap {noteEvents} />
+					{/if}
 				</div>
 			{/if}
 			{#if virtualMidi}

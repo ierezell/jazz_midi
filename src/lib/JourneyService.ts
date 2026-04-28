@@ -25,6 +25,45 @@ export interface Unit {
 	color: string;
 }
 
+// Daily Practice Types
+export interface DailyPracticeItem {
+	id: string;
+	category: DailyPracticeCategory;
+	title: string;
+	durationMinutes: number;
+	path: string;
+	params?: Record<string, string>;
+	completed: boolean;
+	suggestedExercise?: string;
+}
+
+export type DailyPracticeCategory =
+	| 'slow-melody'
+	| 'scales-patterns'
+	| 'pattern-application'
+	| 'improvisation'
+	| 'transcribed-solo'
+	| 'special-disciplines'
+	| 'learn-tune';
+
+export interface DailyPracticeRoutine {
+	date: string; // ISO date string
+	items: DailyPracticeItem[];
+	totalMinutes: number;
+	completedMinutes: number;
+}
+
+// Per-day practice structure with recommended time allocations
+export const DAILY_PRACTICE_STRUCTURE: { category: DailyPracticeCategory; title: string; duration: number; description: string }[] = [
+	{ category: 'slow-melody', title: 'Slow Melody (Tune)', duration: 5, description: 'Play a jazz standard slowly, focusing on beautiful tone and phrasing' },
+	{ category: 'scales-patterns', title: 'Scales and Patterns', duration: 15, description: 'Technical foundation: major, minor, diminished scales and patterns' },
+	{ category: 'pattern-application', title: 'Pattern Application', duration: 10, description: 'Apply scales and arpeggios over chord progressions' },
+	{ category: 'improvisation', title: 'Improvisation Exercise', duration: 5, description: 'Creative soloing over a backing track or metronome' },
+	{ category: 'transcribed-solo', title: 'Transcribed Solo', duration: 15, description: 'Learn a classic solo by ear or from transcription' },
+	{ category: 'special-disciplines', title: 'Special Disciplines', duration: 10, description: 'Ear training, sight reading, or hand independence' },
+	{ category: 'learn-tune', title: 'Learn a Tune', duration: 15, description: 'Memorize melody, chords, and form of a new jazz standard' }
+];
+
 export class JourneyService {
 	private static instance: JourneyService;
 
@@ -1187,6 +1226,177 @@ export class JourneyService {
 		}
 
 		return undefined;
+	}
+
+	// ============================================================
+	// DAILY PRACTICE ROUTINE
+	// Generates a structured 75-minute daily practice session
+	// ============================================================
+
+	getDailyPracticeRoutine(date?: Date): DailyPracticeRoutine {
+		const targetDate = date || new Date();
+		const dateStr = targetDate.toISOString().split('T')[0];
+
+		// Try to load saved routine for this date
+		const saved = this.loadDailyPractice(dateStr);
+		if (saved) return saved;
+
+		// Generate new routine
+		const items: DailyPracticeItem[] = DAILY_PRACTICE_STRUCTURE.map((item, index) => ({
+			id: `daily-${dateStr}-${index}`,
+			category: item.category,
+			title: item.title,
+			durationMinutes: item.duration,
+			path: this.getPathForCategory(item.category),
+			params: this.getParamsForCategory(item.category, targetDate),
+			completed: false,
+			suggestedExercise: this.getSuggestedExercise(item.category)
+		}));
+
+		const routine: DailyPracticeRoutine = {
+			date: dateStr,
+			items,
+			totalMinutes: items.reduce((sum, item) => sum + item.durationMinutes, 0),
+			completedMinutes: 0
+		};
+
+		this.saveDailyPractice(routine);
+		return routine;
+	}
+
+	private getPathForCategory(category: DailyPracticeCategory): string {
+		const pathMap: Record<DailyPracticeCategory, string> = {
+			'slow-melody': '/exercises/song-rhythm',
+			'scales-patterns': '/exercises/scales',
+			'pattern-application': '/exercises/two_five_ones',
+			'improvisation': '/exercises/licks',
+			'transcribed-solo': '/exercises/partition',
+			'special-disciplines': '/exercises/hand_independence',
+			'learn-tune': '/exercises/songs'
+		};
+		return pathMap[category];
+	}
+
+	private getParamsForCategory(category: DailyPracticeCategory, date: Date): Record<string, string> | undefined {
+		// Rotate exercises based on day of week for variety
+		const dayOfWeek = date.getDay();
+		
+		switch (category) {
+			case 'slow-melody':
+				return { 
+					exerciseType: 'melody',
+					song: this.getDailySong(dayOfWeek)
+				};
+			case 'scales-patterns':
+				const scales = ['C', 'F', 'Bb', 'Eb', 'G', 'D', 'A'];
+				return { 
+					root: scales[dayOfWeek % scales.length],
+					mode: dayOfWeek % 2 === 0 ? 'Maj' : 'min'
+				};
+			case 'pattern-application':
+				return { 
+					mode: 'random',
+					bpm: '80'
+				};
+			case 'improvisation':
+				const licks = ['blues', 'bebop', 'ii-v-i'];
+				return { 
+					lickType: licks[dayOfWeek % licks.length]
+				};
+			case 'learn-tune':
+				return { 
+					song: this.getDailySong((dayOfWeek + 3) % 7)
+				};
+			default:
+				return undefined;
+		}
+	}
+
+	private getDailySong(dayOfWeek: number): string {
+		const songs = [
+			'autumn_leaves',
+			'blue_bossa',
+			'all_the_things_you_are',
+			'fly_me_to_the_moon',
+			'misty',
+			'summertime',
+			'so_what'
+		];
+		return songs[dayOfWeek % songs.length];
+	}
+
+	private getSuggestedExercise(category: DailyPracticeCategory): string {
+		const suggestions: Record<DailyPracticeCategory, string> = {
+			'slow-melody': 'Focus on tone quality and breathing',
+			'scales-patterns': 'Use metronome, start slow at 60 BPM',
+			'pattern-application': 'Play through II-V-I progressions',
+			'improvisation': 'Start with simple motifs, build gradually',
+			'transcribed-solo': 'Learn 2-4 bars perfectly by ear',
+			'special-disciplines': 'Try sight reading or hand independence',
+			'learn-tune': 'Memorize melody first, then chords'
+		};
+		return suggestions[category];
+	}
+
+	completeDailyPracticeItem(dateStr: string, itemId: string): void {
+		const routine = this.loadDailyPractice(dateStr);
+		if (!routine) return;
+
+		const item = routine.items.find(i => i.id === itemId);
+		if (item && !item.completed) {
+			item.completed = true;
+			routine.completedMinutes += item.durationMinutes;
+			this.saveDailyPractice(routine);
+		}
+	}
+
+	private loadDailyPractice(dateStr: string): DailyPracticeRoutine | null {
+		if (!browser || typeof localStorage === 'undefined') return null;
+		
+		const saved = localStorage.getItem(`daily_practice_${dateStr}`);
+		if (!saved) return null;
+		
+		try {
+			return JSON.parse(saved) as DailyPracticeRoutine;
+		} catch {
+			return null;
+		}
+	}
+
+	private saveDailyPractice(routine: DailyPracticeRoutine): void {
+		if (!browser || typeof localStorage === 'undefined') return;
+		localStorage.setItem(`daily_practice_${routine.date}`, JSON.stringify(routine));
+	}
+
+	getPracticeStreak(): number {
+		if (!browser || typeof localStorage === 'undefined') return 0;
+		
+		const saved = localStorage.getItem('daily_practice_streak');
+		return saved ? parseInt(saved, 10) : 0;
+	}
+
+	updatePracticeStreak(): void {
+		if (!browser || typeof localStorage === 'undefined') return;
+		
+		const today = new Date().toISOString().split('T')[0];
+		const lastPractice = localStorage.getItem('last_practice_date');
+		
+		if (lastPractice === today) return; // Already practiced today
+		
+		const yesterday = new Date();
+		yesterday.setDate(yesterday.getDate() - 1);
+		const yesterdayStr = yesterday.toISOString().split('T')[0];
+		
+		let streak = this.getPracticeStreak();
+		
+		if (lastPractice === yesterdayStr) {
+			streak++;
+		} else {
+			streak = 1; // Reset streak but count today
+		}
+		
+		localStorage.setItem('daily_practice_streak', streak.toString());
+		localStorage.setItem('last_practice_date', today);
 	}
 }
 

@@ -1,4 +1,10 @@
 <script lang="ts">
+	/**
+	 * @deprecated Use OSMDScore.svelte instead for unified MusicXML rendering
+	 * This component uses VexFlow directly and is kept for backward compatibility.
+	 * Migrate to OSMDScore for better MusicXML support, mobile display, and cursor tracking.
+	 * @see OSMDScore.svelte
+	 */
 	import type { NoteFullName } from '$lib/types/notes';
 	import type { ScoreProps } from '$lib/types/types';
 	import { onMount } from 'svelte';

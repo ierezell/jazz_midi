@@ -4,8 +4,9 @@ import { writable, type Writable } from 'svelte/store';
 
 import { createVirtualMidiAccess, setupKeyboardInput, type VirtualMidiInput } from './virtualMidi';
 import { audioInputService } from './AudioInputService';
+import { logger } from './LoggingService';
 
-export class MIDIManager {
+class MIDIManager {
 	public midiAccess: MIDIAccess | null = null;
 	private virtualMidi: VirtualMidiInput | null = null;
 	private keyboardCleanup: (() => void) | null = null;
@@ -74,7 +75,7 @@ export class MIDIManager {
 			this.updateMidiState();
 			return true;
 		} catch (error) {
-			console.warn('Could not initialize MIDI devices. Fallback mode enabled.', error);
+			logger.warn('Could not initialize MIDI devices. Fallback mode enabled.', error, 'MIDI');
 			return false;
 		}
 	}
@@ -82,13 +83,13 @@ export class MIDIManager {
 	private async safeRequestMidiAccess(options?: MIDIOptions): Promise<MIDIAccess | null> {
 		try {
 			if (!navigator.requestMIDIAccess) {
-				console.warn('Web MIDI API not supported in this browser');
+				logger.warn('Web MIDI API not supported in this browser', undefined, 'MIDI');
 				return null;
 			}
 			const midiAccess = await navigator.requestMIDIAccess(options || { sysex: false });
 			return midiAccess;
 		} catch (error) {
-			console.warn('Failed to obtain MIDI access:', error);
+			logger.warn('Failed to obtain MIDI access', error, 'MIDI');
 			return null;
 		}
 	}
@@ -105,7 +106,7 @@ export class MIDIManager {
 					try {
 						callback(event);
 					} catch (error) {
-						console.error('Error in MIDI message callback:', error);
+						logger.error('Error in MIDI message callback', error, 'MIDI');
 						if (errorCallback) {
 							errorCallback(error as Error);
 						}
@@ -117,7 +118,7 @@ export class MIDIManager {
 					this.updateMidiState();
 			};
 		} catch (error) {
-			console.error('Error setting up MIDI callback:', error);
+			logger.error('Error setting up MIDI callback', error, 'MIDI');
 			if (errorCallback) {
 				errorCallback(error as Error);
 			}
@@ -174,7 +175,7 @@ export class MIDIManager {
 	private safeGetMidiNote(event: MIDIMessageEvent): NoteEvent | null {
 		try {
 			if (!event.data || event.data.length < 3) {
-				console.warn('Invalid MIDI message data');
+				logger.warn('Invalid MIDI message data', undefined, 'MIDI');
 				return null;
 			}
 			const [status, noteNumber, velocity] = event.data;
@@ -184,13 +185,13 @@ export class MIDIManager {
 				return null;
 			}
 			if (noteNumber < 24 || noteNumber > 127) {
-				console.warn(`MIDI note ${noteNumber} out of valid range (24-127)`);
+				logger.warn(`MIDI note ${noteNumber} out of valid range (24-127)`, undefined, 'MIDI');
 				return null;
 			}
 			const midiNote = noteNumber as MidiNote;
 			const noteFullName = MidiToNote[midiNote];
 			if (!noteFullName) {
-				console.error(`No note name found for MIDI note ${midiNote}`);
+				logger.error(`No note name found for MIDI note ${midiNote}`, undefined, 'MIDI');
 				return null;
 			}
 			const isNoteOn = command === 0x90 && velocity > 0;
@@ -230,12 +231,12 @@ export class MIDIManager {
 	}
 
 	private handleError(error: Error): void {
-		console.error('MIDI Manager Error:', error);
+		logger.error('MIDI Manager Error', error, 'MIDI');
 		this.errorCallbacks.forEach((callback) => {
 			try {
 				callback(error);
 			} catch (callbackError) {
-				console.error('Error in error callback:', callbackError);
+				logger.error('Error in error callback', callbackError, 'MIDI');
 			}
 		});
 		if (this.eventHandlers.onError) {

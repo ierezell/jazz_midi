@@ -14,7 +14,14 @@
 		Piano,
 		Fingerprint,
 		RefreshCw,
-		Layers
+		Layers,
+		AudioLines,
+		Music2,
+		Ghost,
+		Ear,
+		Target,
+		Repeat,
+		Volume2
 	} from 'lucide-svelte';
 
 	type Difficulty = 'beginner' | 'intermediate' | 'advanced';
@@ -95,6 +102,30 @@
 			difficulty: 'intermediate'
 		},
 		{
+			title: 'Song Chords',
+			description: 'Practice all chords from jazz standards with various voicings and inversions.',
+			href: resolve('/exercises/song-chords'),
+			icon: Music2,
+			color: 'var(--color-primary)',
+			difficulty: 'intermediate'
+		},
+		{
+			title: 'Song Melody',
+			description: 'Learn the melodies of jazz standards. Practice with or without rhythm.',
+			href: resolve('/exercises/song-melody'),
+			icon: AudioLines,
+			color: 'var(--color-secondary)',
+			difficulty: 'beginner'
+		},
+		{
+			title: 'Song Rhythm',
+			description: 'Practice chord progressions and melodies with strict timing and bar-by-bar focus.',
+			href: resolve('/exercises/song-rhythm'),
+			icon: Dumbbell,
+			color: 'var(--color-warn)',
+			difficulty: 'intermediate'
+		},
+		{
 			title: 'Songs',
 			description: 'Apply everything to real jazz standards. The ultimate test of your skills.',
 			href: resolve('/exercises/songs'),
@@ -133,6 +164,38 @@
 			icon: Layers,
 			color: 'var(--color-level-3)',
 			difficulty: 'advanced'
+		},
+		{
+			title: 'Ghost Notes',
+			description: 'Master jazz articulation. Play soft ghost notes on downbeats and accented upbeats.',
+			href: resolve('/exercises/ghost-notes'),
+			icon: Ghost,
+			color: 'var(--color-primary)',
+			difficulty: 'intermediate'
+		},
+		{
+			title: 'Interval Mimicry',
+			description: 'Ear training: hear an interval, then play it back instantly.',
+			href: resolve('/exercises/interval-mimicry'),
+			icon: Ear,
+			color: 'var(--color-secondary)',
+			difficulty: 'beginner'
+		},
+		{
+			title: 'Enclosure Drill',
+			description: 'Practice circling target tones - the bebop technique of chromatic approach.',
+			href: resolve('/exercises/enclosure'),
+			icon: Target,
+			color: 'var(--color-warn)',
+			difficulty: 'advanced'
+		},
+		{
+			title: 'Hand Dynamics',
+			description: 'Train hand independence through velocity control. LH soft comping, RH strong melody.',
+			href: resolve('/exercises/hand-dynamics'),
+			icon: Volume2,
+			color: 'var(--color-level-2)',
+			difficulty: 'intermediate'
 		}
 	];
 

@@ -83,5 +83,99 @@ Every lesson follows a 4-pillar sequence. The complexity of each pillar is deter
 
 
 
-# NEW FEATURES : 
-Add a feature for audio to midi with https://github.com/spotify/basic-pitch-ts to be able to use microphone instead of a midi instrument.
+## ✅ COMPLETED FEATURES
+- [x] Audio-to-MIDI using @spotify/basic-pitch (microphone input as MIDI alternative)
+- [x] Ghost Note Challenge - Velocity validation exercise (soft downbeats, accented upbeats)
+- [x] Interval Mimicry - Ear training (browser plays interval, user plays back)
+- [x] Enclosure Drill - Bebop target tone circling patterns
+- [x] **Adaptive Training System** - Replaces Weekly Standard with curriculum-based recommendations:
+  - `CurriculumEngine` defines 25+ skills across 4 pillars (Technique/Theory/Vocabulary/Repertoire)
+  - Weakness identification based on accuracy < 70%
+  - Personalized workout generation (40% weaknesses, 30% foundation, 30% repertoire)
+  - Pillar balance tracking with recommended daily focus
+  - Skill dependency tree (must master basics before advanced)
+- [x] Velocity Heatmap - Visual feedback (Blue=Soft, Red=Hard) for ghost note visualization
+- [x] Legato Check - Note overlap monitoring for "connected" jazz sound
+- [x] Hand Dynamics - Per-hand velocity training with loudness meters (LH soft, RH strong)
+- [x] **MusicXML Velocity Support** - Any exercise can opt-in to velocity validation via MusicXML:
+  - Parse dynamics markings (p, mp, mf, f, ff) from MusicXML files
+  - Support notehead shapes (x=ghost, diamond=accent) for articulation
+  - Per-note velocity constraints with min/max ranges
+  - `VelocityValidator` class with modes: 'per-note', 'hand-based', 'ghost-accent', 'off'
+  - `SongExercise.settings.enableVelocityCheck` to opt-in
+  - `buildVelocityMap()` to extract velocity data from any song
+- [x] **Unified OSMD Score System** - All exercises now use OpenSheetMusicDisplay:
+  - `MusicXMLGenerator.ts` - Converts note arrays to MusicXML format for OSMD rendering
+  - `OSMDScore.svelte` - Unified component with cursor tracking, note highlighting, zoom
+  - Old exercises can pass notes to OSMD via `generateMusicXML()`
+  - Supports: mobile display, note cursor, played/upcoming note highlighting
+  - Annotations: II-V-I highlighting, chord inversions, root-third labels
+
+## 🚧 PARTIAL / EXISTING FEATURES
+- [~] Swing Accents - Tempo mode exists, could add swing offset validation
+- [~] ii-V-I Loop - Exists as `two_five_ones` exercise
+
+## 🔲 REMAINING IMPLEMENTATION GAPS
+
+### Pillar 1: Technique & Mechanics
+- [ ] Scale Geometry - Progressive drills (Single Hand → Parallel Motion → 3rds)
+- [ ] Ghost Note Challenge could be enhanced with real-time feedback
+
+### Pillar 2: Theory & Ear Training
+- [ ] Voicing Construction - Step-by-step 7th chords → Shells → Rootless
+- [ ] Diatonic 7ths Navigation - I → II → III chord progression exercise
+
+### Pillar 3: Vocabulary & Patterns
+- [ ] Lick Transposition Loop - Auto-transpose to next Circle of Fifths key
+- [ ] Rhythmic Morphing - Same lick: Straight 8ths / Swing / Bossa Nova styles
+
+### Pillar 4: Repertoire (via Training System)
+- [x] Adaptive workout system - **COMPLETED** via `/training` route
+- [ ] Progress Portfolio with audio recording capability
+
+### MIDI Validation Technical Requirements
+- [x] Velocity validation from MusicXML - **COMPLETED** via `VelocityValidator`
+- [ ] Swing Ratio calculation (long downbeat / short upbeat ratio)
+- [ ] Enhanced Legato Check integration into exercises
+
+### MusicXML Velocity Features
+MusicXML files can now include velocity expectations that any exercise can use:
+
+```xml
+<!-- Dynamics markings are automatically parsed -->
+<direction>
+  <direction-type>
+    <dynamics><p/></dynamics>  <!-- Soft: velocity 40-60 -->
+  </direction-type>
+</direction>
+
+<!-- Notehead shapes for articulation -->
+<note>
+  <pitch><step>C</step><octave>4</octave></pitch>
+  <notehead>x</notehead>  <!-- Ghost note: velocity < 40 -->
+</note>
+
+<note>
+  <pitch><step>G</step><octave>4</octave></pitch>
+  <notehead>diamond</notehead>  <!-- Accent: velocity > 80 -->
+</note>
+```
+
+**Exercise Integration:**
+```typescript
+// Any exercise can enable velocity validation
+const exercise: SongExercise = {
+  songId: 'my-song',
+  exerciseType: 'melody',
+  settings: {
+    enableVelocityCheck: true,  // Opt-in!
+    velocityMode: 'per-note',   // 'per-note' | 'hand-based' | 'ghost-accent'
+    lhVelocityMax: 50,           // Optional override
+    rhVelocityMin: 80            // Optional override
+  }
+};
+
+// Use the validator
+const validator = VelocityValidator.fromExerciseSettings(exercise.settings);
+const result = validator.validate(noteEvent, staff);
+// result: { isValid, feedback, deviation, ... }

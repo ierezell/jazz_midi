@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { Map, Dumbbell, User } from 'lucide-svelte';
+	import { Map, Dumbbell, User, Target } from 'lucide-svelte';
 
 	const navItems = [
 		{ href: resolve('/journey'), icon: Map, label: 'Journey' },
 		{ href: resolve('/exercises'), icon: Dumbbell, label: 'Gym' },
+		{ href: resolve('/training'), icon: Target, label: 'Training' },
 		{ href: resolve('/profile'), icon: User, label: 'Profile' }
 	];
 
