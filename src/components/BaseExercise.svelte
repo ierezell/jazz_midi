@@ -31,7 +31,10 @@
 
 	interface BaseExerciseProps {
 		randomMode: boolean;
-		generateExpectedNotes: (selectedNote: Note, ...args: unknown[]) => MidiNote[];
+		generateExpectedNotes: (
+			selectedNote: Note,
+			...additionalParams: (string | number | boolean | undefined)[]
+		) => MidiNote[];
 		generateScoreProps: (selectedNote: Note) => ScoreProps;
 		validateNoteEvent: (
 			selectedNote: Note,

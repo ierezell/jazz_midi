@@ -6,22 +6,6 @@
 	"hand": "right",
 	"difficulty": "advanced",
 	"suggestedBpm": 110,
-	"notes": [
-		"C4",
-		"Eb4",
-		"F4",
-		"G4",
-		"Bb4",
-		"C5",
-		"Bb4",
-		"G4",
-		"F4",
-		"Eb4"
-	],
-	"tags": [
-		"blues",
-		"minor",
-		"melody",
-		"head"
-	]
+	"notes": ["C4", "Eb4", "F4", "G4", "Bb4", "C5", "Bb4", "G4", "F4", "Eb4"],
+	"tags": ["blues", "minor", "melody", "head"]
 }

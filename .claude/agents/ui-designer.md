@@ -32,6 +32,7 @@ This app should feel like **Duolingo meets a jazz club**: gamified, fun, slightl
 ## Design system approach
 
 When building the design system:
+
 - Define semantic color tokens in `src/styles/global.css` as CSS variables: `--color-primary`, `--color-surface`, `--color-on-surface`, etc.
 - Dark mode via `[data-theme="dark"]` selector OR `.dark` class on `<html>`
 - Use Skeleton UI's built-in theme system if possible
@@ -41,6 +42,7 @@ When building the design system:
 ## Gamification elements
 
 For making exercises feel rewarding:
+
 - Progress bars with smooth transitions
 - Star ratings with CSS animations on completion
 - Streak counters with fire/glow effects

@@ -92,19 +92,11 @@
 			<div class="level-selector card-premium">
 				<span class="section-label">Level</span>
 				<div class="level-toggle" role="group" aria-label="Exercise level">
-					<button
-						class="level-btn"
-						class:active={level === 1}
-						onclick={() => (level = 1)}
-					>
+					<button class="level-btn" class:active={level === 1} onclick={() => (level = 1)}>
 						<span class="level-num">1</span>
 						<span class="level-name">Shell Voicings + Major Scale</span>
 					</button>
-					<button
-						class="level-btn"
-						class:active={level === 2}
-						onclick={() => (level = 2)}
-					>
+					<button class="level-btn" class:active={level === 2} onclick={() => (level = 2)}>
 						<span class="level-num">2</span>
 						<span class="level-name">Walking Bass + Pentatonic</span>
 					</button>
@@ -122,17 +114,18 @@
 					<div class="hand-section">
 						<h4 class="hand-label lh-label">Left Hand</h4>
 						<p class="hand-detail">
-							{level === 1 ? 'Cm7 shell — root + minor 7th (any order)' : 'Cmaj7 arpeggio — 1-3-5-7 in sequence'}
+							{level === 1
+								? 'Cm7 shell — root + minor 7th (any order)'
+								: 'Cmaj7 arpeggio — 1-3-5-7 in sequence'}
 						</p>
 						<div class="pattern-beats">
 							{#each lhExpected as note, i}
 								{@const isFilled = Array.from(lhCollected).some((c) => c % 12 === note % 12)}
-								{@const isCurrent = !isFilled && Array.from(lhCollected).filter((c) => lhExpected.some((n) => n % 12 === c % 12)).length === i}
-								<div
-									class="beat-box lh-beat"
-									class:current={isCurrent}
-									class:filled={isFilled}
-								>
+								{@const isCurrent =
+									!isFilled &&
+									Array.from(lhCollected).filter((c) => lhExpected.some((n) => n % 12 === c % 12))
+										.length === i}
+								<div class="beat-box lh-beat" class:current={isCurrent} class:filled={isFilled}>
 									<div class="beat-label">{i + 1}</div>
 									<div class="note-label">{midiToNoteName(note).slice(0, -1)}</div>
 								</div>
@@ -141,7 +134,11 @@
 						<div class="completion-bar">
 							<div
 								class="completion-fill lh-fill"
-								style="width: {(Array.from(new Set(Array.from(lhCollected).map((c) => c % 12))).filter((pc) => lhExpected.some((n) => n % 12 === pc)).length / lhExpected.length) * 100}%"
+								style="width: {(Array.from(
+									new Set(Array.from(lhCollected).map((c) => c % 12))
+								).filter((pc) => lhExpected.some((n) => n % 12 === pc)).length /
+									lhExpected.length) *
+									100}%"
 							></div>
 						</div>
 					</div>
@@ -150,7 +147,9 @@
 					<div class="hand-section">
 						<h4 class="hand-label rh-label">Right Hand</h4>
 						<p class="hand-detail">
-							{level === 1 ? 'C major scale ascending — C4 to C5 in order' : 'C major pentatonic ascending — C4 to C5 in order'}
+							{level === 1
+								? 'C major scale ascending — C4 to C5 in order'
+								: 'C major pentatonic ascending — C4 to C5 in order'}
 						</p>
 						<div class="pattern-beats">
 							{#each rhExpected as note, i}
@@ -176,9 +175,15 @@
 				<!-- Tips -->
 				<div class="tips">
 					{#if level === 1}
-						<p>Both hands must complete their pattern before the exercise finishes. Left hand notes can be played in any order.</p>
+						<p>
+							Both hands must complete their pattern before the exercise finishes. Left hand notes
+							can be played in any order.
+						</p>
 					{:else}
-						<p>Both sequences must be played in order. Try to overlap both hands as you would in real playing.</p>
+						<p>
+							Both sequences must be played in order. Try to overlap both hands as you would in real
+							playing.
+						</p>
 					{/if}
 				</div>
 			</div>

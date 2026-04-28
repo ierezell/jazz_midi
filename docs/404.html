@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="/jazz_midi/favicon.png" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+		/>
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="theme-color" content="#4075a6" />
+		<script>
+			// Restore theme before first paint to avoid flash
+			(function () {
+				var saved = localStorage.getItem('theme');
+				var theme =
+					saved === 'light' || saved === 'dark'
+						? saved
+						: window.matchMedia('(prefers-color-scheme: light)').matches
+							? 'light'
+							: 'dark';
+				document.documentElement.setAttribute('data-theme', theme);
+				if (theme === 'dark') {
+					document.documentElement.classList.add('dark');
+				}
+			})();
+		</script>
+		
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/entry/start.C33KZGRi.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/DV8LBWph.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/BYcXKYqS.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/ChJ0UbC1.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/CMTjz9kw.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/ZgiKOJzm.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/entry/app.AnYzMvHY.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/PPVm8Dsz.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/Dmb0cE_1.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/Cb0pIHsK.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/Di4D_4Er.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/BTctMWMi.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/BBLosvfI.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/DKPzJWhd.js">
+		<link rel="modulepreload" href="/jazz_midi/_app/immutable/chunks/DF-7Ij9z.js">
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">
+			<script>
+				{
+					__sveltekit_dzjfli = {
+						base: "/jazz_midi",
+						assets: "/jazz_midi"
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("/jazz_midi/_app/immutable/entry/start.C33KZGRi.js"),
+						import("/jazz_midi/_app/immutable/entry/app.AnYzMvHY.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+				}
+			</script>
+		</div>
+	</body>
+</html>

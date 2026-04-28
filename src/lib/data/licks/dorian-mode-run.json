@@ -6,20 +6,6 @@
 	"hand": "right",
 	"difficulty": "intermediate",
 	"suggestedBpm": 120,
-	"notes": [
-		"D4",
-		"E4",
-		"F4",
-		"G4",
-		"A4",
-		"B4",
-		"C5",
-		"D5"
-	],
-	"tags": [
-		"dorian",
-		"mode",
-		"minor",
-		"jazz"
-	]
+	"notes": ["D4", "E4", "F4", "G4", "A4", "B4", "C5", "D5"],
+	"tags": ["dorian", "mode", "minor", "jazz"]
 }

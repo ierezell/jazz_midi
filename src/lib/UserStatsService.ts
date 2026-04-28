@@ -163,7 +163,7 @@ export class UserStatsService {
 				if (!UserStatsService._storageResolved) {
 					UserStatsService._usingRealLocalStorage = true;
 					UserStatsService._storageResolved = true;
-					}
+				}
 				return ls as typeof ls;
 			}
 			// If there is a localStorage-like object but missing methods, log once
@@ -179,7 +179,7 @@ export class UserStatsService {
 			if (!UserStatsService._storageResolved) {
 				UserStatsService._usingRealLocalStorage = false;
 				UserStatsService._storageResolved = true;
-				}
+			}
 		}
 		// create in-memory storage if needed
 		if (!UserStatsService._memoryStorage)
@@ -189,7 +189,7 @@ export class UserStatsService {
 			UserStatsService._storageResolved = true;
 			// Only log if we're in the browser (not during SSR)
 			if (typeof window !== 'undefined') {
-				}
+			}
 		}
 		return {
 			getItem(key: string) {
@@ -391,25 +391,25 @@ export class UserStatsService {
 					missedChords: hydrateMap(parsed.missedChords),
 					practiceCalendar: hydrateMap(parsed.practiceCalendar),
 					masteredChords:
-						(parsed.masteredChords as SerializedMastery[] | undefined)?.map((m) => ({
+						((parsed.masteredChords as SerializedMastery[] | undefined)?.map((m) => ({
 							...m,
 							lastPracticed: new Date(m.lastPracticed)
-						})) as ChordMastery[] || [],
+						})) as ChordMastery[]) || [],
 					masteredScales:
-						(parsed.masteredScales as SerializedMastery[] | undefined)?.map((m) => ({
+						((parsed.masteredScales as SerializedMastery[] | undefined)?.map((m) => ({
 							...m,
 							lastPracticed: new Date(m.lastPracticed)
-						})) as ScaleMastery[] || [],
+						})) as ScaleMastery[]) || [],
 					masteredProgressions:
-						(parsed.masteredProgressions as SerializedMastery[] | undefined)?.map((m) => ({
+						((parsed.masteredProgressions as SerializedMastery[] | undefined)?.map((m) => ({
 							...m,
 							lastPracticed: new Date(m.lastPracticed)
-						})) as ProgressionMastery[] || [],
+						})) as ProgressionMastery[]) || [],
 					recentSessions:
-						(parsed.recentSessions as SerializedSession[] | undefined)?.map((s) => ({
+						((parsed.recentSessions as SerializedSession[] | undefined)?.map((s) => ({
 							...s,
 							date: new Date(s.date)
-						})) as SessionSummary[] || []
+						})) as SessionSummary[]) || []
 				};
 			}
 		} catch (error) {
@@ -491,7 +491,8 @@ export class UserStatsService {
 		if (result.avgDeviationMs !== undefined) {
 			const deviationCount = stats.completed; // Approximation
 			stats.avgDeviationMs =
-				((stats.avgDeviationMs || 0) * (deviationCount - 1) + result.avgDeviationMs) / deviationCount;
+				((stats.avgDeviationMs || 0) * (deviationCount - 1) + result.avgDeviationMs) /
+				deviationCount;
 		}
 
 		stats.masteryLevel = this.calculateMasteryLevel(stats);
@@ -794,21 +795,33 @@ export class UserStatsService {
 	}
 
 	// Get most missed chords (top N)
-	getMostMissedChords(limit: number = 5): Array<{ chord: string; count: number; lastMissed: Date; exerciseType: string }> {
+	getMostMissedChords(
+		limit: number = 5
+	): Array<{ chord: string; count: number; lastMissed: Date; exerciseType: string }> {
 		// Ensure missedChords is initialized as a Map for SSR safety
 		if (!(this.statistics.missedChords instanceof Map)) {
 			this.statistics.missedChords = new Map<string, MissedNote>();
 		}
 
 		return Array.from(this.statistics.missedChords.entries())
-			.map(([chord, data]) => ({ chord, count: data.count, lastMissed: data.lastMissed, exerciseType: data.exerciseType }))
+			.map(([chord, data]) => ({
+				chord,
+				count: data.count,
+				lastMissed: data.lastMissed,
+				exerciseType: data.exerciseType
+			}))
 			.sort((a, b) => b.count - a.count)
 			.slice(0, limit);
 	}
 
 	// Get recommendations based on weaknesses
-	getWeaknessRecommendations(): Array<{ weakness: string; recommendedExercise: string; path: string }> {
-		const recommendations: Array<{ weakness: string; recommendedExercise: string; path: string }> = [];
+	getWeaknessRecommendations(): Array<{
+		weakness: string;
+		recommendedExercise: string;
+		path: string;
+	}> {
+		const recommendations: Array<{ weakness: string; recommendedExercise: string; path: string }> =
+			[];
 		const missedNotes = this.getMostMissedNotes(3);
 		const missedChords = this.getMostMissedChords(3);
 
@@ -923,7 +936,10 @@ export class UserStatsService {
 			}
 		}
 
-		return { current: currentStreak, longest: Math.max(longestStreak, this.statistics.longestStreak) };
+		return {
+			current: currentStreak,
+			longest: Math.max(longestStreak, this.statistics.longestStreak)
+		};
 	}
 }
 export const userStatsService = UserStatsService.getInstance();

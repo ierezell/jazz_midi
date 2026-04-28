@@ -89,7 +89,6 @@
 			// expectedNoteValue is already a MidiNote, no need to look it up again
 			const expectedMidi = expectedNoteValue;
 
-
 			// Always return both notes for validation
 			// Ensure both notes are distinct in the array even if they're the same MIDI number (unison)
 			// This helps the keyboard display show the note properly

@@ -11,7 +11,8 @@
 	import { generateAnnotations } from '$lib/ScoreAnnotationUtils';
 	import { MidiToNote } from '$lib/types/notes.constants';
 
-	const description = 'Practice the melody of jazz standards. Play each note in sequence to learn the tune.';
+	const description =
+		'Practice the melody of jazz standards. Play each note in sequence to learn the tune.';
 
 	interface Props {
 		data: PageData;
@@ -77,9 +78,14 @@
 	}
 
 	// Check if exercise is complete
-	function isCompleted(currentNotes: ReadonlyArray<MidiNote>, expectedNotes: ReadonlyArray<MidiNote>): boolean {
-		return currentNotes.length === expectedNotes.length && 
-			currentNotes.every((note) => expectedNotes.includes(note));
+	function isCompleted(
+		currentNotes: ReadonlyArray<MidiNote>,
+		expectedNotes: ReadonlyArray<MidiNote>
+	): boolean {
+		return (
+			currentNotes.length === expectedNotes.length &&
+			currentNotes.every((note) => expectedNotes.includes(note))
+		);
 	}
 
 	// Handle exercise complete - move to next note
@@ -148,7 +154,10 @@
 			<!-- Song Selection -->
 			<div class="control-group">
 				<label for="song-select">Song:</label>
-				<select id="song-select" onchange={(e) => selectSong(songs[parseInt(e.currentTarget.value)])}>
+				<select
+					id="song-select"
+					onchange={(e) => selectSong(songs[parseInt(e.currentTarget.value)])}
+				>
 					{#each songs as song, i}
 						<option value={i} selected={song.id === selectedSong.id}>
 							{song.title} ({song.key})
@@ -192,10 +201,7 @@
 		<!-- MusicXML Score Display -->
 		{#if selectedSong}
 			<div class="score-section">
-				<MusicXMLScore 
-					url={selectedSong.url}
-					annotations={getAnnotations()}
-				/>
+				<MusicXMLScore url={selectedSong.url} annotations={getAnnotations()} />
 			</div>
 		{/if}
 	{/snippet}

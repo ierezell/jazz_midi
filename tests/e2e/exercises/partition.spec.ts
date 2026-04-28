@@ -8,14 +8,20 @@ test.describe('Partition Exercise', () => {
 		await page.waitForSelector('.exercise-main');
 
 		// Read sequence length from progress text
-		const progressText = await page.locator('.progress-text').innerText({ timeout: 5000 }).catch(() => '0/1');
+		const progressText = await page
+			.locator('.progress-text')
+			.innerText({ timeout: 5000 })
+			.catch(() => '0/1');
 		const totalMatch = progressText.match(/0\/(\d+)/);
 		const sequenceLength = totalMatch ? parseInt(totalMatch[1]) : 1;
 
 		for (let i = 0; i < sequenceLength; i++) {
 			// Re-read the current expected note on each iteration from UI
-			const rawText = await page.locator('.expected-notes').innerText({ timeout: 5000 }).catch(() => '');
-			const [noteName] = rawText.split(',').map(s => s.trim());
+			const rawText = await page
+				.locator('.expected-notes')
+				.innerText({ timeout: 5000 })
+				.catch(() => '');
+			const [noteName] = rawText.split(',').map((s) => s.trim());
 			if (!noteName) break;
 
 			const m = noteName.trim().match(/^([A-Ga-g][#b]?)(\d+)$/);
@@ -36,7 +42,9 @@ test.describe('Partition Exercise', () => {
 				await expect(page.locator('.progress-text')).toContainText(`${i + 1}/${sequenceLength}`);
 			} else {
 				// Last note – expect success or completion feedback
-				await expect(page.locator('.feedback-toast')).toContainText('success', { ignoreCase: true });
+				await expect(page.locator('.feedback-toast')).toContainText('success', {
+					ignoreCase: true
+				});
 			}
 		}
 	});

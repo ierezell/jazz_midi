@@ -336,13 +336,33 @@
 	}
 
 	@media (orientation: landscape) and (max-height: 500px) {
-		.boogie-content { padding: 0.25rem; gap: 0.75rem; }
-		.pattern-guide { padding: 0.5rem; }
-		.pattern-guide h3 { font-size: 1rem; margin-bottom: 0.75rem; }
-		.pattern-breakdown { flex-direction: row; gap: 0.75rem; }
-		.beat-box { min-width: 36px; padding: 0.35rem; }
-		.beat-label { font-size: 0.65rem; }
-		.note-label { font-size: 0.8rem; }
-		.tips { display: none; }
+		.boogie-content {
+			padding: 0.25rem;
+			gap: 0.75rem;
+		}
+		.pattern-guide {
+			padding: 0.5rem;
+		}
+		.pattern-guide h3 {
+			font-size: 1rem;
+			margin-bottom: 0.75rem;
+		}
+		.pattern-breakdown {
+			flex-direction: row;
+			gap: 0.75rem;
+		}
+		.beat-box {
+			min-width: 36px;
+			padding: 0.35rem;
+		}
+		.beat-label {
+			font-size: 0.65rem;
+		}
+		.note-label {
+			font-size: 0.8rem;
+		}
+		.tips {
+			display: none;
+		}
 	}
 </style>

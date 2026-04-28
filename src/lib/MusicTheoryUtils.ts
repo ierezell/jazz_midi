@@ -145,16 +145,12 @@ function constrainToOptimalRange(midi: MidiNote): MidiNote {
  * Generates a chord from root, type, and inversion
  * Pure function - same inputs always produce same output
  */
-export function chords(
-	rootMidi: MidiNote,
-	chordType: ChordType,
-	inversion: Inversion = 0
-): Chord {
+export function chords(rootMidi: MidiNote, chordType: ChordType, inversion: Inversion = 0): Chord {
 	const constrainedRoot = constrainToOptimalRange(rootMidi);
 
 	// Build chord notes using interval functions
 	const intervalFns = CHORD_INTERVALS[chordType] ?? [];
-	const chord = [constrainedRoot, ...intervalFns.map(fn => fn(constrainedRoot))];
+	const chord = [constrainedRoot, ...intervalFns.map((fn) => fn(constrainedRoot))];
 
 	// Validate inversion for triads
 	if (chord.length === 3 && inversion === 3) {
@@ -165,7 +161,6 @@ export function chords(
 		? inverseTriadChord(chord as MidiNote[], inversion, chordType)
 		: inverseSeventhChord(chord as MidiNote[], inversion, chordType);
 }
-
 
 export function getVoicedChordNotes(chord: Chord, voicing: ChordVoicing): MidiNote[] {
 	const allChordNotes = [chord.root, chord.third, chord.fifth, chord.seventh].filter(

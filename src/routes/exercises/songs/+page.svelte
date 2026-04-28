@@ -266,7 +266,8 @@
 				<h2>{selectedSong.name}</h2>
 				{#if selectedSong.composer || selectedSong.year}
 					<div class="song-info">
-						{#if selectedSong.composer}by {selectedSong.composer}{/if}{#if selectedSong.composer && selectedSong.year}, {/if}{#if selectedSong.year}{selectedSong.year}{/if}
+						{#if selectedSong.composer}by {selectedSong.composer}{/if}{#if selectedSong.composer && selectedSong.year},
+						{/if}{#if selectedSong.year}{selectedSong.year}{/if}
 					</div>
 				{/if}
 				{#if selectedSong.description}
@@ -493,7 +494,13 @@
 	}
 
 	@media (orientation: landscape) and (max-height: 500px) {
-		.chord-progression { padding: 0.4rem; gap: 0.3rem; }
-		.chord-box { padding: 0.35rem 0.5rem; min-width: 50px; }
+		.chord-progression {
+			padding: 0.4rem;
+			gap: 0.3rem;
+		}
+		.chord-box {
+			padding: 0.35rem 0.5rem;
+			min-width: 50px;
+		}
 	}
 </style>

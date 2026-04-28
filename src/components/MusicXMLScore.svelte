@@ -30,7 +30,7 @@
 
 		try {
 			// Dynamic import of opensheetmusicdisplay - cast to any to avoid build-time resolution
-			const osmdModule = await import('opensheetmusicdisplay') as any;
+			const osmdModule = (await import('opensheetmusicdisplay')) as any;
 			const OpenSheetMusicDisplay = osmdModule.OpenSheetMusicDisplay;
 
 			osmdInstance = new OpenSheetMusicDisplay(containerRef, {
@@ -63,7 +63,7 @@
 					defaultColorNoteHead: '#000000',
 					defaultColorStem: '#000000',
 					defaultColorRest: '#000000',
-					defaultColorLabel: '#000000',					
+					defaultColorLabel: '#000000'
 				},
 				enableTransformationCanvas: false,
 				autoResize: true,
@@ -73,22 +73,22 @@
 					defaultColorNoteHead: '#000000',
 					defaultColorStem: '#000000',
 					defaultColorRest: '#000000',
-					defaultColorLabel: '#000000',					
-				},
+					defaultColorLabel: '#000000'
+				}
 			});
 
-				// Load from URL if provided and non-empty, otherwise use content
+			// Load from URL if provided and non-empty, otherwise use content
 			if (url?.trim()) {
 				await osmdInstance.load(url);
 			} else {
 				await osmdInstance.load(musicXmlContent);
 			}
-			
+
 			// Apply annotations if any
 			if (annotations.length > 0) {
 				applyAnnotations(osmdInstance, annotations);
 			}
-			
+
 			await osmdInstance.render();
 			isLoading = false;
 		} catch (error) {
@@ -111,19 +111,21 @@
 		if (osmdInstance && (musicXmlContent || url?.trim())) {
 			isLoading = true;
 			const loadPromise = url?.trim() ? osmdInstance.load(url) : osmdInstance.load(musicXmlContent);
-			
-			loadPromise.then(async () => {
-				if (annotations.length > 0) {
-					applyAnnotations(osmdInstance!, annotations);
-				}
-				await osmdInstance!.render();
-				isLoading = false;
-			}).catch((error: any) => {
-				console.error('Error reloading MusicXML:', error);
-				loadError = error instanceof Error ? error.message : 'Failed to reload score';
-				isLoading = false;
-				onError?.(error instanceof Error ? error : new Error(String(error)));
-			});
+
+			loadPromise
+				.then(async () => {
+					if (annotations.length > 0) {
+						applyAnnotations(osmdInstance!, annotations);
+					}
+					await osmdInstance!.render();
+					isLoading = false;
+				})
+				.catch((error: any) => {
+					console.error('Error reloading MusicXML:', error);
+					loadError = error instanceof Error ? error.message : 'Failed to reload score';
+					isLoading = false;
+					onError?.(error instanceof Error ? error : new Error(String(error)));
+				});
 		}
 	});
 
@@ -200,18 +202,14 @@
 			<p>Loading score...</p>
 		</div>
 	{/if}
-	
+
 	{#if loadError}
 		<div class="error-message">
 			<p>Error loading score: {loadError}</p>
 		</div>
 	{/if}
-	
-	<div 
-		bind:this={containerRef} 
-		class="osmd-container"
-		class:loading={isLoading}
-	></div>
+
+	<div bind:this={containerRef} class="osmd-container" class:loading={isLoading}></div>
 </div>
 
 <style>
@@ -252,8 +250,12 @@
 	}
 
 	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
+		0% {
+			transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
 	}
 
 	.error-message {
@@ -269,7 +271,7 @@
 		.musicxml-score-container {
 			min-height: 200px;
 		}
-		
+
 		.osmd-container {
 			min-height: 200px;
 		}

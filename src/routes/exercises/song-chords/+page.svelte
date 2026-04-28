@@ -12,7 +12,8 @@
 	import { NoteToMidi } from '$lib/types/notes.constants';
 	import { chords, getVoicedChordNotes } from '$lib/MusicTheoryUtils';
 
-	const description = 'Practice all chords from real jazz standards. Play each chord with proper voice leading through the progression.';
+	const description =
+		'Practice all chords from real jazz standards. Play each chord with proper voice leading through the progression.';
 
 	interface Props {
 		data: PageData;
@@ -43,7 +44,7 @@
 		const rootNoteName = chord.root as Note;
 		const rootFullName = `${rootNoteName}3` as const;
 		const rootMidi = NoteToMidi[rootFullName];
-		
+
 		if (!rootMidi) return [];
 
 		// Generate chord notes
@@ -94,7 +95,10 @@
 	}
 
 	// Check if exercise is complete
-	function isCompleted(currentNotes: ReadonlyArray<MidiNote>, expectedNotes: ReadonlyArray<MidiNote>): boolean {
+	function isCompleted(
+		currentNotes: ReadonlyArray<MidiNote>,
+		expectedNotes: ReadonlyArray<MidiNote>
+	): boolean {
 		if (voicing.startsWith('rootless')) {
 			const currentClasses = new Set(currentNotes.map((n) => n % 12));
 			const expectedClasses = new Set(expectedNotes.map((n) => n % 12));
@@ -160,7 +164,7 @@
 			'1537': '1 & 5 Left / 3 & 7 Right',
 			'rootless-a': 'Rootless A (3-5-7-9)',
 			'rootless-b': 'Rootless B (7-9-3-5)',
-			'shell': 'Shell Voicing',
+			shell: 'Shell Voicing',
 			'guide-tones': 'Guide Tones (3rd + 7th)'
 		};
 		return names[v];
@@ -188,7 +192,7 @@
 	{isCompleted}
 	onReset={handleReset}
 	onComplete={handleComplete}
-	initialNote={getCurrentChord()?.root as Note ?? 'C'}
+	initialNote={(getCurrentChord()?.root as Note) ?? 'C'}
 	{description}
 	prompt={computedPrompt()}
 	showTempoControl={true}
@@ -199,7 +203,10 @@
 			<!-- Song Selection -->
 			<div class="control-group">
 				<label for="song-select">Song:</label>
-				<select id="song-select" onchange={(e) => selectSong(songs[parseInt(e.currentTarget.value)])}>
+				<select
+					id="song-select"
+					onchange={(e) => selectSong(songs[parseInt(e.currentTarget.value)])}
+				>
 					{#each songs as song, i}
 						<option value={i} selected={song.id === selectedSong.id}>
 							{song.title} ({song.key})
@@ -254,10 +261,7 @@
 		<!-- MusicXML Score Display -->
 		{#if selectedSong}
 			<div class="score-section">
-				<MusicXMLScore 
-					url={selectedSong.url}
-					annotations={getAnnotations()}
-				/>
+				<MusicXMLScore url={selectedSong.url} annotations={getAnnotations()} />
 			</div>
 		{/if}
 	{/snippet}

@@ -157,7 +157,8 @@ export class VelocityValidator {
 		const { noteNumber, velocity } = event;
 
 		// Determine hand from staff or note range
-		const isLeftHand = staff === 2 || (staff === undefined && noteNumber < (this.config.staffSplitNote ?? 60));
+		const isLeftHand =
+			staff === 2 || (staff === undefined && noteNumber < (this.config.staffSplitNote ?? 60));
 
 		if (isLeftHand) {
 			const max = this.config.lhVelocityMax ?? 50;
@@ -269,7 +270,7 @@ export class VelocityValidator {
 			return { total: 0, valid: 0, invalid: 0, accuracy: 0, avgDeviation: 0 };
 		}
 
-		const valid = this.validationHistory.filter(r => r.isValid).length;
+		const valid = this.validationHistory.filter((r) => r.isValid).length;
 		const invalid = total - valid;
 		const accuracy = Math.round((valid / total) * 100);
 		const avgDeviation = Math.round(
@@ -298,8 +299,8 @@ export class VelocityValidator {
 	 * Create validator from SongExercise settings
 	 */
 	static fromExerciseSettings(settings: SongExercise['settings']): VelocityValidator {
-		const mode = settings.enableVelocityCheck ? settings.velocityMode ?? 'hand-based' : 'off';
-		
+		const mode = settings.enableVelocityCheck ? (settings.velocityMode ?? 'hand-based') : 'off';
+
 		return new VelocityValidator({
 			mode,
 			lhVelocityMax: settings.lhVelocityMax,
@@ -312,7 +313,9 @@ export class VelocityValidator {
 	/**
 	 * Build per-note constraints from a VelocityMap
 	 */
-	static buildConstraintsFromMap(velocityMap: VelocityMap): Map<number, { min?: number; max?: number; hint?: string }> {
+	static buildConstraintsFromMap(
+		velocityMap: VelocityMap
+	): Map<number, { min?: number; max?: number; hint?: string }> {
 		return velocityMap.notes;
 	}
 }

@@ -13,7 +13,7 @@ test.describe('Debug Panel', () => {
 
 	test('should open debug panel when clicked', async ({ page }) => {
 		await page.locator('.debug-toggle, [data-testid="debug-toggle"]').click();
-		
+
 		// Debug panel should be visible
 		await expect(page.locator('.debug-panel')).toBeVisible({ timeout: 2_000 });
 	});
@@ -21,7 +21,7 @@ test.describe('Debug Panel', () => {
 	test('should display MIDI status in debug panel', async ({ page }) => {
 		await page.locator('.debug-toggle').click();
 		await expect(page.locator('.debug-panel')).toBeVisible();
-		
+
 		// Should show MIDI section
 		await expect(page.locator('.debug-panel')).toContainText('MIDI');
 	});
@@ -29,15 +29,15 @@ test.describe('Debug Panel', () => {
 	test('should display velocity heatmap in debug panel', async ({ page }) => {
 		// Play some notes first
 		await page.evaluate(() => {
-			const event = new CustomEvent('midi-message', { 
-				detail: { noteNumber: 60, velocity: 80, type: 'on' } 
+			const event = new CustomEvent('midi-message', {
+				detail: { noteNumber: 60, velocity: 80, type: 'on' }
 			});
 			window.dispatchEvent(event);
 		});
-		
+
 		await page.locator('.debug-toggle').click();
 		await expect(page.locator('.debug-panel')).toBeVisible();
-		
+
 		// Should show velocity heatmap
 		await expect(page.locator('.velocity-heatmap, [data-testid="velocity-heatmap"]')).toBeVisible();
 	});
@@ -45,7 +45,7 @@ test.describe('Debug Panel', () => {
 	test('should display virtual keyboard in debug panel', async ({ page }) => {
 		await page.locator('.debug-toggle').click();
 		await expect(page.locator('.debug-panel')).toBeVisible();
-		
+
 		// Should have virtual keyboard section
 		await expect(page.locator('.virtual-keyboard, [data-testid="virtual-keyboard"]')).toBeVisible();
 	});
@@ -53,7 +53,7 @@ test.describe('Debug Panel', () => {
 	test('should close debug panel on second click', async ({ page }) => {
 		await page.locator('.debug-toggle').click();
 		await expect(page.locator('.debug-panel')).toBeVisible();
-		
+
 		await page.locator('.debug-toggle').click();
 		await expect(page.locator('.debug-panel')).not.toBeVisible();
 	});

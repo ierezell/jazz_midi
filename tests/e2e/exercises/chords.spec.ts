@@ -19,12 +19,8 @@ test.describe('Chords Exercise', () => {
 				});
 				await page.goto(`/exercises/chords?${qs.toString()}`, { waitUntil: 'load' });
 				await page.waitForSelector('.exercise-main');
-				await expect
-					.poll(() => new URL(page.url()).searchParams.get('root'))
-					.toBe(note);
-				await expect
-					.poll(() => new URL(page.url()).searchParams.get('quality'))
-					.toBe(chordType);
+				await expect.poll(() => new URL(page.url()).searchParams.get('root')).toBe(note);
+				await expect.poll(() => new URL(page.url()).searchParams.get('quality')).toBe(chordType);
 				await expect(page.locator('#note-select')).toHaveValue(note, { timeout: 15_000 });
 				await expect(page.locator('#chord-type')).toHaveValue(chordType, { timeout: 15_000 });
 
@@ -32,7 +28,9 @@ test.describe('Chords Exercise', () => {
 
 				// 1. Play correct chord → expect success
 				await playMidiChord(page, correctNotes, 50);
-				await expect(page.locator('.feedback-toast')).toContainText('success', { ignoreCase: true });
+				await expect(page.locator('.feedback-toast')).toContainText('success', {
+					ignoreCase: true
+				});
 
 				// Reset for failure test
 				await page.locator('.reset-btn').click();

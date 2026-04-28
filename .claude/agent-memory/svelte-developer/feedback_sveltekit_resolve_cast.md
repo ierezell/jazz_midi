@@ -12,7 +12,7 @@ When you have a runtime `string` that you know is a valid route (e.g., from `get
 
 ```ts
 import type { RouteId } from '$app/types';
-resolve(path as unknown as RouteId)
+resolve(path as unknown as RouteId);
 ```
 
 The two-step cast through `unknown` is the idiomatic TypeScript replacement for `as any` when you need a forced cast to a specific type. It's strictly better than `as any` because you name the target type.

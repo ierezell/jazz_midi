@@ -28,7 +28,7 @@ export class LegatoCheck {
 			offTime: null,
 			velocity: event.velocity
 		};
-		
+
 		this.activeNotes.set(event.noteNumber, note);
 	}
 
@@ -38,7 +38,7 @@ export class LegatoCheck {
 			note.offTime = event.timestamp;
 			this.completedNotes.push(note);
 			this.activeNotes.delete(event.noteNumber);
-			
+
 			// Keep history bounded
 			if (this.completedNotes.length > this.maxHistory) {
 				this.completedNotes.shift();
@@ -73,7 +73,7 @@ export class LegatoCheck {
 			// Check overlap with next note (for sequence legato)
 			if (i < sorted.length - 1) {
 				const nextNote = sorted[i + 1];
-				
+
 				// Legato: next note starts before current note ends
 				if (nextNote.onTime < note.offTime) {
 					legatoCount++;
@@ -87,13 +87,10 @@ export class LegatoCheck {
 		}
 
 		const totalAnalyzed = legatoCount + staccatoCount;
-		const overlapPercentage = totalAnalyzed > 0 
-			? Math.round((legatoCount / totalAnalyzed) * 100) 
-			: 0;
-		
-		const avgOverlap = overlapCount > 0 
-			? Math.round(totalOverlap / overlapCount) 
-			: 0;
+		const overlapPercentage =
+			totalAnalyzed > 0 ? Math.round((legatoCount / totalAnalyzed) * 100) : 0;
+
+		const avgOverlap = overlapCount > 0 ? Math.round(totalOverlap / overlapCount) : 0;
 
 		// Legato score based on overlap percentage and amount
 		// Ideal overlap for jazz legato is 20-100ms
@@ -123,11 +120,11 @@ export class LegatoCheck {
 
 	getFeedback(): string {
 		const analysis = this.getAnalysis();
-		
+
 		if (analysis.totalNotes < 2) {
 			return 'Play more notes to analyze legato...';
 		}
-		
+
 		if (analysis.legatoScore >= 80) {
 			return `Excellent legato! ${analysis.overlapPercentage}% overlap, avg ${analysis.avgOverlapMs}ms`;
 		} else if (analysis.legatoScore >= 60) {

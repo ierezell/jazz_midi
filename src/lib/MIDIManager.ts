@@ -115,7 +115,7 @@ class MIDIManager {
 			});
 			midiAccess.onstatechange = (event) => {
 				const port = event.port!;
-					this.updateMidiState();
+				this.updateMidiState();
 			};
 		} catch (error) {
 			logger.error('Error setting up MIDI callback', error, 'MIDI');

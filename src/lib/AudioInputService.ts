@@ -1,4 +1,3 @@
-
 export class AudioInputService {
 	private static instance: AudioInputService;
 	private basicPitch: unknown = null;
@@ -18,7 +17,7 @@ export class AudioInputService {
 	private readonly SILENCE_THRESHOLD = 5; // Frames to confirm silence
 	private silenceCounter = 0;
 
-	private constructor() { }
+	private constructor() {}
 
 	static getInstance(): AudioInputService {
 		if (!AudioInputService.instance) {
@@ -50,7 +49,7 @@ export class AudioInputService {
 
 			// Race condition check: If stop() was called while awaiting above
 			if (!this.isStarting) {
-					stream.getTracks().forEach(track => track.stop());
+				stream.getTracks().forEach((track) => track.stop());
 				context.close();
 				return;
 			}
@@ -102,7 +101,7 @@ export class AudioInputService {
 		}
 
 		if (this.stream) {
-			this.stream.getTracks().forEach(track => track.stop());
+			this.stream.getTracks().forEach((track) => track.stop());
 			this.stream = null;
 		}
 
@@ -127,7 +126,13 @@ export class AudioInputService {
 	}
 
 	private async processQueue() {
-		if (this.isProcessing || this.audioBufferQueue.length === 0 || !this.basicPitch || !this.audioContext) return;
+		if (
+			this.isProcessing ||
+			this.audioBufferQueue.length === 0 ||
+			!this.basicPitch ||
+			!this.audioContext
+		)
+			return;
 
 		this.isProcessing = true;
 
@@ -137,17 +142,23 @@ export class AudioInputService {
 				if (!rawData) continue;
 
 				// Create AudioBuffer for BasicPitch
-				const audioBuffer = this.audioContext.createBuffer(1, rawData.length, this.audioContext.sampleRate);
+				const audioBuffer = this.audioContext.createBuffer(
+					1,
+					rawData.length,
+					this.audioContext.sampleRate
+				);
 				audioBuffer.copyToChannel(rawData as any, 0);
 
 				// Evaluate model
-				await (this.basicPitch as {
-					evaluateModel(
-						audio: AudioBuffer,
-						onFrames: (frames: number[][], onsets: number[][], contours: number[][]) => void,
-						onNote: (note: { midiNumber: number; confidence: number }) => void
-					): Promise<void>;
-				}).evaluateModel(
+				await (
+					this.basicPitch as {
+						evaluateModel(
+							audio: AudioBuffer,
+							onFrames: (frames: number[][], onsets: number[][], contours: number[][]) => void,
+							onNote: (note: { midiNumber: number; confidence: number }) => void
+						): Promise<void>;
+					}
+				).evaluateModel(
 					audioBuffer,
 					(frames: number[][], onsets: number[][], contours: number[][]) => {
 						let maxConfidence = 0;
@@ -175,7 +186,7 @@ export class AudioInputService {
 				);
 			}
 		} catch (err) {
-			console.error("Error processing audio chunk:", err);
+			console.error('Error processing audio chunk:', err);
 		} finally {
 			this.isProcessing = false;
 		}
@@ -206,7 +217,7 @@ export class AudioInputService {
 				this.currentNote = midiNote; // Tentatively set
 				this.noteConfidence = 1;
 			} else {
-				// Was playing another note. 
+				// Was playing another note.
 				// If confidence in new note is low, ignore (it might be a glitch).
 				// But we need to switch eventually.
 				// For now, let's just reset confidence.
@@ -247,7 +258,7 @@ export class AudioInputService {
 
 	// We need a way to detect silence if no notes are found in a chunk.
 	// Since evaluateModel returns notes, if it returns NOTHING, we need to increment silence counter.
-	// But `evaluateModel` calls the callback `onNote`. 
+	// But `evaluateModel` calls the callback `onNote`.
 	// We can wrap the call to know if any note was detected.
 
 	private notifyListeners(note: number, velocity: number, isOn: boolean): void {

@@ -47,6 +47,8 @@ export const getLicksByCategory = (category: string): Lick[] => {
 	return licks.filter((lick) => lick.category === category);
 };
 
-export const getLicksByDifficulty = (difficulty: 'beginner' | 'intermediate' | 'advanced'): Lick[] => {
+export const getLicksByDifficulty = (
+	difficulty: 'beginner' | 'intermediate' | 'advanced'
+): Lick[] => {
 	return licks.filter((lick) => lick.difficulty === difficulty);
 };

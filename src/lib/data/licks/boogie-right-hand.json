@@ -6,19 +6,6 @@
 	"hand": "right",
 	"difficulty": "beginner",
 	"suggestedBpm": 120,
-	"notes": [
-		"C5",
-		"E5",
-		"G5",
-		"A5",
-		"G5",
-		"E5",
-		"C5",
-		"E5"
-	],
-	"tags": [
-		"boogie",
-		"triplet",
-		"shuffle"
-	]
+	"notes": ["C5", "E5", "G5", "A5", "G5", "E5", "C5", "E5"],
+	"tags": ["boogie", "triplet", "shuffle"]
 }

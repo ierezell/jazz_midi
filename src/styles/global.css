@@ -128,7 +128,9 @@ body {
 	color: var(--color-text);
 	overflow-x: hidden;
 	line-height: 1.6;
-	transition: background-color var(--transition-speed), color var(--transition-speed);
+	transition:
+		background-color var(--transition-speed),
+		color var(--transition-speed);
 }
 
 h1,
@@ -168,7 +170,9 @@ a {
 	border-radius: 16px;
 	padding: 1.5rem;
 	box-shadow: var(--shadow-lg);
-	transition: transform 0.2s, box-shadow 0.2s;
+	transition:
+		transform 0.2s,
+		box-shadow 0.2s;
 }
 
 .glass {

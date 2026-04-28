@@ -79,7 +79,7 @@ export const CURRICULUM: SkillArea[] = [
 		difficulty: 'intermediate',
 		dependencies: ['hand-dynamics']
 	},
-	
+
 	// PILLAR 2: Theory & Ear Training
 	{
 		id: 'interval-mimicry',
@@ -135,7 +135,7 @@ export const CURRICULUM: SkillArea[] = [
 		difficulty: 'advanced',
 		dependencies: ['diatonic-7ths']
 	},
-	
+
 	// PILLAR 3: Vocabulary & Patterns
 	{
 		id: 'ii-v-i-progression',
@@ -182,7 +182,7 @@ export const CURRICULUM: SkillArea[] = [
 		difficulty: 'intermediate',
 		dependencies: ['shell-voicings']
 	},
-	
+
 	// PILLAR 4: Repertoire (Weekly Standard replacement)
 	{
 		id: 'song-foundation',
@@ -276,22 +276,22 @@ export class CurriculumEngine {
 
 	// Get all skills for a pillar
 	getSkillsByPillar(pillar: Pillar): SkillArea[] {
-		return CURRICULUM.filter(s => s.pillar === pillar);
+		return CURRICULUM.filter((s) => s.pillar === pillar);
 	}
 
 	// Get skills by difficulty
 	getSkillsByDifficulty(difficulty: 'beginner' | 'intermediate' | 'advanced'): SkillArea[] {
-		return CURRICULUM.filter(s => s.difficulty === difficulty);
+		return CURRICULUM.filter((s) => s.difficulty === difficulty);
 	}
 
 	// Get available skills (dependencies met)
 	getAvailableSkills(): SkillArea[] {
-		return CURRICULUM.filter(skill => {
+		return CURRICULUM.filter((skill) => {
 			const progress = this.progress.get(skill.id);
 			if (progress?.status === 'mastered') return false;
-			
+
 			// Check all dependencies are mastered
-			return skill.dependencies.every(depId => {
+			return skill.dependencies.every((depId) => {
 				const depProgress = this.progress.get(depId);
 				return depProgress?.status === 'mastered';
 			});
@@ -301,7 +301,7 @@ export class CurriculumEngine {
 	// Identify weaknesses (accuracy < 70%)
 	identifyWeaknesses(): WeaknessProfile[] {
 		return Array.from(this.weaknesses.values())
-			.filter(w => w.averageAccuracy < 70)
+			.filter((w) => w.averageAccuracy < 70)
 			.sort((a, b) => a.averageAccuracy - b.averageAccuracy);
 	}
 
@@ -326,25 +326,25 @@ export class CurriculumEngine {
 		}
 
 		return {
-			technique: { 
-				mastered: stats.technique.mastered, 
-				total: stats.technique.total, 
-				averageAccuracy: Math.round(stats.technique.sumAccuracy / stats.technique.total) || 0 
+			technique: {
+				mastered: stats.technique.mastered,
+				total: stats.technique.total,
+				averageAccuracy: Math.round(stats.technique.sumAccuracy / stats.technique.total) || 0
 			},
-			theory: { 
-				mastered: stats.theory.mastered, 
-				total: stats.theory.total, 
-				averageAccuracy: Math.round(stats.theory.sumAccuracy / stats.theory.total) || 0 
+			theory: {
+				mastered: stats.theory.mastered,
+				total: stats.theory.total,
+				averageAccuracy: Math.round(stats.theory.sumAccuracy / stats.theory.total) || 0
 			},
-			vocabulary: { 
-				mastered: stats.vocabulary.mastered, 
-				total: stats.vocabulary.total, 
-				averageAccuracy: Math.round(stats.vocabulary.sumAccuracy / stats.vocabulary.total) || 0 
+			vocabulary: {
+				mastered: stats.vocabulary.mastered,
+				total: stats.vocabulary.total,
+				averageAccuracy: Math.round(stats.vocabulary.sumAccuracy / stats.vocabulary.total) || 0
 			},
-			repertoire: { 
-				mastered: stats.repertoire.mastered, 
-				total: stats.repertoire.total, 
-				averageAccuracy: Math.round(stats.repertoire.sumAccuracy / stats.repertoire.total) || 0 
+			repertoire: {
+				mastered: stats.repertoire.mastered,
+				total: stats.repertoire.total,
+				averageAccuracy: Math.round(stats.repertoire.sumAccuracy / stats.repertoire.total) || 0
 			}
 		};
 	}
@@ -364,8 +364,8 @@ export class CurriculumEngine {
 			const weaknesses = this.identifyWeaknesses().slice(0, 2);
 			for (const weakness of weaknesses) {
 				if (remainingTime < 5) break;
-				
-				const skill = CURRICULUM.find(s => s.id === weakness.skillId);
+
+				const skill = CURRICULUM.find((s) => s.id === weakness.skillId);
 				if (skill) {
 					exercises.push({
 						skillId: skill.id,
@@ -381,12 +381,12 @@ export class CurriculumEngine {
 			}
 		}
 
-		// 30% on foundational skills from focus pillar
-		if (focusPillar && remainingTime > 5) {
+		// 30% on foundational skills from focus pillar (or all pillars if no focus)
+		if (remainingTime > 5) {
 			const foundationSkills = this.getAvailableSkills()
-				.filter(s => s.pillar === focusPillar && s.difficulty !== 'advanced')
-				.slice(0, 1);
-			
+				.filter((s) => (focusPillar ? s.pillar === focusPillar : true))
+				.slice(0, focusPillar ? 1 : 2);
+
 			for (const skill of foundationSkills) {
 				exercises.push({
 					skillId: skill.id,
@@ -401,12 +401,12 @@ export class CurriculumEngine {
 			}
 		}
 
-		// 30% on repertoire / strength building
-		const repertoireSkills = this.getAvailableSkills()
-			.filter(s => s.pillar === 'repertoire')
+		// 30% on repertoire / strength building from focus pillar (or repertoire if no focus)
+		const strengthSkills = this.getAvailableSkills()
+			.filter((s) => (focusPillar ? s.pillar === focusPillar : s.pillar === 'repertoire'))
 			.slice(0, 1);
-		
-		for (const skill of repertoireSkills) {
+
+		for (const skill of strengthSkills) {
 			if (remainingTime < 5) break;
 			exercises.push({
 				skillId: skill.id,
@@ -414,7 +414,7 @@ export class CurriculumEngine {
 				pillar: skill.pillar,
 				duration: remainingTime,
 				difficulty: skill.difficulty,
-				purpose: 'repertoire',
+				purpose: 'strength',
 				route: skill.exercises[0]
 			});
 		}
@@ -433,7 +433,12 @@ export class CurriculumEngine {
 	}
 
 	// Record practice session
-	recordPractice(skillId: string, score: number, timeMinutes: number, missedNotes?: string[]): void {
+	recordPractice(
+		skillId: string,
+		score: number,
+		timeMinutes: number,
+		missedNotes?: string[]
+	): void {
 		const existing = this.progress.get(skillId) || {
 			skillId,
 			status: 'available',
@@ -448,9 +453,9 @@ export class CurriculumEngine {
 		existing.totalTimeMinutes += timeMinutes;
 		existing.lastScore = score;
 		existing.bestScore = Math.max(existing.bestScore, score);
-		
+
 		// Update accuracy with exponential moving average
-		existing.accuracy = Math.round((existing.accuracy * 0.7) + (score * 0.3));
+		existing.accuracy = Math.round(existing.accuracy * 0.7 + score * 0.3);
 
 		// Update status
 		if (existing.accuracy >= 80 && existing.timesPracticed >= 5) {
@@ -470,14 +475,17 @@ export class CurriculumEngine {
 				lastPracticed: new Date(),
 				struggleAreas: []
 			};
-			
+
 			weakness.missedAttempts++;
-			weakness.averageAccuracy = Math.round((weakness.averageAccuracy * 0.7) + (score * 0.3));
+			weakness.averageAccuracy = Math.round(weakness.averageAccuracy * 0.7 + score * 0.3);
 			weakness.lastPracticed = new Date();
 			if (missedNotes) {
-				weakness.struggleAreas = [...new Set([...weakness.struggleAreas, ...missedNotes])].slice(0, 5);
+				weakness.struggleAreas = [...new Set([...weakness.struggleAreas, ...missedNotes])].slice(
+					0,
+					5
+				);
 			}
-			
+
 			this.weaknesses.set(skillId, weakness);
 		}
 	}
@@ -485,11 +493,11 @@ export class CurriculumEngine {
 	// Get recommended daily focus based on pillar balance
 	getRecommendedFocus(): { pillar: Pillar; reason: string } {
 		const stats = this.getPillarStats();
-		
+
 		// Find weakest pillar
 		let weakest: Pillar = 'technique';
 		let lowestAvg = 100;
-		
+
 		for (const [pillar, stat] of Object.entries(stats)) {
 			if (stat.averageAccuracy < lowestAvg) {
 				lowestAvg = stat.averageAccuracy;
@@ -498,13 +506,16 @@ export class CurriculumEngine {
 		}
 
 		if (lowestAvg < 50) {
-			return { pillar: weakest, reason: `Your ${weakest} skills need attention (${lowestAvg}% avg)` };
+			return {
+				pillar: weakest,
+				reason: `Your ${weakest} skills need attention (${lowestAvg}% avg)`
+			};
 		}
-		
+
 		// Find pillar with fewest mastered skills
 		let leastMastered: Pillar = 'technique';
 		let lowestRatio = 1;
-		
+
 		for (const [pillar, stat] of Object.entries(stats)) {
 			const ratio = stat.mastered / stat.total;
 			if (ratio < lowestRatio) {
@@ -514,26 +525,35 @@ export class CurriculumEngine {
 		}
 
 		if (lowestRatio < 0.3) {
-			return { pillar: leastMastered, reason: `Build your ${leastMastered} foundation (${Math.round(lowestRatio * 100)}% complete)` };
+			return {
+				pillar: leastMastered,
+				reason: `Build your ${leastMastered} foundation (${Math.round(lowestRatio * 100)}% complete)`
+			};
 		}
 
 		return { pillar: 'repertoire', reason: 'Time to apply your skills to real songs!' };
 	}
 
 	// Get learning path visualization
-	getLearningPath(): { skill: SkillArea; status: 'locked' | 'available' | 'in-progress' | 'mastered'; progress?: StudentProgress }[] {
-		return CURRICULUM.map(skill => {
+	getLearningPath(): {
+		skill: SkillArea;
+		status: 'locked' | 'available' | 'in-progress' | 'mastered';
+		progress?: StudentProgress;
+	}[] {
+		return CURRICULUM.map((skill) => {
 			const progress = this.progress.get(skill.id);
 			let status: 'locked' | 'available' | 'in-progress' | 'mastered' = 'locked';
-			
+
 			if (progress?.status === 'mastered') {
 				status = 'mastered';
 			} else if (progress?.status === 'in-progress') {
 				status = 'in-progress';
-			} else if (skill.dependencies.every(depId => this.progress.get(depId)?.status === 'mastered')) {
+			} else if (
+				skill.dependencies.every((depId) => this.progress.get(depId)?.status === 'mastered')
+			) {
 				status = 'available';
 			}
-			
+
 			return { skill, status, progress };
 		});
 	}

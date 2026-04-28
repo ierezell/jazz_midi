@@ -1,5 +1,18 @@
 <script lang="ts">
-	const NOTE_NAMES = ['C', 'C sharp', 'D', 'D sharp', 'E', 'F', 'F sharp', 'G', 'G sharp', 'A', 'A sharp', 'B'];
+	const NOTE_NAMES = [
+		'C',
+		'C sharp',
+		'D',
+		'D sharp',
+		'E',
+		'F',
+		'F sharp',
+		'G',
+		'G sharp',
+		'A',
+		'A sharp',
+		'B'
+	];
 
 	let {
 		noteNum,
@@ -166,12 +179,20 @@
 		transform: scale(0.98);
 	}
 	.wrong-note {
-		background: linear-gradient(135deg, var(--color-wrong-note-start) 0%, var(--color-wrong-note-end) 100%) !important;
+		background: linear-gradient(
+			135deg,
+			var(--color-wrong-note-start) 0%,
+			var(--color-wrong-note-end) 100%
+		) !important;
 		border-color: var(--color-wrong-note-border) !important;
 		animation: wrongNoteFlash 0.3s ease-in-out;
 	}
 	.wrong-note.accidental {
-		background: linear-gradient(135deg, var(--color-wrong-note-start) 0%, var(--color-wrong-note-end) 100%) !important;
+		background: linear-gradient(
+			135deg,
+			var(--color-wrong-note-start) 0%,
+			var(--color-wrong-note-end) 100%
+		) !important;
 	}
 	@keyframes wrongNoteFlash {
 		0% {

@@ -35,8 +35,7 @@
 	const modeHint: Record<DexMode, string> = {
 		random: 'Play each note shown in order. Stay relaxed!',
 		chromatic: 'Play every semitone from C up to B and back down.',
-		'five-finger':
-			'Classic Hanon warm-up: C-D-E-F-G-F-E-D-C. Lift each finger cleanly.',
+		'five-finger': 'Classic Hanon warm-up: C-D-E-F-G-F-E-D-C. Lift each finger cleanly.',
 		thirds: 'Skip-step pattern: C-E-D-F-E-G... great for interval control.'
 	};
 
@@ -205,12 +204,8 @@
 			<div class="mode-selector card-premium">
 				<span class="section-label">Mode</span>
 				<div class="mode-tabs" role="group" aria-label="Dexterity mode">
-					{#each (Object.keys(modeLabel) as DexMode[]) as m}
-						<button
-							class="mode-tab"
-							class:active={mode === m}
-							onclick={() => (mode = m)}
-						>
+					{#each Object.keys(modeLabel) as DexMode[] as m}
+						<button class="mode-tab" class:active={mode === m} onclick={() => (mode = m)}>
 							{modeLabel[m]}
 						</button>
 					{/each}
@@ -220,16 +215,12 @@
 			<!-- Hand selector + stats -->
 			<div class="dex-controls card-premium">
 				<div class="hand-toggle" role="group" aria-label="Hand selection">
-					<button
-						class="hand-btn"
-						class:active={hand === 'left'}
-						onclick={() => (hand = 'left')}
-					>Left Hand</button>
-					<button
-						class="hand-btn"
-						class:active={hand === 'right'}
-						onclick={() => (hand = 'right')}
-					>Right Hand</button>
+					<button class="hand-btn" class:active={hand === 'left'} onclick={() => (hand = 'left')}
+						>Left Hand</button
+					>
+					<button class="hand-btn" class:active={hand === 'right'} onclick={() => (hand = 'right')}
+						>Right Hand</button
+					>
 				</div>
 				<div class="progress-display">
 					<span class="progress-num">{playedCount}</span>
@@ -436,10 +427,22 @@
 	}
 
 	@media (orientation: landscape) and (max-height: 500px) {
-		.dexterity-content { gap: 0.75rem; }
-		.mode-tab { padding: 0.25rem 0.6rem; font-size: 0.72rem; }
-		.progress-num { font-size: 1.2rem; }
-		.next-notes { padding: 0.5rem 0.75rem; gap: 0.5rem; }
-		.hint { font-size: 0.75rem; }
+		.dexterity-content {
+			gap: 0.75rem;
+		}
+		.mode-tab {
+			padding: 0.25rem 0.6rem;
+			font-size: 0.72rem;
+		}
+		.progress-num {
+			font-size: 1.2rem;
+		}
+		.next-notes {
+			padding: 0.5rem 0.75rem;
+			gap: 0.5rem;
+		}
+		.hint {
+			font-size: 0.75rem;
+		}
 	}
 </style>

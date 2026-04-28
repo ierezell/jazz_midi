@@ -27,7 +27,7 @@ describe('JourneyService', () => {
 		journeyService.completeLesson(unitId, lessonId, 3);
 
 		const unit = journeyService.getUnit(unitId);
-		const lesson = unit?.lessons.find(l => l.id === lessonId);
+		const lesson = unit?.lessons.find((l) => l.id === lessonId);
 
 		// Lesson requires 3 perfect completions to be marked as completed.
 		// We just did 1, so it should NOT be completed yet, but stars should be 3.
@@ -57,7 +57,7 @@ describe('JourneyService', () => {
 		const unit = journeyService.getUnit('unit-1')!;
 
 		// Complete all lessons in unit-1
-		unit.lessons.forEach(lesson => {
+		unit.lessons.forEach((lesson) => {
 			const required = lesson.requiredPerfectCompletions;
 			for (let i = 0; i < required; i++) {
 				journeyService.completeLesson(unit.id, lesson.id, 3);

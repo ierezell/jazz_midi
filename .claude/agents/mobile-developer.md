@@ -45,6 +45,7 @@ Use mobile-first: base styles = mobile, then add `md:` and `lg:` prefixes for la
 ## PWA considerations (optional enhancement)
 
 The app is already a static SvelteKit app — it could become a PWA with:
+
 - `manifest.json` for install prompt
 - Service worker for offline support (already works since static)
 - App icons at multiple sizes

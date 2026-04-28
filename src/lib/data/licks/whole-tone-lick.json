@@ -6,19 +6,6 @@
 	"hand": "right",
 	"difficulty": "advanced",
 	"suggestedBpm": 130,
-	"notes": [
-		"C4",
-		"D4",
-		"E4",
-		"F#4",
-		"G#4",
-		"A#4",
-		"C5"
-	],
-	"tags": [
-		"whole-tone",
-		"dominant",
-		"advanced",
-		"bebop"
-	]
+	"notes": ["C4", "D4", "E4", "F#4", "G#4", "A#4", "C5"],
+	"tags": ["whole-tone", "dominant", "advanced", "bebop"]
 }

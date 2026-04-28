@@ -12,17 +12,22 @@
 		<meta name="mobile-web-app-capable" content="yes" />
 		<meta name="theme-color" content="#4075a6" />
 		<script>
-		// Restore theme before first paint to avoid flash
-		(function () {
-			var saved = localStorage.getItem('theme');
-			var theme = saved === 'light' || saved === 'dark' ? saved : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-			document.documentElement.setAttribute('data-theme', theme);
-			if (theme === 'dark') {
-				document.documentElement.classList.add('dark');
-			}
-		})();
-	</script>
-	%sveltekit.head%
+			// Restore theme before first paint to avoid flash
+			(function () {
+				var saved = localStorage.getItem('theme');
+				var theme =
+					saved === 'light' || saved === 'dark'
+						? saved
+						: window.matchMedia('(prefers-color-scheme: light)').matches
+							? 'light'
+							: 'dark';
+				document.documentElement.setAttribute('data-theme', theme);
+				if (theme === 'dark') {
+					document.documentElement.classList.add('dark');
+				}
+			})();
+		</script>
+		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">%sveltekit.body%</div>

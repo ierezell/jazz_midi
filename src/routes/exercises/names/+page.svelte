@@ -475,11 +475,30 @@
 	}
 
 	@media (orientation: landscape) and (max-height: 500px) {
-		.note-name-exercise { flex-direction: row; align-items: flex-start; gap: 1rem; padding: 0.25rem; flex-wrap: wrap; }
-		.note-card { padding: 0.75rem 1.25rem; min-width: 80px; }
-		.note-name { font-size: 1.75rem; }
-		.note-display { flex-direction: row; gap: 1rem; flex-wrap: wrap; }
-		.answer-display { flex-direction: row; }
-		.arrow { font-size: 1.25rem; }
+		.note-name-exercise {
+			flex-direction: row;
+			align-items: flex-start;
+			gap: 1rem;
+			padding: 0.25rem;
+			flex-wrap: wrap;
+		}
+		.note-card {
+			padding: 0.75rem 1.25rem;
+			min-width: 80px;
+		}
+		.note-name {
+			font-size: 1.75rem;
+		}
+		.note-display {
+			flex-direction: row;
+			gap: 1rem;
+			flex-wrap: wrap;
+		}
+		.answer-display {
+			flex-direction: row;
+		}
+		.arrow {
+			font-size: 1.25rem;
+		}
 	}
 </style>

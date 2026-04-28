@@ -68,22 +68,20 @@
 		// Calculate target note based on degree
 		const baseMidi = NoteToMidi[`${rootNote}4` as keyof typeof NoteToMidi];
 		const target = (baseMidi + targetDegree.offset) as MidiNote;
-		
+
 		// Calculate enclosure notes
-		const notes = currentPattern.steps.map(step => 
-			(target + step) as MidiNote
-		);
-		
+		const notes = currentPattern.steps.map((step) => (target + step) as MidiNote);
+
 		return { target, notes };
 	}
 
 	function startNewPattern(selectedNote: Note) {
 		// Random pattern
 		currentPattern = PATTERNS[Math.floor(Math.random() * PATTERNS.length)];
-		
+
 		// Random target degree
 		targetDegree = TARGET_DEGREES[Math.floor(Math.random() * TARGET_DEGREES.length)];
-		
+
 		const result = generateEnclosure(selectedNote);
 		targetNote = result.target;
 		expectedNotes = result.notes;
@@ -98,8 +96,8 @@
 	}
 
 	function generateScoreProps(selectedNote: Note): ScoreProps {
-		const noteNames: NoteFullName[] = expectedNotes.map(n => MidiToNote[n] as NoteFullName);
-		
+		const noteNames: NoteFullName[] = expectedNotes.map((n) => MidiToNote[n] as NoteFullName);
+
 		return {
 			selectedNote,
 			leftHand: [],
@@ -118,17 +116,17 @@
 		}
 
 		const expectedNote = expectedNotes[stepIndex];
-		
+
 		if (event.noteNumber === expectedNote) {
 			stepIndex++;
-			
+
 			if (stepIndex >= expectedNotes.length) {
 				// Pattern complete
 				completedPatterns++;
 				patternAttempts = 0;
-				
+
 				setTimeout(() => startNewPattern(selectedNote), 800);
-				
+
 				return {
 					isCorrect: true,
 					message: `Perfect! ${currentPattern.name} complete.`,
@@ -136,7 +134,7 @@
 					resetCollected: false
 				};
 			}
-			
+
 			// Next step
 			const nextNoteName = MidiToNote[expectedNotes[stepIndex]];
 			return {
@@ -146,7 +144,7 @@
 				resetCollected: false
 			};
 		}
-		
+
 		// Wrong note
 		patternAttempts++;
 		const correctNoteName = MidiToNote[expectedNote];
@@ -204,7 +202,11 @@
 				</div>
 				<div class="sequence-display">
 					{#each expectedNotes as note, i}
-						<div class="sequence-note" class:completed={i < stepIndex} class:current={i === stepIndex}>
+						<div
+							class="sequence-note"
+							class:completed={i < stepIndex}
+							class:current={i === stepIndex}
+						>
 							<span class="note-name">{MidiToNote[note]}</span>
 							{#if i < expectedNotes.length - 1}
 								<span class="arrow">→</span>
@@ -312,8 +314,13 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% { transform: scale(1); }
-		50% { transform: scale(1.05); }
+		0%,
+		100% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.05);
+		}
 	}
 
 	.arrow {

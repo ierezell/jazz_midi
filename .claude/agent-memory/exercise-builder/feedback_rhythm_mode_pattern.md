@@ -12,7 +12,7 @@ Rhythm mode integration pattern used across chords, scales, and two_five_ones ex
 
 3. Toggle function creates/destroys BeatValidator on mode change; passes `(beat) => { currentBeat = beat; }` as the onBeatChange callback.
 
-4. Beat check placement: at the top of the note validation function, guarded by `withRhythmMode && beatValidator && currentNotes.length === 0` (for chord-at-a-time exercises) or just `rhythmicMode && scaleBeatValidator` (for per-note sequential exercises). Returns early with `{ isCorrect: false, message: \`Off beat! (\${beatResult.label})\`, collected: false, resetCollected: false }` when `!beatResult.isHit`.
+4. Beat check placement: at the top of the note validation function, guarded by `withRhythmMode && beatValidator && currentNotes.length === 0` (for chord-at-a-time exercises) or just `rhythmicMode && scaleBeatValidator` (for per-note sequential exercises). Returns early with `{ isCorrect: false, message: \`Off beat! (\${beatResult.label})\`, collected: false, resetCollected: false }`when`!beatResult.isHit`.
 
 5. Template: `<div class="rhythm-controls">` with checkbox toggle, pattern `<select>`, and `<BeatIndicator totalBeats={4} {currentBeat} hitPositions={selectedPattern.hits} isActive={...} />`.
 

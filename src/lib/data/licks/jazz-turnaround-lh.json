@@ -6,16 +6,6 @@
 	"hand": "left",
 	"difficulty": "intermediate",
 	"suggestedBpm": 100,
-	"notes": [
-		"C2",
-		"A2",
-		"D2",
-		"G2"
-	],
-	"tags": [
-		"jazz",
-		"turnaround",
-		"I-VI-II-V",
-		"comping"
-	]
+	"notes": ["C2", "A2", "D2", "G2"],
+	"tags": ["jazz", "turnaround", "I-VI-II-V", "comping"]
 }

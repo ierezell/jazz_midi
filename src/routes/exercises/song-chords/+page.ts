@@ -3,14 +3,14 @@ import type { MusicXMLSong } from '$lib/types/musicxml';
 
 export const load = async () => {
 	const songs = await loadAllSongs();
-	
+
 	// Fallback if no songs loaded
 	if (songs.length === 0) {
 		return {
 			songs: [getFallbackSong()]
 		};
 	}
-	
+
 	return { songs };
 };
 

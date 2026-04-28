@@ -59,7 +59,9 @@ test.describe('Song Chords Exercise', () => {
 		await page.waitForTimeout(1000);
 
 		// Check that the score container exists
-		const scoreContainer = page.locator('.score-section, .osmd-container, .musicxml-score-container');
+		const scoreContainer = page.locator(
+			'.score-section, .osmd-container, .musicxml-score-container'
+		);
 		await expect(scoreContainer.first()).toBeVisible();
 	});
 
@@ -96,10 +98,10 @@ test.describe('Song Chords Exercise', () => {
 		for (let i = 0; i < maxChords; i++) {
 			// Read current chord from the page
 			const promptText = await promptLocator.innerText().catch(() => '');
-			
+
 			// Try to extract chord info from prompt text
 			const chordMatch = promptText.match(/([A-G][#b]?(?:m|maj7|m7|7|dim|aug|sus[24])?)/);
-			
+
 			if (!chordMatch) {
 				// No chord to play, might be complete
 				break;
@@ -107,7 +109,7 @@ test.describe('Song Chords Exercise', () => {
 
 			const chordStr = chordMatch[1];
 			const parsed = parseChordString(chordStr);
-			
+
 			if (!parsed) continue;
 
 			// Map chord type to our test format
@@ -121,7 +123,7 @@ test.describe('Song Chords Exercise', () => {
 			try {
 				// Get expected notes for this chord
 				const expectedNotes = chordNotes(parsed.note, chordType);
-				
+
 				// Play the correct chord
 				await playMidiChord(page, expectedNotes, 100);
 				await page.waitForTimeout(300);
@@ -142,11 +144,11 @@ test.describe('Song Chords Exercise', () => {
 		// Exercise should show progress - check for feedback toast or performance strip
 		const feedback = page.locator('.feedback-toast');
 		const performanceStrip = page.locator('.performance-strip');
-		
+
 		// At least one of these should be visible
 		const hasFeedback = await feedback.isVisible().catch(() => false);
 		const hasPerformance = await performanceStrip.isVisible().catch(() => false);
-		
+
 		expect(hasFeedback || hasPerformance).toBe(true);
 	});
 
@@ -164,12 +166,12 @@ test.describe('Song Chords Exercise', () => {
 		// Check for mistake feedback or that mistakes counter increased
 		const feedback = page.locator('.feedback-toast');
 		const mistakesCounter = page.locator('.stat-pill:has-text("Mistakes:") .value');
-		
+
 		// Either feedback toast is visible OR mistakes counter shows > 0
 		const hasFeedback = await feedback.isVisible().catch(() => false);
 		const mistakesText = await mistakesCounter.innerText().catch(() => '0');
 		const mistakesCount = parseInt(mistakesText) || 0;
-		
+
 		// At least one of these should indicate a mistake was registered
 		expect(hasFeedback || mistakesCount > 0).toBe(true);
 	});
@@ -181,13 +183,13 @@ test.describe('Song Chords Exercise', () => {
 
 		// Find voicing select dropdown
 		const voicingSelect = page.locator('select#voicing-select');
-		
+
 		// If voicing select exists, test different voicings
 		if (await voicingSelect.isVisible().catch(() => false)) {
 			// Change to a different voicing
 			await voicingSelect.selectOption('shell');
 			await page.waitForTimeout(200);
-			
+
 			// Change to another voicing
 			await voicingSelect.selectOption('rootless-a');
 			await page.waitForTimeout(200);
@@ -203,13 +205,15 @@ test.describe('Song Chords Exercise', () => {
 		await page.waitForTimeout(500);
 
 		// Find annotations toggle
-		const annotationsToggle = page.locator('input[type="checkbox"]').filter({ hasText: /II-V-I|annotations/i });
-		
+		const annotationsToggle = page
+			.locator('input[type="checkbox"]')
+			.filter({ hasText: /II-V-I|annotations/i });
+
 		// If toggle exists, click it
 		if (await annotationsToggle.isVisible().catch(() => false)) {
 			await annotationsToggle.click();
 			await page.waitForTimeout(200);
-			
+
 			// Click again to toggle back
 			await annotationsToggle.click();
 			await page.waitForTimeout(200);
@@ -238,10 +242,10 @@ test.describe('Song Chords Exercise', () => {
 			const optionValues = await Promise.all(
 				options.map(async (opt) => await opt.getAttribute('value'))
 			);
-			
+
 			// Find a different option
-			const differentIndex = optionValues.findIndex(val => val !== initialValue);
-			
+			const differentIndex = optionValues.findIndex((val) => val !== initialValue);
+
 			if (differentIndex >= 0) {
 				const newValue = optionValues[differentIndex];
 				await songSelect.selectOption(newValue || '');
@@ -260,13 +264,15 @@ test.describe('Song Chords Exercise', () => {
 		await page.waitForTimeout(500);
 
 		// Find rhythm toggle
-		const rhythmToggle = page.locator('input[type="checkbox"]').filter({ hasText: /rhythm|timing/i });
-		
+		const rhythmToggle = page
+			.locator('input[type="checkbox"]')
+			.filter({ hasText: /rhythm|timing/i });
+
 		// If toggle exists, test it
 		if (await rhythmToggle.isVisible().catch(() => false)) {
 			await rhythmToggle.click();
 			await page.waitForTimeout(200);
-			
+
 			// Exercise should adapt to rhythm mode
 			await expect(page.locator('.exercise-main')).toBeVisible();
 		}
@@ -278,7 +284,7 @@ test.describe('Song Chords Exercise', () => {
 		await page.waitForTimeout(500);
 
 		const inversionSelect = page.locator('select#inversion-select');
-		
+
 		if (await inversionSelect.isVisible().catch(() => false)) {
 			// Try different inversions
 			const options = await inversionSelect.locator('option').all();
@@ -313,9 +319,14 @@ test.describe('Song Chords Exercise', () => {
 		}
 
 		// Check for any completion indicator or final state
-		const completionIndicators = page.locator('.completion-message, .exercise-complete, .success-message, .finished');
-		const hasCompletion = await completionIndicators.first().isVisible().catch(() => false);
-		
+		const completionIndicators = page.locator(
+			'.completion-message, .exercise-complete, .success-message, .finished'
+		);
+		const hasCompletion = await completionIndicators
+			.first()
+			.isVisible()
+			.catch(() => false);
+
 		// Or check if we're still in a valid exercise state
 		if (!hasCompletion) {
 			await expect(page.locator('.exercise-main')).toBeVisible();

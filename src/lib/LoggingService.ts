@@ -80,7 +80,7 @@ class LoggingService {
 		}
 
 		// Notify subscribers
-		this.subscribers.forEach(cb => {
+		this.subscribers.forEach((cb) => {
 			try {
 				cb(entry);
 			} catch {
@@ -92,7 +92,7 @@ class LoggingService {
 		if (typeof window !== 'undefined' && import.meta.env?.DEV) {
 			const prefix = context ? `[${context}]` : '[App]';
 			const consoleMethod = level === 'debug' ? 'log' : level;
-			
+
 			if (data !== undefined) {
 				// eslint-disable-next-line no-console
 				console[consoleMethod](`${prefix} ${message}`, data);
@@ -154,5 +154,5 @@ export const log = {
 	debug: (msg: string, data?: unknown, ctx?: string) => logger.debug(msg, data, ctx),
 	info: (msg: string, data?: unknown, ctx?: string) => logger.info(msg, data, ctx),
 	warn: (msg: string, data?: unknown, ctx?: string) => logger.warn(msg, data, ctx),
-	error: (msg: string, data?: unknown, ctx?: string) => logger.error(msg, data, ctx),
+	error: (msg: string, data?: unknown, ctx?: string) => logger.error(msg, data, ctx)
 };

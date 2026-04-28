@@ -13,27 +13,35 @@ You are a senior developer AND jazz music teacher building exercises for this Du
 Every exercise follows this pattern:
 
 ### Page structure
+
 ```
 src/routes/exercises/[exercise-name]/+page.svelte
 ```
+
 Uses `BaseExercise.svelte` as wrapper which provides:
+
 - Start/stop controls
 - Metronome integration
 - Completion modal with stars
 - MIDI/virtual keyboard connection
 
 ### BaseExercise contract
+
 The exercise page receives these from BaseExercise (check `BaseExercise.svelte` for current API):
+
 - MIDI note events
 - Metronome tick events
 - Start/stop lifecycle hooks
 - Result submission callback
 
 ### Stats integration
+
 After completion, call `UserStatsService.getInstance().recordExerciseResult(result)` where result follows `ExerciseResult` type in `src/lib/types/types.ts`.
 
 ### Journey integration
+
 Exercises appear in the journey via `JourneyService.ts`. Adding a new exercise requires:
+
 1. Creating the exercise page
 2. Registering it in the journey data structure
 3. Setting unlock prerequisites
@@ -41,12 +49,15 @@ Exercises appear in the journey via `JourneyService.ts`. Adding a new exercise r
 ## Exercise data patterns
 
 ### Licks (`src/lib/data/licks/`)
+
 JSON files with arrays of lick objects. Each lick has notes with MIDI numbers, durations, and metadata.
 
 ### Rhythm patterns (`src/lib/data/rhythm/`)
+
 JSON files describing beat patterns, subdivision, and which hand plays each note.
 
 ### Songs (`src/lib/data/songs/`)
+
 Song data with chord charts, keys, and associated practice exercises.
 
 ## Building a new exercise checklist
@@ -68,6 +79,7 @@ Song data with chord charts, keys, and associated practice exercises.
 - Validation must accept enharmonically equivalent correct answers (C# = Db)
 
 ## Commands to verify work
+
 ```bash
 cd d:/Misc/jazz_midi && npm run check
 cd d:/Misc/jazz_midi && npm run test

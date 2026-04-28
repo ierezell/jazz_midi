@@ -1,7 +1,9 @@
 # 🧪 Test Coverage Report
 
 ## Overview
+
 Comprehensive test coverage for Jazz Piano Learning Platform using:
+
 - **Vitest** - Unit tests for services and utilities
 - **Playwright** - E2E tests for UI and user flows
 
@@ -11,41 +13,42 @@ Comprehensive test coverage for Jazz Piano Learning Platform using:
 
 ### Unit Tests (Vitest)
 
-| Module | Test File | Status | Coverage |
-|--------|-----------|--------|----------|
-| CurriculumEngine | `CurriculumEngine.spec.ts` | ✅ | 90% |
-| VelocityValidator | `VelocityValidator.spec.ts` | ✅ | 95% |
-| MusicTheoryUtils | `music-utils.spec.ts` | ✅ | 80% |
-| Chord Generation | `chords.spec.ts` | ✅ | 85% |
-| Scale Generation | `scale.exercise.spec.ts` | ✅ | 75% |
-| Beat Validator | `beat-validator.test.ts` | ✅ | 70% |
-| Flashcard Utils | `FlashcardUtils.spec.ts` | ✅ | 60% |
-| Journey Service | `JourneyService.spec.ts` | ✅ | 50% |
-| User Stats Service | `UserStatsService.spec.ts` | ✅ | 40% |
-| Hand Independence | `hand-independence-validation.test.ts` | ✅ | 70% |
-| Audio Input Service | `AudioInputService.spec.ts` | ✅ | 65% |
+| Module              | Test File                              | Status | Coverage |
+| ------------------- | -------------------------------------- | ------ | -------- |
+| CurriculumEngine    | `CurriculumEngine.spec.ts`             | ✅     | 90%      |
+| VelocityValidator   | `VelocityValidator.spec.ts`            | ✅     | 95%      |
+| MusicTheoryUtils    | `music-utils.spec.ts`                  | ✅     | 80%      |
+| Chord Generation    | `chords.spec.ts`                       | ✅     | 85%      |
+| Scale Generation    | `scale.exercise.spec.ts`               | ✅     | 75%      |
+| Beat Validator      | `beat-validator.test.ts`               | ✅     | 70%      |
+| Flashcard Utils     | `FlashcardUtils.spec.ts`               | ✅     | 60%      |
+| Journey Service     | `JourneyService.spec.ts`               | ✅     | 50%      |
+| User Stats Service  | `UserStatsService.spec.ts`             | ✅     | 40%      |
+| Hand Independence   | `hand-independence-validation.test.ts` | ✅     | 70%      |
+| Audio Input Service | `AudioInputService.spec.ts`            | ✅     | 65%      |
 
 ### E2E Tests (Playwright)
 
-| Feature | Test File | Status | Scenarios |
-|---------|-----------|--------|-----------|
-| Ghost Notes Exercise | `ghost-notes.spec.ts` | ✅ | 6 tests |
-| Hand Dynamics Exercise | `hand-dynamics.spec.ts` | ✅ | 6 tests |
-| Interval Mimicry Exercise | `interval-mimicry.spec.ts` | ✅ | 6 tests |
-| Enclosure Drill Exercise | `enclosure.spec.ts` | ✅ | 7 tests |
-| Chords Exercise | `chords.spec.ts` | ✅ | Parallel tests |
-| Training System | `training.spec.ts` | ✅ | 9 tests |
-| OSMD Score Rendering | `osmd-score.spec.ts` | ✅ | 6 tests |
-| Debug Panel | `debug-panel.spec.ts` | ✅ | 6 tests |
-| Navigation | `navigation.spec.ts` | ✅ | 4 tests |
-| User Journey | `user-journey.spec.ts` | ✅ | 5 tests |
-| Licks Exercise | `licks-exercise.spec.ts` | ✅ | 4 tests |
+| Feature                   | Test File                  | Status | Scenarios      |
+| ------------------------- | -------------------------- | ------ | -------------- |
+| Ghost Notes Exercise      | `ghost-notes.spec.ts`      | ✅     | 6 tests        |
+| Hand Dynamics Exercise    | `hand-dynamics.spec.ts`    | ✅     | 6 tests        |
+| Interval Mimicry Exercise | `interval-mimicry.spec.ts` | ✅     | 6 tests        |
+| Enclosure Drill Exercise  | `enclosure.spec.ts`        | ✅     | 7 tests        |
+| Chords Exercise           | `chords.spec.ts`           | ✅     | Parallel tests |
+| Training System           | `training.spec.ts`         | ✅     | 9 tests        |
+| OSMD Score Rendering      | `osmd-score.spec.ts`       | ✅     | 6 tests        |
+| Debug Panel               | `debug-panel.spec.ts`      | ✅     | 6 tests        |
+| Navigation                | `navigation.spec.ts`       | ✅     | 4 tests        |
+| User Journey              | `user-journey.spec.ts`     | ✅     | 5 tests        |
+| Licks Exercise            | `licks-exercise.spec.ts`   | ✅     | 4 tests        |
 
 ---
 
 ## 🎯 Test Categories
 
 ### 1. Exercise Generation & Validation
+
 - ✅ Scale generation (major, minor, modes)
 - ✅ Chord generation (triads, 7ths, inversions)
 - ✅ Progression generation (II-V-I)
@@ -55,6 +58,7 @@ Comprehensive test coverage for Jazz Piano Learning Platform using:
 - ✅ Enclosure patterns
 
 ### 2. Progression & Curriculum
+
 - ✅ Skill dependency tree
 - ✅ Pillar balance tracking
 - ✅ Weakness identification
@@ -63,6 +67,7 @@ Comprehensive test coverage for Jazz Piano Learning Platform using:
 - ✅ Journey path visualization
 
 ### 3. UI & UX
+
 - ✅ Score rendering (OSMD)
 - ✅ Keyboard display
 - ✅ Feedback toasts
@@ -72,6 +77,7 @@ Comprehensive test coverage for Jazz Piano Learning Platform using:
 - ✅ Loading states
 
 ### 4. MIDI & Audio
+
 - ✅ MIDI note validation
 - ✅ Velocity tracking
 - ✅ Note event handling
@@ -79,6 +85,7 @@ Comprehensive test coverage for Jazz Piano Learning Platform using:
 - ✅ Audio playback
 
 ### 5. Data Persistence
+
 - ✅ LocalStorage integration
 - ✅ Progress saving/loading
 - ✅ Stats aggregation
@@ -89,6 +96,7 @@ Comprehensive test coverage for Jazz Piano Learning Platform using:
 ## 🚀 Running Tests
 
 ### Run All Tests
+
 ```bash
 # Unit tests
 npm run test
@@ -101,6 +109,7 @@ npm run test:all
 ```
 
 ### Run Specific Tests
+
 ```bash
 # Single unit test file
 npx vitest src/lib/tests/CurriculumEngine.spec.ts
@@ -113,6 +122,7 @@ npx playwright test tests/e2e/exercises/
 ```
 
 ### Debug Mode
+
 ```bash
 # Debug E2E tests
 npx playwright test --debug
@@ -128,13 +138,13 @@ npx vitest --watch
 
 ## 📈 Test Quality Metrics
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| Code Coverage | 80% | 72% |
-| E2E Pass Rate | 100% | 100% |
-| Unit Test Pass Rate | 100% | 98% |
-| Flaky Tests | 0 | 0 |
-| Test Runtime | <5 min | ~3 min |
+| Metric              | Target | Current |
+| ------------------- | ------ | ------- |
+| Code Coverage       | 80%    | 72%     |
+| E2E Pass Rate       | 100%   | 100%    |
+| Unit Test Pass Rate | 100%   | 98%     |
+| Flaky Tests         | 0      | 0       |
+| Test Runtime        | <5 min | ~3 min  |
 
 ---
 
@@ -156,29 +166,32 @@ When adding new features, ensure:
 ## 🔍 Test Patterns
 
 ### Mock MIDI Event
+
 ```typescript
 const mockNoteEvent = (note: number, velocity: number): NoteEvent => ({
-    noteNumber: note as MidiNote,
-    velocity,
-    type: 'on',
-    noteName: 'C',
-    noteFullName: 'C4',
-    timestamp: Date.now(),
-    channel: 1
+	noteNumber: note as MidiNote,
+	velocity,
+	type: 'on',
+	noteName: 'C',
+	noteFullName: 'C4',
+	timestamp: Date.now(),
+	channel: 1
 });
 ```
 
 ### Play MIDI in Playwright
+
 ```typescript
 await page.evaluate(() => {
-    const event = new CustomEvent('midi-message', { 
-        detail: { noteNumber: 60, velocity: 80, type: 'on' } 
-    });
-    window.dispatchEvent(event);
+	const event = new CustomEvent('midi-message', {
+		detail: { noteNumber: 60, velocity: 80, type: 'on' }
+	});
+	window.dispatchEvent(event);
 });
 ```
 
 ### Test Page Navigation
+
 ```typescript
 await page.goto('/exercises/ghost-notes');
 await page.waitForSelector('.exercise-main', { timeout: 10_000 });

@@ -8,7 +8,7 @@ describe('User Journey Integration', () => {
 		localStorage.clear();
 		vi.clearAllMocks();
 
-		// Reset service states (assuming they have reset methods or we can re-instantiate if they weren't singletons, 
+		// Reset service states (assuming they have reset methods or we can re-instantiate if they weren't singletons,
 		// but they are singletons. We rely on them reading from localStorage on init or having a way to reset).
 		// Since they are singletons, we might need to manually reset their internal state if they don't expose a reset.
 		// UserStatsService has createProfile which resets stats.
@@ -23,7 +23,7 @@ describe('User Journey Integration', () => {
 	it('should complete the full onboarding and practice flow', () => {
 		// 1. Initial State: No Profile
 		expect(userStatsService.getProfile().name).toBe('Jazz Student');
-		// In the real app, this triggers a redirect to /login. 
+		// In the real app, this triggers a redirect to /login.
 		// Here we verify the condition that triggers it.
 		expect(userStatsService.getProfile().experiencePoints).toBe(0);
 
@@ -38,7 +38,7 @@ describe('User Journey Integration', () => {
 
 		// 3. User views Dashboard and sees active unit (Dashboard Page)
 		const units = journeyService.getUnits();
-		const activeUnit = units.find(u => u.status === 'active');
+		const activeUnit = units.find((u) => u.status === 'active');
 		expect(activeUnit).toBeDefined();
 		expect(activeUnit?.id).toBe('unit-1'); // First unit is unit-1
 
@@ -71,7 +71,9 @@ describe('User Journey Integration', () => {
 
 		// Journey should update
 		const updatedUnits = journeyService.getUnits();
-		const updatedLesson = updatedUnits.find(u => u.id === activeUnit!.id)?.lessons.find(l => l.id === lessonId);
+		const updatedLesson = updatedUnits
+			.find((u) => u.id === activeUnit!.id)
+			?.lessons.find((l) => l.id === lessonId);
 		expect(updatedLesson?.stars).toBe(3);
 		expect(updatedLesson?.perfectCompletions).toBe(1);
 
@@ -95,8 +97,8 @@ describe('User Journey Integration', () => {
 		// 4. Verify recommendations exist
 		expect(recommendations.length).toBeGreaterThan(0);
 		// Should recommend based on Cmaj7 or D note
-		const hasChordRec = recommendations.some(r => r.weakness.includes('Chord'));
-		const hasNoteRec = recommendations.some(r => r.weakness.includes('Note'));
+		const hasChordRec = recommendations.some((r) => r.weakness.includes('Chord'));
+		const hasNoteRec = recommendations.some((r) => r.weakness.includes('Note'));
 		expect(hasChordRec || hasNoteRec).toBe(true);
 	});
 });

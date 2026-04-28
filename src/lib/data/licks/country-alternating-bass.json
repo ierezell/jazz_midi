@@ -6,19 +6,6 @@
 	"hand": "left",
 	"difficulty": "beginner",
 	"suggestedBpm": 120,
-	"notes": [
-		"C2",
-		"G2",
-		"C2",
-		"G2",
-		"C2",
-		"G2",
-		"C2",
-		"G2"
-	],
-	"tags": [
-		"country",
-		"stride",
-		"alternating-bass"
-	]
+	"notes": ["C2", "G2", "C2", "G2", "C2", "G2", "C2", "G2"],
+	"tags": ["country", "stride", "alternating-bass"]
 }

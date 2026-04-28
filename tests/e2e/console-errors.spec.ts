@@ -3,6 +3,10 @@ import { test, expect } from '@playwright/test';
 const ROUTES = [
 	'/',
 	'/journey',
+	'/about',
+	'/login',
+	'/training',
+	'/exercises',
 	'/exercises/two_five_ones',
 	'/exercises/scales',
 	'/exercises/chords',
@@ -14,7 +18,15 @@ const ROUTES = [
 	'/exercises/rhythm',
 	'/exercises/flashcards',
 	'/exercises/dexterity',
-	'/exercises',
+	'/exercises/boogie',
+	'/exercises/enclosure',
+	'/exercises/ghost-notes',
+	'/exercises/hand-dynamics',
+	'/exercises/hand_independence',
+	'/exercises/interval-mimicry',
+	'/exercises/song-chords',
+	'/exercises/song-melody',
+	'/exercises/song-rhythm',
 	'/profile'
 ];
 

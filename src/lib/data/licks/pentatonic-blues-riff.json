@@ -6,18 +6,6 @@
 	"hand": "right",
 	"difficulty": "beginner",
 	"suggestedBpm": 100,
-	"notes": [
-		"C4",
-		"Eb4",
-		"F4",
-		"Gb4",
-		"G4",
-		"Bb4",
-		"C5"
-	],
-	"tags": [
-		"blues",
-		"pentatonic",
-		"riff"
-	]
+	"notes": ["C4", "Eb4", "F4", "Gb4", "G4", "Bb4", "C5"],
+	"tags": ["blues", "pentatonic", "riff"]
 }

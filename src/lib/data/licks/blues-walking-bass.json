@@ -6,19 +6,6 @@
 	"hand": "left",
 	"difficulty": "beginner",
 	"suggestedBpm": 100,
-	"notes": [
-		"C2",
-		"E2",
-		"G2",
-		"A2",
-		"C3",
-		"A2",
-		"G2",
-		"E2"
-	],
-	"tags": [
-		"walking-bass",
-		"blues",
-		"swing"
-	]
+	"notes": ["C2", "E2", "G2", "A2", "C3", "A2", "G2", "E2"],
+	"tags": ["walking-bass", "blues", "swing"]
 }

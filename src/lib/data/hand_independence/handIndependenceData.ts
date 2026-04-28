@@ -4,22 +4,22 @@ import level3 from './level3-chord-melody.json' with { type: 'json' };
 import level4 from './level4-stride-pattern.json' with { type: 'json' };
 
 export interface HandIndependenceLevel {
-  id: string;
-  title: string;
-  level: number;
-  description: string;
-  lhPattern: number[] | { beat: number; semitones: number[] }[];
-  rhPattern: number[];
-  rootMidi: number;
-  rhStartMidi: number;
-  suggestedBpm: number;
-  measures: number;
-  instructions: string;
+	id: string;
+	title: string;
+	level: number;
+	description: string;
+	lhPattern: number[] | { beat: number; semitones: number[] }[];
+	rhPattern: number[];
+	rootMidi: number;
+	rhStartMidi: number;
+	suggestedBpm: number;
+	measures: number;
+	instructions: string;
 }
 
 export const handIndependenceLevels: HandIndependenceLevel[] = [
-  level1 as HandIndependenceLevel,
-  level2 as HandIndependenceLevel,
-  level3 as HandIndependenceLevel,
-  level4 as HandIndependenceLevel,
+	level1 as HandIndependenceLevel,
+	level2 as HandIndependenceLevel,
+	level3 as HandIndependenceLevel,
+	level4 as HandIndependenceLevel
 ];

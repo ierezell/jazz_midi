@@ -155,7 +155,6 @@
 			return;
 		}
 
-
 		try {
 			if (rightHand && rightHand.length > 0 && stringRightHand) {
 				const trebleStave = system.addStave({

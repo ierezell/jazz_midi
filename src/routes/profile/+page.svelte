@@ -147,19 +147,28 @@
 							placeholder="Your name"
 						/>
 						<div class="edit-actions">
-							<button onclick={saveProfile} class="icon-btn save" title="Save" aria-label="Save profile"
-								><Save size={20} /></button
+							<button
+								onclick={saveProfile}
+								class="icon-btn save"
+								title="Save"
+								aria-label="Save profile"><Save size={20} /></button
 							>
-							<button onclick={toggleEdit} class="icon-btn cancel" title="Cancel" aria-label="Cancel editing"
-								><X size={20} /></button
+							<button
+								onclick={toggleEdit}
+								class="icon-btn cancel"
+								title="Cancel"
+								aria-label="Cancel editing"><X size={20} /></button
 							>
 						</div>
 					</div>
 				{:else}
 					<div class="view-mode">
 						<h1 class="profile-name">{profile.name}</h1>
-						<button onclick={toggleEdit} class="icon-btn edit" title="Edit Profile" aria-label="Edit profile"
-							><Edit2 size={18} /></button
+						<button
+							onclick={toggleEdit}
+							class="icon-btn edit"
+							title="Edit Profile"
+							aria-label="Edit profile"><Edit2 size={18} /></button
 						>
 					</div>
 				{/if}
@@ -383,10 +392,21 @@
 		onclick={() => (showExportDialog = false)}
 		onkeydown={(e) => e.key === 'Enter' && (showExportDialog = false)}
 	>
-		<div class="modal" role="dialog" aria-modal="true" aria-label="Export Data" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+		<div
+			class="modal"
+			role="dialog"
+			aria-modal="true"
+			aria-label="Export Data"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
 			<div class="modal-header">
 				<h3>Export Data</h3>
-				<button onclick={() => (showExportDialog = false)} class="close-btn" aria-label="Close export dialog"><X size={20} /></button
+				<button
+					onclick={() => (showExportDialog = false)}
+					class="close-btn"
+					aria-label="Close export dialog"><X size={20} /></button
 				>
 			</div>
 			<div class="modal-content">

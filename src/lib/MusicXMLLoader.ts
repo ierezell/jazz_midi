@@ -36,15 +36,13 @@ export async function loadAllSongs(): Promise<MusicXMLSong[]> {
 		if (response.ok) {
 			const files: string[] = await response.json();
 			// Filter to only .musicxml and .xml files (.mxl needs special handling)
-			const validFiles = files.filter(f => 
-				f.endsWith('.musicxml') || f.endsWith('.xml')
-			);
-			return validFiles.map(filename => createSongMetadata(filename));
+			const validFiles = files.filter((f) => f.endsWith('.musicxml') || f.endsWith('.xml'));
+			return validFiles.map((filename) => createSongMetadata(filename));
 		}
 	} catch {
 		// Manifest doesn't exist, use fallback approach
 	}
-	
+
 	// Return empty array or fallback songs
 	// In production, you'd scan the directory server-side
 	return [];
@@ -56,7 +54,7 @@ export async function loadAllSongs(): Promise<MusicXMLSong[]> {
 function createSongMetadata(filename: string): MusicXMLSong {
 	const id = filename.replace(/\.(mxl|musicxml|xml)$/i, '').replace(/[^a-zA-Z0-9]/g, '_');
 	const title = filename.replace(/\.(mxl|musicxml|xml)$/i, '').replace(/[_-]/g, ' ');
-	
+
 	return {
 		id,
 		filename,
@@ -75,10 +73,10 @@ function createSongMetadata(filename: string): MusicXMLSong {
  */
 export function loadSong(filename: string): { url: string; filename: string; id: string } {
 	const id = filename.replace(/\.(mxl|musicxml|xml)$/i, '').replace(/[^a-zA-Z0-9]/g, '_');
-	return { 
-		url: getSongUrl(filename), 
-		filename, 
-		id 
+	return {
+		url: getSongUrl(filename),
+		filename,
+		id
 	};
 }
 
@@ -103,18 +101,15 @@ export async function fetchSong(filename: string): Promise<string | null> {
  * Parse song data from an OSMD instance after loading
  * Call this after osmd.load() completes and osmd.render() or similar has processed
  */
-export function parseFromOSMD(
-	osmd: { Sheet: any },
-	filename: string
-): MusicXMLSong | null {
+export function parseFromOSMD(osmd: { Sheet: any }, filename: string): MusicXMLSong | null {
 	try {
 		const sheet = osmd.Sheet;
 		if (!sheet) return null;
-		
+
 		// Extract metadata from OSMD sheet
 		const title = sheet.Title?.text?.toString() || filename.replace(/\.(mxl|musicxml|xml)$/i, '');
 		const composer = sheet.Composer?.text?.toString();
-		
+
 		// Get key from first measure's key signature
 		let key = 'C';
 		if (sheet.SourceMeasures.length > 0) {
@@ -126,18 +121,18 @@ export function parseFromOSMD(
 				key = getKeyFromFifths(fifths);
 			}
 		}
-		
+
 		// Get tempo from sheet
 		const tempo = sheet.DefaultStartTempoInBpm || 120;
-		
+
 		// Extract chords from OSMD's harmony elements
 		const chords = extractChordsFromOSMD(sheet);
-		
+
 		// Extract melody notes
 		const melody = extractMelodyFromOSMD(sheet);
-		
+
 		const id = filename.replace(/\.(mxl|musicxml|xml)$/i, '').replace(/[^a-zA-Z0-9]/g, '_');
-		
+
 		return {
 			id,
 			filename,
@@ -161,12 +156,12 @@ export function parseFromOSMD(
  */
 function extractChordsFromOSMD(sheet: any): SongChord[] {
 	const chords: SongChord[] = [];
-	
+
 	// OSMD stores chord symbols in the measure's vertical containers
 	sheet.SourceMeasures.forEach((measure: any, measureIndex: number) => {
 		// Access chord symbols through the measure's staff entries
 		const staffEntries = measure?.VerticalSourceStaffEntryContainers || [];
-		
+
 		staffEntries.forEach((entry: any, entryIndex: number) => {
 			// Look for chord symbols in the entry
 			const chordSymbol = entry?.ChordSymbolContainer?.ChordSymbol;
@@ -181,7 +176,7 @@ function extractChordsFromOSMD(sheet: any): SongChord[] {
 			}
 		});
 	});
-	
+
 	return chords;
 }
 
@@ -190,22 +185,22 @@ function extractChordsFromOSMD(sheet: any): SongChord[] {
  */
 function extractMelodyFromOSMD(sheet: any): SongNote[] {
 	const notes: SongNote[] = [];
-	
+
 	sheet.SourceMeasures.forEach((measure: any, measureIndex: number) => {
 		const staffEntries = measure?.VerticalSourceStaffEntryContainers || [];
-		
+
 		staffEntries.forEach((entry: any, entryIndex: number) => {
 			// Access notes through the entry
 			const notesList = entry?.Notes || [];
-			
+
 			notesList.forEach((note: any) => {
 				if (note?.Pitch?.frequency !== undefined) {
 					// Convert frequency to MIDI note number
 					const midiNote = Math.round(69 + 12 * Math.log2(note.Pitch.frequency / 440));
-					
+
 					// Extract velocity/dynamics if available
 					const velocity = extractNoteVelocity(note);
-					
+
 					notes.push({
 						measure: measureIndex,
 						beat: entryIndex,
@@ -221,7 +216,7 @@ function extractMelodyFromOSMD(sheet: any): SongNote[] {
 			});
 		});
 	});
-	
+
 	return notes;
 }
 
@@ -229,10 +224,7 @@ function extractMelodyFromOSMD(sheet: any): SongNote[] {
  * Convert key signature (fifths) to key name
  */
 function getKeyFromFifths(fifths: number): string {
-	const keys = [
-		'Cb', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F',
-		'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#'
-	];
+	const keys = ['Cb', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F', 'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#'];
 	const index = fifths + 7;
 	return keys[Math.max(0, Math.min(keys.length - 1, index))] || 'C';
 }
@@ -241,11 +233,20 @@ function getKeyFromFifths(fifths: number): string {
  * Extract velocity/dynamics information from a note
  * MusicXML can contain dynamics markings that we convert to velocity ranges
  */
-function extractNoteVelocity(note: any): { expected?: number; min?: number; max?: number; hint?: 'ghost' | 'soft' | 'medium' | 'loud' | 'accent' } | undefined {
+function extractNoteVelocity(
+	note: any
+):
+	| {
+			expected?: number;
+			min?: number;
+			max?: number;
+			hint?: 'ghost' | 'soft' | 'medium' | 'loud' | 'accent';
+	  }
+	| undefined {
 	// Check for dynamics in the note's notehead or parent measure
 	const notehead = note?.Notehead?.label;
 	const dynamics = note?.Parent?.Parent?.Dynamics?.[0]; // Measure-level dynamics
-	
+
 	// Parse notehead shapes for articulation hints
 	if (notehead) {
 		switch (notehead.toLowerCase()) {
@@ -259,46 +260,64 @@ function extractNoteVelocity(note: any): { expected?: number; min?: number; max?
 				return { expected: 110, min: 90, max: 127, hint: 'accent' };
 		}
 	}
-	
+
 	// Parse dynamics markings (p, mp, mf, f, ff, etc.)
 	if (dynamics) {
 		const dynamicText = dynamics?.text?.toLowerCase() || dynamics?.toString()?.toLowerCase() || '';
-		
+
 		// Standard dynamic markings with velocity ranges
-		const dynamicMap: Record<string, { expected: number; min: number; max: number; hint: 'ghost' | 'soft' | 'medium' | 'loud' | 'accent' }> = {
-			'pppp': { expected: 10, min: 0, max: 15, hint: 'ghost' },
-			'ppp': { expected: 20, min: 10, max: 30, hint: 'ghost' },
-			'pp': { expected: 35, min: 25, max: 45, hint: 'ghost' },
-			'p': { expected: 50, min: 40, max: 60, hint: 'soft' },
-			'mp': { expected: 65, min: 55, max: 75, hint: 'soft' },
-			'mf': { expected: 80, min: 70, max: 90, hint: 'medium' },
-			'f': { expected: 100, min: 90, max: 110, hint: 'loud' },
-			'ff': { expected: 115, min: 105, max: 127, hint: 'accent' },
-			'fff': { expected: 120, min: 110, max: 127, hint: 'accent' },
-			'ffff': { expected: 127, min: 120, max: 127, hint: 'accent' }
+		const dynamicMap: Record<
+			string,
+			{
+				expected: number;
+				min: number;
+				max: number;
+				hint: 'ghost' | 'soft' | 'medium' | 'loud' | 'accent';
+			}
+		> = {
+			pppp: { expected: 10, min: 0, max: 15, hint: 'ghost' },
+			ppp: { expected: 20, min: 10, max: 30, hint: 'ghost' },
+			pp: { expected: 35, min: 25, max: 45, hint: 'ghost' },
+			p: { expected: 50, min: 40, max: 60, hint: 'soft' },
+			mp: { expected: 65, min: 55, max: 75, hint: 'soft' },
+			mf: { expected: 80, min: 70, max: 90, hint: 'medium' },
+			f: { expected: 100, min: 90, max: 110, hint: 'loud' },
+			ff: { expected: 115, min: 105, max: 127, hint: 'accent' },
+			fff: { expected: 120, min: 110, max: 127, hint: 'accent' },
+			ffff: { expected: 127, min: 120, max: 127, hint: 'accent' }
 		};
-		
+
 		for (const [mark, velocity] of Object.entries(dynamicMap)) {
 			if (dynamicText.includes(mark)) {
 				return velocity;
 			}
 		}
 	}
-	
+
 	// Check note's own velocity (MIDI velocity from MusicXML)
 	const midiVelocity = note?.MIDIVelocity;
 	if (midiVelocity !== undefined && midiVelocity > 0) {
 		// Convert MIDI velocity (0-1 or 0-127) to our scale
-		const normalizedVel = midiVelocity <= 1 ? Math.round(midiVelocity * 127) : Math.round(midiVelocity);
-		const hint = normalizedVel < 40 ? 'ghost' : normalizedVel < 70 ? 'soft' : normalizedVel < 90 ? 'medium' : normalizedVel < 110 ? 'loud' : 'accent';
-		return { 
-			expected: normalizedVel, 
-			min: Math.max(0, normalizedVel - 15), 
+		const normalizedVel =
+			midiVelocity <= 1 ? Math.round(midiVelocity * 127) : Math.round(midiVelocity);
+		const hint =
+			normalizedVel < 40
+				? 'ghost'
+				: normalizedVel < 70
+					? 'soft'
+					: normalizedVel < 90
+						? 'medium'
+						: normalizedVel < 110
+							? 'loud'
+							: 'accent';
+		return {
+			expected: normalizedVel,
+			min: Math.max(0, normalizedVel - 15),
 			max: Math.min(127, normalizedVel + 15),
 			hint
 		};
 	}
-	
+
 	return undefined;
 }
 
@@ -308,7 +327,7 @@ function extractNoteVelocity(note: any): { expected?: number; min?: number; max?
  */
 export function buildVelocityMap(song: MusicXMLSong): VelocityMap {
 	const notes = new Map<number, { min?: number; max?: number; hint?: string }>();
-	
+
 	if (song.melody) {
 		for (const note of song.melody) {
 			if (note.velocityMin !== undefined || note.velocityMax !== undefined) {
@@ -320,14 +339,14 @@ export function buildVelocityMap(song: MusicXMLSong): VelocityMap {
 			}
 		}
 	}
-	
+
 	// Determine global settings based on note distribution
-	const upperStaffNotes = song.melody?.filter(n => n.staff === 1 || n.pitch >= 60) || [];
-	const lowerStaffNotes = song.melody?.filter(n => n.staff === 2 || n.pitch < 60) || [];
-	
-	const hasGhostNotes = Array.from(notes.values()).some(n => n.hint === 'ghost');
-	const hasAccents = Array.from(notes.values()).some(n => n.hint === 'accent');
-	
+	const upperStaffNotes = song.melody?.filter((n) => n.staff === 1 || n.pitch >= 60) || [];
+	const lowerStaffNotes = song.melody?.filter((n) => n.staff === 2 || n.pitch < 60) || [];
+
+	const hasGhostNotes = Array.from(notes.values()).some((n) => n.hint === 'ghost');
+	const hasAccents = Array.from(notes.values()).some((n) => n.hint === 'accent');
+
 	return {
 		notes,
 		globalSettings: {
@@ -343,11 +362,16 @@ export function buildVelocityMap(song: MusicXMLSong): VelocityMap {
  */
 function detectStyle(filename: string, composer: string): string | undefined {
 	const text = (filename + ' ' + composer).toLowerCase();
-	
+
 	if (text.includes('blues') || text.includes('b.b. king') || text.includes('robert johnson')) {
 		return 'blues';
 	}
-	if (text.includes('jazz') || text.includes('swing') || text.includes('ellington') || text.includes('monk')) {
+	if (
+		text.includes('jazz') ||
+		text.includes('swing') ||
+		text.includes('ellington') ||
+		text.includes('monk')
+	) {
 		return 'jazz';
 	}
 	if (text.includes('bossa') || text.includes('samba') || text.includes('jobim')) {
@@ -365,7 +389,7 @@ function detectStyle(filename: string, composer: string): string | undefined {
 	if (text.includes('classical') || text.includes('mozart') || text.includes('beethoven')) {
 		return 'classical';
 	}
-	
+
 	return undefined;
 }
 
@@ -381,19 +405,22 @@ export function getRandomSongs(songs: MusicXMLSong[], count: number): MusicXMLSo
  * Filter songs by style
  */
 export function filterSongsByStyle(songs: MusicXMLSong[], style: string): MusicXMLSong[] {
-	return songs.filter(s => s.style?.toLowerCase().includes(style.toLowerCase()));
+	return songs.filter((s) => s.style?.toLowerCase().includes(style.toLowerCase()));
 }
 
 /**
  * Filter songs by difficulty (based on complexity)
  */
-export function filterSongsByDifficulty(songs: MusicXMLSong[], difficulty: 'easy' | 'medium' | 'hard'): MusicXMLSong[] {
-	return songs.filter(song => {
+export function filterSongsByDifficulty(
+	songs: MusicXMLSong[],
+	difficulty: 'easy' | 'medium' | 'hard'
+): MusicXMLSong[] {
+	return songs.filter((song) => {
 		if (!song.chords) return false;
-		
+
 		const chordCount = song.chords.length;
-		const uniqueChords = new Set(song.chords.map(c => c.root + c.quality)).size;
-		
+		const uniqueChords = new Set(song.chords.map((c) => c.root + c.quality)).size;
+
 		switch (difficulty) {
 			case 'easy':
 				return chordCount <= 8 && uniqueChords <= 4;

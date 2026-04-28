@@ -71,7 +71,8 @@
 		},
 		{
 			title: 'Scales',
-			description: 'Practice major scales, modes, and jazz scales in all 12 keys with correct fingering.',
+			description:
+				'Practice major scales, modes, and jazz scales in all 12 keys with correct fingering.',
 			href: resolve('/exercises/scales'),
 			icon: Key,
 			color: 'var(--color-primary)',
@@ -119,7 +120,8 @@
 		},
 		{
 			title: 'Song Rhythm',
-			description: 'Practice chord progressions and melodies with strict timing and bar-by-bar focus.',
+			description:
+				'Practice chord progressions and melodies with strict timing and bar-by-bar focus.',
 			href: resolve('/exercises/song-rhythm'),
 			icon: Dumbbell,
 			color: 'var(--color-warn)',
@@ -143,7 +145,8 @@
 		},
 		{
 			title: 'Boogie',
-			description: 'Learn boogie-woogie left-hand patterns — the rhythmic foundation of jazz and blues.',
+			description:
+				'Learn boogie-woogie left-hand patterns — the rhythmic foundation of jazz and blues.',
 			href: resolve('/exercises/boogie'),
 			icon: Piano,
 			color: 'var(--color-warn)',
@@ -167,7 +170,8 @@
 		},
 		{
 			title: 'Ghost Notes',
-			description: 'Master jazz articulation. Play soft ghost notes on downbeats and accented upbeats.',
+			description:
+				'Master jazz articulation. Play soft ghost notes on downbeats and accented upbeats.',
 			href: resolve('/exercises/ghost-notes'),
 			icon: Ghost,
 			color: 'var(--color-primary)',
@@ -191,7 +195,8 @@
 		},
 		{
 			title: 'Hand Dynamics',
-			description: 'Train hand independence through velocity control. LH soft comping, RH strong melody.',
+			description:
+				'Train hand independence through velocity control. LH soft comping, RH strong melody.',
 			href: resolve('/exercises/hand-dynamics'),
 			icon: Volume2,
 			color: 'var(--color-level-2)',

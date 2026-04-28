@@ -15,6 +15,7 @@ Curriculum lives entirely in `src/lib/JourneyService.ts` as a `private units: Un
 Progress is persisted to `localStorage` under key `journey_progress_v2`. When unit IDs change, existing user progress will not carry over (IDs were changed from `level-0..6` to `unit-1..12` in v2.0).
 
 Exercise routes that exist (confirmed by file glob):
+
 - `/exercises/names` — note name identification
 - `/exercises/flashcards` — rapid-fire flash cards
 - `/exercises/scales` — params: root, mode, bpm

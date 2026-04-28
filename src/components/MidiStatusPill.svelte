@@ -46,7 +46,9 @@
 	class:connected={isConnected}
 	onclick={() => (showHelp = !showHelp)}
 	title={isConnected ? 'MIDI Connected' : 'No MIDI Device Found'}
-	aria-label={isConnected ? 'MIDI Connected — click for details' : 'No MIDI Device Found — click for help'}
+	aria-label={isConnected
+		? 'MIDI Connected — click for details'
+		: 'No MIDI Device Found — click for help'}
 >
 	{#if isConnected}
 		<CheckCircle2 size={16} class="icon-success" />
@@ -66,7 +68,15 @@
 		onclick={() => (showHelp = false)}
 		onkeydown={(e) => e.key === 'Enter' && (showHelp = false)}
 	>
-		<div class="modal-content" role="dialog" aria-modal="true" aria-label="MIDI Setup" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+		<div
+			class="modal-content"
+			role="dialog"
+			aria-modal="true"
+			aria-label="MIDI Setup"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
 			<div class="modal-header">
 				<Piano size={28} class="text-primary" />
 				<h3>MIDI Setup</h3>

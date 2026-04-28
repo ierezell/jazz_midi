@@ -166,8 +166,14 @@
 	}
 
 	@media (orientation: landscape) and (max-height: 500px) {
-		header { display: none; }
-		main { padding-top: 0.5rem; }
-		footer { display: none; }
+		header {
+			display: none;
+		}
+		main {
+			padding-top: 0.5rem;
+		}
+		footer {
+			display: none;
+		}
 	}
 </style>

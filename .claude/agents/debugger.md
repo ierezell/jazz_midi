@@ -11,21 +11,25 @@ You are an expert debugger specializing in root cause analysis for Svelte/TypeSc
 ## Known bugs to investigate (from TOFIX.md)
 
 ### 1. Dark mode toggle does nothing
+
 - **File**: `src/components/ThemeToggle.svelte`
 - **Likely cause**: Toggle changes state but doesn't apply a class to `<html>` or `<body>`, or CSS variables don't respond to the theme class
 - **Investigate**: What does `ThemeToggle.svelte` actually do? Does it use Skeleton UI's theme system? Is the class being applied?
 
 ### 2. White text/icons on white backgrounds
+
 - **Files**: Likely in `src/styles/`, `src/components/NavigationBar.svelte`, or specific exercise pages
 - **Likely cause**: Hardcoded `text-white` on light backgrounds, or dark mode variables not defined
 - **Investigate**: Grep for `text-white`, `text-gray-100`, `fill-white` used without dark mode context
 
 ### 3. Nav bar text overlap on scroll (Journey page)
+
 - **File**: `src/routes/journey/+page.svelte`, `src/components/NavigationBar.svelte`
 - **Likely cause**: Nav bar not `sticky`/`fixed` with correct `z-index`, or content has no top padding offset
 - **Investigate**: Check CSS position and z-index of nav bar; check if journey page has `pt-[nav-height]`
 
 ### 4. Random exercise doesn't pick from current level
+
 - **File**: `src/lib/JourneyService.ts` and wherever "random exercise" is called
 - **Likely cause**: The random picker ignores the current active unit and picks from all exercises
 - **Investigate**: Find where random exercise selection is implemented, trace what data it uses
@@ -63,6 +67,7 @@ grep -r "ThemeToggle\|dark\|theme" src/components/ --include="*.svelte" -l
 ## Output format
 
 For each bug, report:
+
 ```
 **Bug**: [name]
 **Root cause**: [what was actually wrong]

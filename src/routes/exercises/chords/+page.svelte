@@ -137,13 +137,17 @@
 	let beatValidator = $state<BeatValidator | null>(null);
 	let currentBeat = $state(0);
 	let selectedPatternId = $state(rhythmPatterns[0]?.id ?? '');
-	let selectedPattern = $derived(rhythmPatterns.find(p => p.id === selectedPatternId) ?? rhythmPatterns[0]);
+	let selectedPattern = $derived(
+		rhythmPatterns.find((p) => p.id === selectedPatternId) ?? rhythmPatterns[0]
+	);
 
 	function toggleRhythmMode(): void {
 		withRhythmMode = !withRhythmMode;
 		if (withRhythmMode) {
 			beatValidator = new BeatValidator();
-			beatValidator.start(selectedPattern.suggestedBpm, selectedPattern, (beat) => { currentBeat = beat; });
+			beatValidator.start(selectedPattern.suggestedBpm, selectedPattern, (beat) => {
+				currentBeat = beat;
+			});
 		} else {
 			beatValidator?.stop();
 			beatValidator = null;
@@ -231,7 +235,12 @@
 		if (withRhythmMode && beatValidator && currentNotes.length === 0) {
 			const beatResult = beatValidator.validateHit(event);
 			if (!beatResult.isHit) {
-				return { isCorrect: false, message: `Off beat! (${beatResult.label})`, collected: false, resetCollected: false };
+				return {
+					isCorrect: false,
+					message: `Off beat! (${beatResult.label})`,
+					collected: false,
+					resetCollected: false
+				};
 			}
 		}
 
@@ -359,10 +368,7 @@
 			<div class="controls">
 				<div class="control-group">
 					<label for="chord-type">Chord Type</label>
-					<select
-						id="chord-type"
-						bind:value={currentChordType}
-					>
+					<select id="chord-type" bind:value={currentChordType}>
 						{#each AllChordTypes as type}
 							<option value={type}>{type}</option>
 						{/each}
@@ -493,6 +499,11 @@
 	}
 
 	@media (orientation: landscape) and (max-height: 500px) {
-		.controls { flex-direction: row; gap: 0.5rem; padding: 0.5rem; margin: 0.5rem 0; }
+		.controls {
+			flex-direction: row;
+			gap: 0.5rem;
+			padding: 0.5rem;
+			margin: 0.5rem 0;
+		}
 	}
 </style>

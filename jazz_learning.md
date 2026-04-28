@@ -53,6 +53,7 @@ They also use their mind and their free time to figure out things harmonically, 
 pipe is real helpful in identifying pitches when you are not at a piano or don’t have your instrument. You can carry it with you and train your
 ear “on the go.” No one knows or could truly imagine the amount of thought each jazzer has put into their art/craft.
 PRACTICE SUGGESTIONS
+
 1. Play with good sound/tone. Wind players -- support your sound. Don’t play staccato.
 2. Make phrases flow naturally; even when playing scales and exercises.
 3. Mentally sing the exercises, scales, patterns as you play them.
@@ -65,17 +66,17 @@ PRACTICE SUGGESTIONS
 10. Learn the Blues in Bb & F concert keys.
 11. Memorize everything you can. Know what it is you are trying to play.
 
-
 Here are several exercises every professional jazz musician has probably played at one time or another. Play
 these over the harmony (changes, chord/scales) to whatever song you are working on. Do this before you try
 to improvise.
+
 1. Play the first five notes to each chord/scale.
 2. Play the triad (notes 1,3, and 5 of the scale).
 3. Play the entire scale from the root (first note) to the 9th and back down.
 4. Play the 7th chord up and down (1,3,5,7,5,3,1).
 5. Play the 9th chord up and down (1,3,5,7,9,7,5,3,1).
 6. Play the scale up to the 9th and then come back down the chord. 7. Play the chord up to the 9th and then come back down the scale.
-8. Play the scale in thirds up and down.
+7. Play the scale in thirds up and down.
 
 PRACTICE PROCEDURES FOR MEMORIZING
 SCALES AND CHORDS TO ANY SONG
@@ -93,39 +94,35 @@ SCALES AND CHORDS TO ANY SONG
 11. Play up the 9th chord and then come back down the scale
 12. Play the scale in broken thirds up and down (1, 3, 2, 4, 3, 5, 4, 6, 5, 7, etc., up & down)
 
-
-
 Beginning Songs
 Blues in Bb & F (1, 2, 21, 35, 42, 50, 53, 54, 69, 70, 73)
-Footprints, C_
+Footprints, C*
 (33, 54)
 Satin Doll, C (12, 54, 66)
 Doxy, Bb (8, 54)
-Autumn Leaves, G_
+Autumn Leaves, G*
 
 (20, 44, 54, 67)
-Impressions or So What, D_
+Impressions or So What, D\_
 
 (28, 50, 54)
 
-Summertime, D_
+Summertime, D*
 (25, 54)
-Song For My Father, F_
+Song For My Father, F*
 (17, 54)
 
-Maiden Voyage, A_
+Maiden Voyage, A\_
 
 (11, 54, 8 1)
-Silvers Serenade, E_
+Silvers Serenade, E*
 (17)
-Cantaloupe Island, F_
+Cantaloupe Island, F*
 (11, 54)
 
-Sugar, C_
+Sugar, C\_
 (5, 49, 70) (called Groovitis)
 Watermelon Man, F (11, 54)
-
-
 
 Intermediate Songs
 Four, Eb (7, 65, 67) [F#_
@@ -134,7 +131,7 @@ Perdido, Bb (12, 65, 67) [bridge]
 All Blues, G (5 0, 8 1) [D7+9, Eb7+9, D7+9]
 Groovin High, Eb (43) [A‐ D7]
 Yardbird Suite, C (6, 69) [bridge]
-Softly As In A Morning Sunrise, C_
+Softly As In A Morning Sunrise, C\_
 
 (40) [bridge]
 On Green Dolphin Street, Eb (34, 59)
@@ -148,12 +145,10 @@ Sweet Georgia Brown (39, 67, 70, 84)
 Indiana (Back Home Again In) (6, 61, 80, 84)
 Girl From Ipanema, F (31, 70, 90)
 
-
-
 Advanced Songs
 Stella by Starlight, Bb or G (15, 22, 59, 68) [entire tune]
 Star Eyes, Eb (34, 59) [bars 4, 5, & 6]
-Invitation, C_
+Invitation, C\_
 
 (34, 59) [entire tune]
 
@@ -168,8 +163,6 @@ John Coltrane tunes (27, 28)
 Benny Golson tunes (14)
 ... and thousands of other songs
 
-
-
 Given below is an example of a schedule that may help you to organize your practice time. This schedule is based on
 a seventy-five minute period (1 hr., 15 min.), but it could be changed proportionately to fit a shorter or longer period or
 modified to allow time to take up instrumental studies (long tones, dexterity exercises for the fingers, range studies,
@@ -177,14 +170,15 @@ reading, etc.).
 
 A DAILY PRACTICE SCHEDULE:
 Topic Sequence Minutes Spent
-1) A SLOW MELODY (tune) 5
-2) SCALES AND PATTERNS 15
-3) PATTERN APPLICATION 10
-4) IMPROVISATION EXERCISE 5
-5) TRANSCRIBED SOLO 15
-6) SPECIAL DISCIPLINES 10
-7) LEARN A TUNE 15
-TOTAL 75
+
+1. A SLOW MELODY (tune) 5
+2. SCALES AND PATTERNS 15
+3. PATTERN APPLICATION 10
+4. IMPROVISATION EXERCISE 5
+5. TRANSCRIBED SOLO 15
+6. SPECIAL DISCIPLINES 10
+7. LEARN A TUNE 15
+   TOTAL 75
 
 A new set of melodies, patterns, exercises, transcribed solos, disciplines, and tunes should be taken up each week.
 Such a turnover in materials will help insure a steady rate of progress. Items 3 through 7 should be played with recorded

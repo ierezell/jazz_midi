@@ -27,7 +27,9 @@
 		const url = journeyService.getLessonUrl(unit, lesson);
 		// Split the path and query params
 		const [path, query] = url.split('?');
-		return query ? `${resolve(path as unknown as RouteId)}?${query}` : resolve(path as unknown as RouteId);
+		return query
+			? `${resolve(path as unknown as RouteId)}?${query}`
+			: resolve(path as unknown as RouteId);
 	}
 
 	function startPractice(unitId: string) {
@@ -102,13 +104,15 @@
 				<div class="unit-meta">
 					<span class="lesson-count">{unit.lessons.length} lessons</span>
 					<span class="unit-progress-text">
-						{unit.lessons.filter(l => l.completed).length}/{unit.lessons.length} completed
+						{unit.lessons.filter((l) => l.completed).length}/{unit.lessons.length} completed
 					</span>
 				</div>
 				<div class="unit-progress-bar">
 					<div
 						class="unit-progress-fill"
-						style="width: {unit.lessons.length > 0 ? (unit.lessons.filter(l => l.completed).length / unit.lessons.length) * 100 : 0}%"
+						style="width: {unit.lessons.length > 0
+							? (unit.lessons.filter((l) => l.completed).length / unit.lessons.length) * 100
+							: 0}%"
 					></div>
 				</div>
 
@@ -513,12 +517,30 @@
 	}
 
 	@media (orientation: landscape) and (max-height: 500px) {
-		.stats-header { top: 0; height: 44px; gap: 0.75rem; }
-		.stat-label { display: none; }
-		.stat-value { font-size: 0.8rem; }
-		.journey-header h1 { font-size: 1.5rem; }
-		.journey-header p { display: none; }
-		.lessons-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.5rem; }
-		.lesson-card { padding: 0.5rem; gap: 0.5rem; }
+		.stats-header {
+			top: 0;
+			height: 44px;
+			gap: 0.75rem;
+		}
+		.stat-label {
+			display: none;
+		}
+		.stat-value {
+			font-size: 0.8rem;
+		}
+		.journey-header h1 {
+			font-size: 1.5rem;
+		}
+		.journey-header p {
+			display: none;
+		}
+		.lessons-grid {
+			grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+			gap: 0.5rem;
+		}
+		.lesson-card {
+			padding: 0.5rem;
+			gap: 0.5rem;
+		}
 	}
 </style>

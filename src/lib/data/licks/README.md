@@ -71,32 +71,39 @@ export const licks: Lick[] = [
 ## Current Licks Library
 
 ### Blues
+
 - **Blues Walking Bass** (Left, Beginner) - Classic root-3rd-5th-6th pattern
 - **Blues Shuffle Lick** (Right, Beginner) - Shuffle pattern with chromatic approach
 
 ### Bebop
+
 - **Bebop Scale Run** (Right, Intermediate) - Dominant scale with chromatic passing tone
 - **Bebop Enclosure** (Right, Advanced) - Chromatic enclosure technique
 
 ### Boogie
+
 - **Boogie Woogie Right Hand** (Right, Beginner) - Classic triplet pattern
 
 ### Latin
+
 - **Latin Montuno Bass** (Left, Intermediate) - Traditional montuno pattern
 
 ### Country
+
 - **Country Alternating Bass** (Left, Beginner) - Stride-style alternating bass
 
 ### Funk
+
 - **Funk Sixteenth Bass** (Left, Advanced) - Syncopated sixteenth note pattern
 
 ### Jazz
+
 - **Stride Piano Left Hand** (Left, Intermediate) - Classic stride alternating pattern
 
 ## Tips for Creating Good Licks
 
 1. **Keep it focused**: 8-16 notes is ideal for finger mechanics practice
-2. **Use realistic ranges**: 
+2. **Use realistic ranges**:
    - Left hand: C1-C4
    - Right hand: C4-C6
 3. **Match difficulty to complexity**:

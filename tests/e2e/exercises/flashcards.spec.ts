@@ -8,9 +8,15 @@ test.describe('Flashcards Exercise', () => {
 		await page.waitForSelector('.exercise-main');
 
 		// Read expected notes from the main exercise UI
-		const rawText = await page.locator('.expected-notes').innerText({ timeout: 5000 }).catch(() => '');
+		const rawText = await page
+			.locator('.expected-notes')
+			.innerText({ timeout: 5000 })
+			.catch(() => '');
 
-		const noteNames = rawText.split(',').map(s => s.trim()).filter(Boolean);
+		const noteNames = rawText
+			.split(',')
+			.map((s) => s.trim())
+			.filter(Boolean);
 
 		if (noteNames.length === 0) return; // smoke-test only
 
@@ -32,9 +38,17 @@ test.describe('Flashcards Exercise', () => {
 		await page.locator('.reset-btn').click();
 
 		// Re-read expected notes after reset (they may change)
-		const rawText2 = await page.locator('.expected-notes').innerText({ timeout: 3000 }).catch(() => rawText);
+		const rawText2 = await page
+			.locator('.expected-notes')
+			.innerText({ timeout: 3000 })
+			.catch(() => rawText);
 
-		const newNotes = rawText2.split(',').map(s => s.trim()).filter(Boolean).map(parseMidi).filter((n): n is number => n !== null);
+		const newNotes = rawText2
+			.split(',')
+			.map((s) => s.trim())
+			.filter(Boolean)
+			.map(parseMidi)
+			.filter((n): n is number => n !== null);
 
 		if (newNotes.length === 1) {
 			await playMidiNote(page, newNotes[0], 80);

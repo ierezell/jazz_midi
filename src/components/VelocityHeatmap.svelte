@@ -10,15 +10,19 @@
 
 	// Calculate velocity statistics per note
 	const velocityStats = $derived.by(() => {
-		const stats = new Map<MidiNote, { count: number; avgVelocity: number; min: number; max: number }>();
-		
+		const stats = new Map<
+			MidiNote,
+			{ count: number; avgVelocity: number; min: number; max: number }
+		>();
+
 		for (const event of noteEvents) {
 			if (event.type !== 'on') continue;
-			
+
 			const existing = stats.get(event.noteNumber);
 			if (existing) {
 				existing.count++;
-				existing.avgVelocity = (existing.avgVelocity * (existing.count - 1) + event.velocity) / existing.count;
+				existing.avgVelocity =
+					(existing.avgVelocity * (existing.count - 1) + event.velocity) / existing.count;
 				existing.min = Math.min(existing.min, event.velocity);
 				existing.max = Math.max(existing.max, event.velocity);
 			} else {
@@ -30,7 +34,7 @@
 				});
 			}
 		}
-		
+
 		return stats;
 	});
 
@@ -40,18 +44,18 @@
 	// Calculate overall statistics
 	const overallStats = $derived.by(() => {
 		if (noteEvents.length === 0) return null;
-		
-		const velocities = noteEvents.filter(e => e.type === 'on').map(e => e.velocity);
+
+		const velocities = noteEvents.filter((e) => e.type === 'on').map((e) => e.velocity);
 		if (velocities.length === 0) return null;
-		
+
 		const avg = velocities.reduce((a, b) => a + b, 0) / velocities.length;
 		const min = Math.min(...velocities);
 		const max = Math.max(...velocities);
-		
+
 		// Ghost notes (velocity < 40) and accents (velocity > 80)
-		const ghostNotes = velocities.filter(v => v < 40).length;
-		const accents = velocities.filter(v => v > 80).length;
-		
+		const ghostNotes = velocities.filter((v) => v < 40).length;
+		const accents = velocities.filter((v) => v > 80).length;
+
 		return { avg: Math.round(avg), min, max, ghostNotes, accents, total: velocities.length };
 	});
 
@@ -116,21 +120,27 @@
 					<div class="note-row">
 						<span class="note-name">{formatNoteName(note)}</span>
 						<div class="velocity-bars">
-							<div 
-								class="velocity-bar avg" 
-								style="width: {(stat.avgVelocity / 127) * 100}%; background: {getColorForVelocity(stat.avgVelocity)}"
+							<div
+								class="velocity-bar avg"
+								style="width: {(stat.avgVelocity / 127) * 100}%; background: {getColorForVelocity(
+									stat.avgVelocity
+								)}"
 								title="Average: {Math.round(stat.avgVelocity)}"
 							>
 								<span class="bar-label">Avg: {Math.round(stat.avgVelocity)}</span>
 							</div>
-							<div 
-								class="velocity-bar min" 
-								style="width: {(stat.min / 127) * 100}%; background: {getColorForVelocity(stat.min)}; opacity: 0.5"
+							<div
+								class="velocity-bar min"
+								style="width: {(stat.min / 127) * 100}%; background: {getColorForVelocity(
+									stat.min
+								)}; opacity: 0.5"
 								title="Min: {stat.min}"
 							></div>
-							<div 
-								class="velocity-bar max" 
-								style="width: {(stat.max / 127) * 100}%; background: {getColorForVelocity(stat.max)}; opacity: 0.5"
+							<div
+								class="velocity-bar max"
+								style="width: {(stat.max / 127) * 100}%; background: {getColorForVelocity(
+									stat.max
+								)}; opacity: 0.5"
 								title="Max: {stat.max}"
 							></div>
 						</div>
@@ -220,12 +230,13 @@
 	.velocity-gradient-bar {
 		height: 12px;
 		border-radius: 6px;
-		background: linear-gradient(to right, 
-			hsl(240, 80%, 50%),  /* Blue - soft */
-			hsl(180, 80%, 50%),  /* Cyan */
-			hsl(120, 80%, 50%),  /* Green */
-			hsl(60, 80%, 50%),   /* Yellow */
-			hsl(0, 80%, 50%)     /* Red - loud */
+		background: linear-gradient(
+			to right,
+			hsl(240, 80%, 50%),
+			/* Blue - soft */ hsl(180, 80%, 50%),
+			/* Cyan */ hsl(120, 80%, 50%),
+			/* Green */ hsl(60, 80%, 50%),
+			/* Yellow */ hsl(0, 80%, 50%) /* Red - loud */
 		);
 	}
 
@@ -278,7 +289,7 @@
 		font-size: 0.65rem;
 		color: white;
 		font-weight: 700;
-		text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 	}
 
 	.velocity-label {

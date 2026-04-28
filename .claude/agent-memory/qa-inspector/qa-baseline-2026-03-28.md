@@ -15,6 +15,7 @@ Two categories:
 2. Property types are `unknown` or `number` instead of the expected concrete types (`ChordType`, `Inversion`, `ChordVoicing`, `Note`, `ScaleMode`) — likely because `config` is typed as a generic/loose object.
 
 Two additional errors in `tests/e2e/progression-flow.spec.ts` lines 7 and 11:
+
 - `Cannot find module '/src/lib/UserStatsService.ts'` — the E2E test uses a dynamic `import()` with an absolute path that TypeScript cannot resolve at check-time.
 
 ### Unit tests: 3 FAILED / 79 passed (20 test files, 82 total tests)
@@ -37,24 +38,31 @@ Root cause: chord generation placed root notes one octave too low — a MIDI bas
 ## Run 2 (later commit 600bef6, 2026-03-28) — ALL GREEN
 
 ### Type check: PASSED (exit 0)
+
 `svelte-check found 0 errors and 0 warnings`
+
 - All 20 flashcards type errors resolved.
 - E2E progression-flow import error resolved.
 
 ### Unit tests: PASSED — 82/82 (exit 0)
+
 All 20 test files, all 82 tests pass.
+
 - rootless.spec.ts octave offset bug: FIXED
 - chords.spec.ts octave offset bugs: FIXED
 
 ### Build: PASSED (exit 0)
+
 - SSR: 3853 modules, built in ~40s
 - Client: 5193 modules, built in ~25s
 - Output written to `docs/` via @sveltejs/adapter-static
 
 #### Persistent warnings (benign, carry-forward)
+
 - `[esbuild css minify] "file" is not a known CSS property` — appears in both SSR and client build. Caused by a Tailwind arbitrary class `[file:line]` leaking into the minified CSS. Not a runtime error; esbuild suggests "flex" as the intended property. Track for cleanup.
 
 #### Large chunks (same as baseline, no regressions)
+
 - `wr6S8XWn.js`: 1,128 kB raw / 691 kB gzip
 - `CAYENW2a.js`: 1,040 kB raw / 264 kB gzip
 
@@ -63,12 +71,15 @@ All 20 test files, all 82 tests pass.
 ## Run 3 (commit 600bef6, 2026-03-28) — ALL GREEN
 
 ### Type check: PASSED (exit 0)
+
 `svelte-check found 0 errors and 0 warnings`
 
 ### Unit tests: PASSED — 82/82 (exit 0)
+
 All 20 test files, all 82 tests pass. Module count unchanged from Run 2.
 
 ### Build: PASSED (exit 0)
+
 - SSR: 3858 modules, built in ~98s
 - Client: 5199 modules, built in ~58s
 - Output written to `docs/` via @sveltejs/adapter-static

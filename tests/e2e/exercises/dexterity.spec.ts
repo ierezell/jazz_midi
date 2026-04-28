@@ -7,7 +7,6 @@ test.describe('Dexterity Exercise', () => {
 		await page.goto('/exercises/dexterity');
 		await page.waitForSelector('.exercise-main');
 
-
 		// Read upcoming sequence from the page's preview row
 		await page.waitForSelector('.next-notes .note-row', { state: 'attached', timeout: 5000 });
 		const chips = await page.locator('.next-notes .note-row .note-chip').allInnerTexts();

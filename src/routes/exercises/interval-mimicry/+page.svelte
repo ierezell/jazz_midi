@@ -34,15 +34,15 @@
 	function startNewRound(selectedNote: Note) {
 		// Pick random interval
 		currentInterval = INTERVALS[Math.floor(Math.random() * INTERVALS.length)];
-		
+
 		// Set root note based on selected key, random octave between 3 and 5
 		const octave = 3 + Math.floor(Math.random() * 3);
 		const baseMidi = NoteToMidi[`${selectedNote}${octave}` as keyof typeof NoteToMidi];
 		rootNote = baseMidi as MidiNote;
 		targetNote = (rootNote + currentInterval.semitones) as MidiNote;
-		
+
 		isListening = false;
-		
+
 		// Play the interval
 		playInterval();
 	}
@@ -50,19 +50,19 @@
 	async function playInterval() {
 		if (isPlayingInterval || !currentInterval) return;
 		isPlayingInterval = true;
-		
+
 		// Play root note
 		audioManager.playNote(rootNote, 100);
-		await new Promise(r => setTimeout(r, 600));
-		
+		await new Promise((r) => setTimeout(r, 600));
+
 		// Play target note
 		audioManager.playNote(targetNote!, 100);
-		await new Promise(r => setTimeout(r, 600));
-		
+		await new Promise((r) => setTimeout(r, 600));
+
 		// Play both together
 		audioManager.playNote(rootNote, 80);
 		audioManager.playNote(targetNote!, 80);
-		
+
 		isPlayingInterval = false;
 		isListening = true;
 	}
@@ -103,15 +103,15 @@
 		}
 
 		const playedNote = event.noteNumber;
-		
+
 		if (playedNote === targetNote) {
 			correctCount++;
 			roundCount++;
 			const intervalName = currentInterval?.name || 'interval';
-			
+
 			// Start next round after a delay
 			setTimeout(() => startNewRound(selectedNote), 1000);
-			
+
 			return {
 				isCorrect: true,
 				message: `Correct! That was a ${intervalName}`,
@@ -119,7 +119,7 @@
 				resetCollected: false
 			};
 		}
-		
+
 		// Wrong note
 		return {
 			isCorrect: false,
@@ -160,14 +160,10 @@
 	{#snippet children(api: import('$lib/types/exercise-api').ExerciseAPI)}
 		<div class="interval-content">
 			<div class="controls card-premium">
-				<button 
-					class="play-btn" 
-					onclick={() => playInterval()}
-					disabled={isPlayingInterval}
-				>
+				<button class="play-btn" onclick={() => playInterval()} disabled={isPlayingInterval}>
 					{isPlayingInterval ? '▶ Playing...' : '▶ Hear Interval Again'}
 				</button>
-				
+
 				{#if currentInterval}
 					<div class="interval-hint" class:revealed={!isListening}>
 						<span class="hint-label">Last interval:</span>
@@ -187,7 +183,11 @@
 				</div>
 				<div class="stat-card">
 					<span class="stat-label">Accuracy</span>
-					<span class="stat-value" class:success={accuracy >= 70} class:warn={accuracy < 70 && accuracy >= 50}>
+					<span
+						class="stat-value"
+						class:success={accuracy >= 70}
+						class:warn={accuracy < 70 && accuracy >= 50}
+					>
 						{accuracy}%
 					</span>
 				</div>

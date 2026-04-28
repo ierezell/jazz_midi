@@ -127,6 +127,7 @@ Use **@qa-inspector** for test runs, **@svelte-developer** for refactoring.
 ## Definition of Done
 
 Before considering any phase complete:
+
 - [ ] `npm run build` passes
 - [ ] `npm run check` passes (zero TypeScript errors)
 - [ ] `npm run test` passes (all unit tests green)
@@ -142,12 +143,14 @@ Before considering any phase complete:
 For targeted work, use these shorter prompts:
 
 **Fix all known bugs:**
+
 ```
 Use the @debugger agent to work through every item in TOFIX.md. Fix each one,
 run tests after each fix, and confirm it's resolved.
 ```
 
 **Full visual redesign:**
+
 ```
 Use the @ui-designer agent to implement a complete design system for this app.
 Start with the color tokens in global.css, then apply them to every component.
@@ -155,12 +158,14 @@ Make it look like Duolingo: colorful, gamified, polished.
 ```
 
 **QA pass:**
+
 ```
 Use the @qa-inspector agent to run a complete QA pass: check, test, build,
 then report all failures as BLOCKERS or WARNINGS.
 ```
 
 **Add a new exercise:**
+
 ```
 Use the @exercise-builder agent with @jazz-music-expert to add a [EXERCISE NAME]
 exercise. It should teach [CONCEPT] to [BEGINNER/INTERMEDIATE] students.

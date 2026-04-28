@@ -330,7 +330,9 @@
 							onchange={() => selectSpecificLick(selectedLickId)}
 						>
 							{#each licks as lick}
-								<option value={lick.id}>{lick.name} — {lick.category} · {lick.difficulty} · {lick.suggestedBpm} BPM</option>
+								<option value={lick.id}
+									>{lick.name} — {lick.category} · {lick.difficulty} · {lick.suggestedBpm} BPM</option
+								>
 							{/each}
 						</select>
 					</div>
@@ -656,7 +658,12 @@
 	}
 
 	@media (orientation: landscape) and (max-height: 500px) {
-		.lick-header h2 { font-size: 1.2rem; }
-		.meta-badge { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+		.lick-header h2 {
+			font-size: 1.2rem;
+		}
+		.meta-badge {
+			padding: 0.3rem 0.6rem;
+			font-size: 0.8rem;
+		}
 	}
 </style>

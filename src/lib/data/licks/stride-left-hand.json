@@ -6,19 +6,6 @@
 	"hand": "left",
 	"difficulty": "intermediate",
 	"suggestedBpm": 110,
-	"notes": [
-		"C2",
-		"G3",
-		"E3",
-		"C2",
-		"G3",
-		"E3",
-		"C2",
-		"G3"
-	],
-	"tags": [
-		"stride",
-		"jazz",
-		"alternating"
-	]
+	"notes": ["C2", "G3", "E3", "C2", "G3", "E3", "C2", "G3"],
+	"tags": ["stride", "jazz", "alternating"]
 }

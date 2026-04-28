@@ -83,8 +83,9 @@
 	<div class="pillars-grid">
 		{#each pillars as pillar}
 			{@const stats = pillarStats[pillar.id]}
-			<div 
-				class="pillar-card" 
+			<button
+				type="button"
+				class="pillar-card"
 				class:recommended={recommendedFocus.pillar === pillar.id}
 				style="--pillar-color: {pillar.color}"
 				onclick={() => selectedPillar = pillar.id}
@@ -103,7 +104,7 @@
 					</div>
 					<span class="progress-text">{stats.mastered}/{stats.total} • {stats.averageAccuracy}% avg</span>
 				</div>
-			</div>
+			</button>
 		{/each}
 	</div>
 
@@ -152,11 +153,11 @@
 		<h3>🎯 Generate Custom Workout</h3>
 		<div class="generator-controls">
 			<div class="duration-control">
-				<label>Duration: {workoutDuration} min</label>
-				<input type="range" min="10" max="60" step="5" bind:value={workoutDuration} />
+				<label for="duration-range">Duration: {workoutDuration} min</label>
+				<input id="duration-range" type="range" min="10" max="60" step="5" bind:value={workoutDuration} />
 			</div>
 			<div class="pillar-filter">
-				<label>Focus (optional):</label>
+				<span>Focus (optional):</span>
 				<div class="pillar-buttons">
 					<button class="pillar-btn" class:active={!selectedPillar} onclick={() => selectedPillar = undefined}>All</button>
 					{#each pillars as pillar}
@@ -222,9 +223,10 @@
 		<h3><TrendingUp size={20} /> Full Curriculum Path</h3>
 		<div class="curriculum-list">
 			{#each learningPath.filter(item => item.status !== 'locked').slice(0, 10) as item}
+				{@const StatusIcon = getStatusIcon(item.status)}
 				<div class="curriculum-item" class:mastered={item.status === 'mastered'}>
 					<div class="item-status" style="color: {getStatusColor(item.status)}">
-						<svelte:component this={getStatusIcon(item.status)} size={20} />
+						<StatusIcon size={20} />
 					</div>
 					<div class="item-content">
 						<strong>{item.skill.name}</strong>
@@ -292,6 +294,17 @@
 		padding: 1.5rem;
 		cursor: pointer;
 		transition: all 0.2s;
+		/* Reset button styles */
+		font-family: inherit;
+		font-size: inherit;
+		color: inherit;
+		text-align: left;
+		width: 100%;
+	}
+
+	.pillar-card:focus-visible {
+		outline: 2px solid var(--pillar-color);
+		outline-offset: 2px;
 	}
 
 	.pillar-card:hover {
@@ -368,10 +381,6 @@
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-	}
-
-	.rec-icon {
-		color: var(--color-primary);
 	}
 
 	.rec-content h3 {

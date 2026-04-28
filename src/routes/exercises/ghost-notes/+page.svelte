@@ -71,7 +71,9 @@
 		return Math.round((totalCorrect / state.notesPlayed) * 100);
 	});
 
-	let beatIndicator = $derived(state.beatPosition === 0 ? '↓ Beat (Ghost)' : '↑ & of Beat (Accent)');
+	let beatIndicator = $derived(
+		state.beatPosition === 0 ? '↓ Beat (Ghost)' : '↑ & of Beat (Accent)'
+	);
 </script>
 
 <BaseExercise
@@ -127,7 +129,12 @@
 				</div>
 				<div class="stat-card">
 					<span class="stat-label">Accuracy</span>
-					<span class="stat-value" class:success={accuracy >= 80} class:warn={accuracy < 80 && accuracy >= 50} class:error={accuracy < 50}>
+					<span
+						class="stat-value"
+						class:success={accuracy >= 80}
+						class:warn={accuracy < 80 && accuracy >= 50}
+						class:error={accuracy < 50}
+					>
 						{accuracy}%
 					</span>
 				</div>

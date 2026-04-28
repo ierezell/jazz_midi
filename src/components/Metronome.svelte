@@ -69,10 +69,13 @@
 			const beatForCallback = scheduledBeat;
 			const tsForCallback = nextBeatTime;
 			const downbeatForCallback = isDownbeat;
-			setTimeout(() => {
-				currentBeat = beatForCallback;
-				onTick?.(Math.round(tsForCallback * 1000), beatForCallback, downbeatForCallback);
-			}, Math.max(0, (tsForCallback - audioCtx!.currentTime) * 1000));
+			setTimeout(
+				() => {
+					currentBeat = beatForCallback;
+					onTick?.(Math.round(tsForCallback * 1000), beatForCallback, downbeatForCallback);
+				},
+				Math.max(0, (tsForCallback - audioCtx!.currentTime) * 1000)
+			);
 
 			scheduledBeat = scheduledBeat >= timeSignature ? 1 : scheduledBeat + 1;
 			nextBeatTime += secPerBeat;
@@ -273,7 +276,9 @@
 		height: 8px;
 		border-radius: 50%;
 		background: var(--color-border);
-		transition: background 0.05s ease, transform 0.05s ease;
+		transition:
+			background 0.05s ease,
+			transform 0.05s ease;
 	}
 
 	.beat-dot.active {

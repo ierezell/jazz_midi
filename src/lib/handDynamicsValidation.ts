@@ -75,7 +75,7 @@ export function validateHandDynamics(
 ): HandDynamicsResult {
 	const hand = getHandForNote(event.noteNumber, config);
 	const { velocity } = event;
-	
+
 	if (!hand) {
 		return {
 			isCorrect: false,
@@ -86,9 +86,9 @@ export function validateHandDynamics(
 			feedback: 'error'
 		};
 	}
-	
+
 	state.lastHand = hand;
-	
+
 	// Track velocity for visualization
 	if (hand === 'LH') {
 		state.lhVelocities.push(velocity);
@@ -99,12 +99,12 @@ export function validateHandDynamics(
 		if (state.rhVelocities.length > 20) state.rhVelocities.shift();
 		state.rhNotesPlayed++;
 	}
-	
+
 	// Check if velocity is in target range
 	let isCorrect = false;
 	let message = '';
 	let feedback = 'neutral';
-	
+
 	if (hand === 'LH') {
 		// LH should be soft (piano)
 		if (velocity >= config.lhTargetMin && velocity <= config.lhTargetMax) {
@@ -141,28 +141,30 @@ export function validateHandDynamics(
 			feedback = 'neutral';
 		}
 	}
-	
+
 	// Calculate balance score
-	const lhAvg = state.lhVelocities.length > 0
-		? state.lhVelocities.reduce((a, b) => a + b, 0) / state.lhVelocities.length
-		: 0;
-	const rhAvg = state.rhVelocities.length > 0
-		? state.rhVelocities.reduce((a, b) => a + b, 0) / state.rhVelocities.length
-		: 0;
-	
+	const lhAvg =
+		state.lhVelocities.length > 0
+			? state.lhVelocities.reduce((a, b) => a + b, 0) / state.lhVelocities.length
+			: 0;
+	const rhAvg =
+		state.rhVelocities.length > 0
+			? state.rhVelocities.reduce((a, b) => a + b, 0) / state.rhVelocities.length
+			: 0;
+
 	// Ideal: LH around 40, RH around 90
 	// Balance score based on how close we are to ideal separation
 	const idealSeparation = 50; // 90 - 40
 	const actualSeparation = rhAvg - lhAvg;
 	const separationScore = Math.max(0, 100 - Math.abs(actualSeparation - idealSeparation) * 2);
-	
+
 	// Also factor in correctness
 	const totalNotes = state.lhNotesPlayed + state.rhNotesPlayed;
 	const correctNotes = state.lhCorrectDynamics + state.rhCorrectDynamics;
 	const correctnessScore = totalNotes > 0 ? (correctNotes / totalNotes) * 100 : 0;
-	
+
 	state.balanceScore = Math.round((separationScore + correctnessScore) / 2);
-	
+
 	return {
 		isCorrect,
 		message,
@@ -184,18 +186,16 @@ export function getDynamicsFeedback(state: HandDynamicsState): string {
 	if (state.lhNotesPlayed < 3 || state.rhNotesPlayed < 3) {
 		return 'Play with both hands - LH soft, RH strong';
 	}
-	
-	const lhAccuracy = state.lhNotesPlayed > 0
-		? (state.lhCorrectDynamics / state.lhNotesPlayed) * 100
-		: 0;
-	const rhAccuracy = state.rhNotesPlayed > 0
-		? (state.rhCorrectDynamics / state.rhNotesPlayed) * 100
-		: 0;
-	
+
+	const lhAccuracy =
+		state.lhNotesPlayed > 0 ? (state.lhCorrectDynamics / state.lhNotesPlayed) * 100 : 0;
+	const rhAccuracy =
+		state.rhNotesPlayed > 0 ? (state.rhCorrectDynamics / state.rhNotesPlayed) * 100 : 0;
+
 	if (state.lhTooLoudCount > state.lhNotesPlayed * 0.3) {
 		return '🔇 LH is overpowering! Practice playing piano with left hand.';
 	}
-	
+
 	if (lhAccuracy > 80 && rhAccuracy > 80) {
 		return '🎹 Excellent dynamics! LH soft, RH strong - perfect jazz balance!';
 	} else if (lhAccuracy > 60 && rhAccuracy > 60) {
@@ -205,16 +205,18 @@ export function getDynamicsFeedback(state: HandDynamicsState): string {
 	} else if (rhAccuracy < 50) {
 		return '🎵 RH needs more presence. Lead with melody!';
 	}
-	
+
 	return 'Balance your hands: LH piano, RH forte';
 }
 
 export function getAverageVelocities(state: HandDynamicsState): { lh: number; rh: number } {
-	const lhAvg = state.lhVelocities.length > 0
-		? Math.round(state.lhVelocities.reduce((a, b) => a + b, 0) / state.lhVelocities.length)
-		: 0;
-	const rhAvg = state.rhVelocities.length > 0
-		? Math.round(state.rhVelocities.reduce((a, b) => a + b, 0) / state.rhVelocities.length)
-		: 0;
+	const lhAvg =
+		state.lhVelocities.length > 0
+			? Math.round(state.lhVelocities.reduce((a, b) => a + b, 0) / state.lhVelocities.length)
+			: 0;
+	const rhAvg =
+		state.rhVelocities.length > 0
+			? Math.round(state.rhVelocities.reduce((a, b) => a + b, 0) / state.rhVelocities.length)
+			: 0;
 	return { lh: lhAvg, rh: rhAvg };
 }

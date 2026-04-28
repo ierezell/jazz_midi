@@ -89,9 +89,14 @@
 			<div class="dashboard-card getting-started-card">
 				<div class="gs-content">
 					<h2>Welcome! Here's where to begin 🎹</h2>
-					<p>New to the app? Start with the <strong>Rhythm</strong> exercise to learn beat timing, then explore <strong>Scales</strong> and <strong>Chords</strong>.</p>
+					<p>
+						New to the app? Start with the <strong>Rhythm</strong> exercise to learn beat timing,
+						then explore <strong>Scales</strong> and <strong>Chords</strong>.
+					</p>
 					<div class="gs-buttons">
-						<a href={resolve('/exercises/rhythm')} class="action-btn primary">Start Rhythm Exercise →</a>
+						<a href={resolve('/exercises/rhythm')} class="action-btn primary"
+							>Start Rhythm Exercise →</a
+						>
 						<a href={resolve('/journey')} class="action-btn secondary">View Full Journey</a>
 					</div>
 				</div>
@@ -104,10 +109,7 @@
 				<span class="badge">Recommended</span>
 			</div>
 			<p>Keep your streak alive! Practice a lesson from your current unit.</p>
-			<button
-				class="action-btn"
-				onclick={startDailyPractice}
-			>
+			<button class="action-btn" onclick={startDailyPractice}>
 				Start Daily Practice <ArrowRight size={16} />
 			</button>
 		</div>

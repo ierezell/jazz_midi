@@ -24,13 +24,21 @@ test.describe('Songs Exercise', () => {
 
 			// Read the app's actual expected notes (machine-readable element)
 			const readExpected = async (): Promise<number[]> => {
-				const rawText = await page.locator('.expected-notes').innerText({ timeout: 3000 }).catch(() => '');
-				const noteNames = rawText.split(',').map(s => s.trim()).filter(Boolean);
-				const midiNotes = noteNames.map(n => {
-					const m = n.match(/^([A-Ga-g][#b]?)(\d+)$/);
-					if (!m) return null;
-					return midiFromName(m[1], parseInt(m[2]));
-				}).filter((x): x is number => x !== null);
+				const rawText = await page
+					.locator('.expected-notes')
+					.innerText({ timeout: 3000 })
+					.catch(() => '');
+				const noteNames = rawText
+					.split(',')
+					.map((s) => s.trim())
+					.filter(Boolean);
+				const midiNotes = noteNames
+					.map((n) => {
+						const m = n.match(/^([A-Ga-g][#b]?)(\d+)$/);
+						if (!m) return null;
+						return midiFromName(m[1], parseInt(m[2]));
+					})
+					.filter((x): x is number => x !== null);
 				return midiNotes;
 			};
 
@@ -40,10 +48,12 @@ test.describe('Songs Exercise', () => {
 
 			if (i === 0) {
 				// Play a wrong chord first to verify error handling
-				const wrongNotes = expectedNotes.map(n => n + 1);
+				const wrongNotes = expectedNotes.map((n) => n + 1);
 				await playMidiChord(page, wrongNotes, 50);
 				// Chord index should NOT advance
-				await expect(page.locator('.chord-progress')).toContainText(`Chord ${i + 1} of ${totalChords}`);
+				await expect(page.locator('.chord-progress')).toContainText(
+					`Chord ${i + 1} of ${totalChords}`
+				);
 			}
 
 			// Play the correct chord
@@ -51,7 +61,9 @@ test.describe('Songs Exercise', () => {
 			await page.waitForTimeout(300);
 
 			if (i < totalChords - 1) {
-				await expect(page.locator('.chord-progress')).toContainText(`Chord ${i + 2} of ${totalChords}`);
+				await expect(page.locator('.chord-progress')).toContainText(
+					`Chord ${i + 2} of ${totalChords}`
+				);
 			}
 		}
 	});

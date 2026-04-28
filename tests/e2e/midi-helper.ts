@@ -28,7 +28,13 @@ export async function releaseMidiNote(page: Page, note: number, channel = 0) {
 	await dispatchMidi(page, 0x80 | channel, note, 0);
 }
 
-export async function playMidiNote(page: Page, note: number, durationMs = 50, channel = 0, velocity = 100) {
+export async function playMidiNote(
+	page: Page,
+	note: number,
+	durationMs = 50,
+	channel = 0,
+	velocity = 100
+) {
 	await pressMidiNote(page, note, channel, velocity);
 	if (durationMs > 0) {
 		await page.waitForTimeout(durationMs);

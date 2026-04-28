@@ -20,10 +20,10 @@
 		zoom?: number;
 	}
 
-	let { 
-		musicXmlContent = '', 
-		url = '', 
-		annotations = [], 
+	let {
+		musicXmlContent = '',
+		url = '',
+		annotations = [],
 		onError,
 		cursorNote = null,
 		playedNotes = [],
@@ -46,7 +46,7 @@
 		}
 
 		try {
-			const osmdModule = await import('opensheetmusicdisplay') as any;
+			const osmdModule = (await import('opensheetmusicdisplay')) as any;
 			const OpenSheetMusicDisplay = osmdModule.OpenSheetMusicDisplay;
 
 			osmdInstance = new OpenSheetMusicDisplay(containerRef, {
@@ -74,13 +74,13 @@
 					// Custom colors for played/upcoming notes
 					defaultColorNoteHead: '#000000',
 					defaultColorStem: '#000000',
-					defaultColorRest: '#000000',
+					defaultColorRest: '#000000'
 				},
 				autoResize: true,
 				enableTransformationCanvas: false,
 				rules: {
 					defaultFontFamily: 'Bravura, Arial, sans-serif',
-					defaultFontSize: 16,
+					defaultFontSize: 16
 				}
 			});
 
@@ -97,12 +97,12 @@
 			}
 
 			await osmdInstance.render();
-			
+
 			// Initialize cursor if enabled
 			if (showCursor) {
 				initializeCursor();
 			}
-			
+
 			isLoading = false;
 		} catch (error) {
 			console.error('Error loading OSMD:', error);
@@ -137,7 +137,7 @@
 
 	function initializeCursor() {
 		if (!containerRef) return;
-		
+
 		// Create cursor element
 		cursorElement = document.createElement('div');
 		cursorElement.className = 'osmd-cursor';
@@ -175,12 +175,12 @@
 							const svgEl = osmdNote.graphicalNote.svgElement;
 							const rect = svgEl.getBoundingClientRect();
 							const containerRect = containerRef.getBoundingClientRect();
-							
+
 							cursorElement.style.left = `${rect.left - containerRect.left}px`;
 							cursorElement.style.top = `${rect.top - containerRect.top}px`;
 							cursorElement.style.height = `${rect.height}px`;
 							cursorElement.style.opacity = '1';
-							
+
 							if (followCursor) {
 								svgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 							}
@@ -194,7 +194,7 @@
 
 	function updateNoteHighlights() {
 		if (!osmdInstance) return;
-		
+
 		const sheet = osmdInstance.Sheet;
 		if (!sheet) return;
 
@@ -205,7 +205,7 @@
 					if (note?.Pitch?.frequency && note.graphicalNote?.svgElement) {
 						const midiNote = Math.round(69 + 12 * Math.log2(note.Pitch.frequency / 440));
 						const svgEl = note.graphicalNote.svgElement;
-						
+
 						// Apply color based on state
 						if (playedNotes.includes(midiNote as MidiNote)) {
 							svgEl.style.fill = '#94a3b8'; // Gray for played
@@ -292,18 +292,14 @@
 			<p>Loading score...</p>
 		</div>
 	{/if}
-	
+
 	{#if loadError}
 		<div class="error-overlay">
 			<p>⚠️ {loadError}</p>
 		</div>
 	{/if}
-	
-	<div 
-		bind:this={containerRef} 
-		class="osmd-container"
-		class:loading={isLoading}
-	></div>
+
+	<div bind:this={containerRef} class="osmd-container" class:loading={isLoading}></div>
 </div>
 
 <style>
@@ -351,7 +347,9 @@
 	}
 
 	@keyframes spin {
-		to { transform: rotate(360deg); }
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.error-overlay {

@@ -21,7 +21,9 @@ test.describe('Scales Exercise', () => {
 
 				// 1. Play correct sequence → expect success
 				await playMidiSequence(page, correctNotes, 50);
-				await expect(page.locator('.feedback-toast')).toContainText('success', { ignoreCase: true });
+				await expect(page.locator('.feedback-toast')).toContainText('success', {
+					ignoreCase: true
+				});
 
 				// Reset for failure test
 				await page.locator('.reset-btn').click();

@@ -13,7 +13,7 @@ async function dispatchNote(page: Page, note: number) {
 }
 
 test('DEBUG: C major chord', async ({ page }) => {
-	page.on('console', msg => console.log('[BROWSER]', msg.text()));
+	page.on('console', (msg) => console.log('[BROWSER]', msg.text()));
 
 	await page.goto('/exercises/chords');
 	await page.waitForSelector('.exercise-main');
@@ -30,17 +30,26 @@ test('DEBUG: C major chord', async ({ page }) => {
 	await dispatchNote(page, 67);
 	await page.waitForTimeout(1000);
 
-	const toast = await page.locator('.feedback-toast').textContent().catch(() => '<none>');
+	const toast = await page
+		.locator('.feedback-toast')
+		.textContent()
+		.catch(() => '<none>');
 	console.log('Toast text:', toast);
 
-	const mistakesText = await page.locator('.stat-pill.warn .value').textContent().catch(() => '<none>');
+	const mistakesText = await page
+		.locator('.stat-pill.warn .value')
+		.textContent()
+		.catch(() => '<none>');
 	console.log('Mistakes:', mistakesText);
 
 	// Enable debug to see expected notes
 	await page.locator('#debug-toggle').click();
 	await page.waitForTimeout(500);
 
-	const debugText = await page.locator('.status-info').textContent().catch(() => '<none>');
+	const debugText = await page
+		.locator('.status-info')
+		.textContent()
+		.catch(() => '<none>');
 	console.log('Debug panel:', debugText);
 
 	// Just assert something minimal so we get the logs

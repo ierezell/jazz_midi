@@ -182,7 +182,10 @@
 			<button onclick={() => (showConfigPopup = true)} class="config-btn"> ⚙️ Config </button>
 			<button onclick={generateNewCard} class="new-btn"> 🎲 New Card </button>
 		</div>
-		<p class="exercise-instructions">Play the requested note, chord, scale, or interval on your MIDI keyboard — cards advance automatically on success.</p>
+		<p class="exercise-instructions">
+			Play the requested note, chord, scale, or interval on your MIDI keyboard — cards advance
+			automatically on success.
+		</p>
 	</div>
 
 	<ConfigPopup

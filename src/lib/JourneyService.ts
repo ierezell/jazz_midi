@@ -54,14 +54,54 @@ export interface DailyPracticeRoutine {
 }
 
 // Per-day practice structure with recommended time allocations
-export const DAILY_PRACTICE_STRUCTURE: { category: DailyPracticeCategory; title: string; duration: number; description: string }[] = [
-	{ category: 'slow-melody', title: 'Slow Melody (Tune)', duration: 5, description: 'Play a jazz standard slowly, focusing on beautiful tone and phrasing' },
-	{ category: 'scales-patterns', title: 'Scales and Patterns', duration: 15, description: 'Technical foundation: major, minor, diminished scales and patterns' },
-	{ category: 'pattern-application', title: 'Pattern Application', duration: 10, description: 'Apply scales and arpeggios over chord progressions' },
-	{ category: 'improvisation', title: 'Improvisation Exercise', duration: 5, description: 'Creative soloing over a backing track or metronome' },
-	{ category: 'transcribed-solo', title: 'Transcribed Solo', duration: 15, description: 'Learn a classic solo by ear or from transcription' },
-	{ category: 'special-disciplines', title: 'Special Disciplines', duration: 10, description: 'Ear training, sight reading, or hand independence' },
-	{ category: 'learn-tune', title: 'Learn a Tune', duration: 15, description: 'Memorize melody, chords, and form of a new jazz standard' }
+export const DAILY_PRACTICE_STRUCTURE: {
+	category: DailyPracticeCategory;
+	title: string;
+	duration: number;
+	description: string;
+}[] = [
+	{
+		category: 'slow-melody',
+		title: 'Slow Melody (Tune)',
+		duration: 5,
+		description: 'Play a jazz standard slowly, focusing on beautiful tone and phrasing'
+	},
+	{
+		category: 'scales-patterns',
+		title: 'Scales and Patterns',
+		duration: 15,
+		description: 'Technical foundation: major, minor, diminished scales and patterns'
+	},
+	{
+		category: 'pattern-application',
+		title: 'Pattern Application',
+		duration: 10,
+		description: 'Apply scales and arpeggios over chord progressions'
+	},
+	{
+		category: 'improvisation',
+		title: 'Improvisation Exercise',
+		duration: 5,
+		description: 'Creative soloing over a backing track or metronome'
+	},
+	{
+		category: 'transcribed-solo',
+		title: 'Transcribed Solo',
+		duration: 15,
+		description: 'Learn a classic solo by ear or from transcription'
+	},
+	{
+		category: 'special-disciplines',
+		title: 'Special Disciplines',
+		duration: 10,
+		description: 'Ear training, sight reading, or hand independence'
+	},
+	{
+		category: 'learn-tune',
+		title: 'Learn a Tune',
+		duration: 15,
+		description: 'Memorize melody, chords, and form of a new jazz standard'
+	}
 ];
 
 export class JourneyService {
@@ -72,7 +112,6 @@ export class JourneyService {
 	// See src/lib/data/curriculum-design.ts for full rationale.
 	// ============================================================
 	private units: Unit[] = [
-
 		// ── UNIT 1 ─ First Steps ────────────────────────────────
 		// Milestone: Know all 12 note names and their keyboard positions.
 		{
@@ -1136,10 +1175,10 @@ export class JourneyService {
 	private saveProgress() {
 		if (!browser || typeof localStorage === 'undefined') return;
 
-		const progress = this.units.map(u => ({
+		const progress = this.units.map((u) => ({
 			id: u.id,
 			status: u.status,
-			lessons: u.lessons.map(l => ({
+			lessons: u.lessons.map((l) => ({
 				id: l.id,
 				completed: l.completed,
 				stars: l.stars,
@@ -1173,11 +1212,11 @@ export class JourneyService {
 			const progress = JSON.parse(saved) as SavedUnit[];
 			// Merge saved progress with current structure
 			progress.forEach((savedUnit) => {
-				const unit = this.units.find(u => u.id === savedUnit.id);
+				const unit = this.units.find((u) => u.id === savedUnit.id);
 				if (unit) {
 					unit.status = savedUnit.status;
 					savedUnit.lessons.forEach((savedLesson) => {
-						const lesson = unit.lessons.find(l => l.id === savedLesson.id);
+						const lesson = unit.lessons.find((l) => l.id === savedLesson.id);
 						if (lesson) {
 							lesson.completed = savedLesson.completed;
 							lesson.stars = savedLesson.stars;
@@ -1204,15 +1243,17 @@ export class JourneyService {
 		return `${lesson.path}?${params.toString()}`;
 	}
 
-	getPracticeLesson(unitId: string): { unit: Unit, lesson: Lesson } | undefined {
-		const unit = this.units.find(u => u.id === unitId);
+	getPracticeLesson(unitId: string): { unit: Unit; lesson: Lesson } | undefined {
+		const unit = this.units.find((u) => u.id === unitId);
 		if (!unit) return undefined;
 
 		// User expects "Practice random exercise from THIS level"
 		// So we strictly scope to the target unit.
 
 		// 1. Find unmastered lessons in the target unit
-		const unmastered = unit.lessons.filter(l => (l.perfectCompletions || 0) < l.requiredPerfectCompletions);
+		const unmastered = unit.lessons.filter(
+			(l) => (l.perfectCompletions || 0) < l.requiredPerfectCompletions
+		);
 
 		if (unmastered.length > 0) {
 			const randomIndex = Math.floor(Math.random() * unmastered.length);
@@ -1269,7 +1310,7 @@ export class JourneyService {
 			'slow-melody': '/exercises/song-rhythm',
 			'scales-patterns': '/exercises/scales',
 			'pattern-application': '/exercises/two_five_ones',
-			'improvisation': '/exercises/licks',
+			improvisation: '/exercises/licks',
 			'transcribed-solo': '/exercises/partition',
 			'special-disciplines': '/exercises/hand_independence',
 			'learn-tune': '/exercises/songs'
@@ -1277,34 +1318,37 @@ export class JourneyService {
 		return pathMap[category];
 	}
 
-	private getParamsForCategory(category: DailyPracticeCategory, date: Date): Record<string, string> | undefined {
+	private getParamsForCategory(
+		category: DailyPracticeCategory,
+		date: Date
+	): Record<string, string> | undefined {
 		// Rotate exercises based on day of week for variety
 		const dayOfWeek = date.getDay();
-		
+
 		switch (category) {
 			case 'slow-melody':
-				return { 
+				return {
 					exerciseType: 'melody',
 					song: this.getDailySong(dayOfWeek)
 				};
 			case 'scales-patterns':
 				const scales = ['C', 'F', 'Bb', 'Eb', 'G', 'D', 'A'];
-				return { 
+				return {
 					root: scales[dayOfWeek % scales.length],
 					mode: dayOfWeek % 2 === 0 ? 'Maj' : 'min'
 				};
 			case 'pattern-application':
-				return { 
+				return {
 					mode: 'random',
 					bpm: '80'
 				};
 			case 'improvisation':
 				const licks = ['blues', 'bebop', 'ii-v-i'];
-				return { 
+				return {
 					lickType: licks[dayOfWeek % licks.length]
 				};
 			case 'learn-tune':
-				return { 
+				return {
 					song: this.getDailySong((dayOfWeek + 3) % 7)
 				};
 			default:
@@ -1330,7 +1374,7 @@ export class JourneyService {
 			'slow-melody': 'Focus on tone quality and breathing',
 			'scales-patterns': 'Use metronome, start slow at 60 BPM',
 			'pattern-application': 'Play through II-V-I progressions',
-			'improvisation': 'Start with simple motifs, build gradually',
+			improvisation: 'Start with simple motifs, build gradually',
 			'transcribed-solo': 'Learn 2-4 bars perfectly by ear',
 			'special-disciplines': 'Try sight reading or hand independence',
 			'learn-tune': 'Memorize melody first, then chords'
@@ -1342,7 +1386,7 @@ export class JourneyService {
 		const routine = this.loadDailyPractice(dateStr);
 		if (!routine) return;
 
-		const item = routine.items.find(i => i.id === itemId);
+		const item = routine.items.find((i) => i.id === itemId);
 		if (item && !item.completed) {
 			item.completed = true;
 			routine.completedMinutes += item.durationMinutes;
@@ -1352,10 +1396,10 @@ export class JourneyService {
 
 	private loadDailyPractice(dateStr: string): DailyPracticeRoutine | null {
 		if (!browser || typeof localStorage === 'undefined') return null;
-		
+
 		const saved = localStorage.getItem(`daily_practice_${dateStr}`);
 		if (!saved) return null;
-		
+
 		try {
 			return JSON.parse(saved) as DailyPracticeRoutine;
 		} catch {
@@ -1370,31 +1414,31 @@ export class JourneyService {
 
 	getPracticeStreak(): number {
 		if (!browser || typeof localStorage === 'undefined') return 0;
-		
+
 		const saved = localStorage.getItem('daily_practice_streak');
 		return saved ? parseInt(saved, 10) : 0;
 	}
 
 	updatePracticeStreak(): void {
 		if (!browser || typeof localStorage === 'undefined') return;
-		
+
 		const today = new Date().toISOString().split('T')[0];
 		const lastPractice = localStorage.getItem('last_practice_date');
-		
+
 		if (lastPractice === today) return; // Already practiced today
-		
+
 		const yesterday = new Date();
 		yesterday.setDate(yesterday.getDate() - 1);
 		const yesterdayStr = yesterday.toISOString().split('T')[0];
-		
+
 		let streak = this.getPracticeStreak();
-		
+
 		if (lastPractice === yesterdayStr) {
 			streak++;
 		} else {
 			streak = 1; // Reset streak but count today
 		}
-		
+
 		localStorage.setItem('daily_practice_streak', streak.toString());
 		localStorage.setItem('last_practice_date', today);
 	}

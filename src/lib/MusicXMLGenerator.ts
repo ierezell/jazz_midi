@@ -38,10 +38,7 @@ const DEFAULT_OPTIONS: MusicXMLOptions = {
 /**
  * Generate a complete MusicXML document from notes
  */
-export function generateMusicXML(
-	notes: MusicXMLNote[],
-	options: MusicXMLOptions = {}
-): string {
+export function generateMusicXML(notes: MusicXMLNote[], options: MusicXMLOptions = {}): string {
 	const opts = { ...DEFAULT_OPTIONS, ...options };
 	const { divisions } = opts;
 
@@ -61,7 +58,13 @@ export function generateMusicXML(
 	const safeDivisions = divisions ?? 4;
 
 	for (const [measureNum, measureNotes] of sortedMeasures) {
-		const measureContent = generateMeasure(measureNotes, measureNum, safeDivisions, measureNum === 1, opts);
+		const measureContent = generateMeasure(
+			measureNotes,
+			measureNum,
+			safeDivisions,
+			measureNum === 1,
+			opts
+		);
 		measureXML.push(measureContent);
 	}
 
@@ -205,7 +208,10 @@ function generateNoteElement(
 
 	const pitch = midiToPitch(note.pitch);
 	const notehead = note.velocity !== undefined ? velocityToNotehead(note.velocity) : '';
-	const dynamics = note.velocity !== undefined ? `<dynamics>${Math.round(note.velocity / 127 * 100)}</dynamics>` : '';
+	const dynamics =
+		note.velocity !== undefined
+			? `<dynamics>${Math.round((note.velocity / 127) * 100)}</dynamics>`
+			: '';
 
 	return `      <note${isChord ? '><chord/>' : '>'}
         <pitch>
@@ -257,8 +263,21 @@ function durationToType(duration: number, divisions: number): string {
  */
 function noteToFifths(note: Note): number {
 	const fifthsMap: Record<string, number> = {
-		'Cb': -7, 'Gb': -6, 'Db': -5, 'Ab': -4, 'Eb': -3, 'Bb': -2, 'F': -1,
-		'C': 0, 'G': 1, 'D': 2, 'A': 3, 'E': 4, 'B': 5, 'F#': 6, 'C#': 7
+		Cb: -7,
+		Gb: -6,
+		Db: -5,
+		Ab: -4,
+		Eb: -3,
+		Bb: -2,
+		F: -1,
+		C: 0,
+		G: 1,
+		D: 2,
+		A: 3,
+		E: 4,
+		B: 5,
+		'F#': 6,
+		'C#': 7
 	};
 	return fifthsMap[note] ?? 0;
 }

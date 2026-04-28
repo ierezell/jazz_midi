@@ -64,13 +64,23 @@ export class VirtualMidiInput {
 	setRootNote(note: string) {
 		// Map note names to semitone offsets from C
 		const noteOffsets: Record<string, number> = {
-			'C': 0, 'C#': 1, 'Db': 1,
-			'D': 2, 'D#': 3, 'Eb': 3,
-			'E': 4,
-			'F': 5, 'F#': 6, 'Gb': 6,
-			'G': 7, 'G#': 8, 'Ab': 8,
-			'A': 9, 'A#': 10, 'Bb': 10,
-			'B': 11
+			C: 0,
+			'C#': 1,
+			Db: 1,
+			D: 2,
+			'D#': 3,
+			Eb: 3,
+			E: 4,
+			F: 5,
+			'F#': 6,
+			Gb: 6,
+			G: 7,
+			'G#': 8,
+			Ab: 8,
+			A: 9,
+			'A#': 10,
+			Bb: 10,
+			B: 11
 		};
 		this.rootNoteOffset = noteOffsets[note] || 0;
 		this.rootNoteName = note;
@@ -191,18 +201,28 @@ const keyboardLayout: Record<string, number> = {
 export function getKeyboardToMidi(baseOctave: number, rootNote?: string): Record<string, MidiNote> {
 	const mapping: Record<string, MidiNote> = {};
 	const baseNote = baseOctave * 12 + 12; // Convert octave to MIDI (C0 = 12, C1 = 24, etc.)
-	
+
 	// Calculate root note offset
 	let rootOffset = 0;
 	if (rootNote) {
 		const noteOffsets: Record<string, number> = {
-			'C': 0, 'C#': 1, 'Db': 1,
-			'D': 2, 'D#': 3, 'Eb': 3,
-			'E': 4,
-			'F': 5, 'F#': 6, 'Gb': 6,
-			'G': 7, 'G#': 8, 'Ab': 8,
-			'A': 9, 'A#': 10, 'Bb': 10,
-			'B': 11
+			C: 0,
+			'C#': 1,
+			Db: 1,
+			D: 2,
+			'D#': 3,
+			Eb: 3,
+			E: 4,
+			F: 5,
+			'F#': 6,
+			Gb: 6,
+			G: 7,
+			'G#': 8,
+			Ab: 8,
+			A: 9,
+			'A#': 10,
+			Bb: 10,
+			B: 11
 		};
 		rootOffset = noteOffsets[rootNote] || 0;
 	}
@@ -250,7 +270,6 @@ export function setupKeyboardInput(virtualMidi: VirtualMidiInput, enableKeyboard
 			event.preventDefault();
 		}
 	}
-
 
 	document.addEventListener('keydown', handleKeyDown);
 	document.addEventListener('keyup', handleKeyUp);

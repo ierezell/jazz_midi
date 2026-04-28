@@ -26,15 +26,15 @@ npx playwright test  # E2E tests
 
 ## Key architecture
 
-| Pattern | Where |
-|---------|-------|
-| Singleton services | `src/lib/JourneyService.ts`, `src/lib/UserStatsService.ts` |
-| Exercise wrapper | `src/components/BaseExercise.svelte` — all exercises use this |
-| MIDI input | `src/lib/MIDIManager.ts` singleton |
-| Music theory | `src/lib/core/`, `src/lib/MusicTheoryUtils.ts` |
-| Types | `src/lib/types/types.ts`, `notes.ts`, `notes.constants.ts` |
-| Exercise data | `src/lib/data/` (licks, rhythms, songs as JSON/TS) |
-| Routes | `src/routes/exercises/[type]/+page.svelte` |
+| Pattern            | Where                                                         |
+| ------------------ | ------------------------------------------------------------- |
+| Singleton services | `src/lib/JourneyService.ts`, `src/lib/UserStatsService.ts`    |
+| Exercise wrapper   | `src/components/BaseExercise.svelte` — all exercises use this |
+| MIDI input         | `src/lib/MIDIManager.ts` singleton                            |
+| Music theory       | `src/lib/core/`, `src/lib/MusicTheoryUtils.ts`                |
+| Types              | `src/lib/types/types.ts`, `notes.ts`, `notes.constants.ts`    |
+| Exercise data      | `src/lib/data/` (licks, rhythms, songs as JSON/TS)            |
+| Routes             | `src/routes/exercises/[type]/+page.svelte`                    |
 
 ## Known bugs (TOFIX.md)
 
@@ -56,12 +56,14 @@ npx playwright test  # E2E tests
 ## Improvement roadmap
 
 ### Phase 1 — Bug fixes (do first)
+
 1. Fix dark mode (ThemeToggle + CSS variables)
 2. Fix white-on-white contrast
 3. Fix nav bar scroll overlap
 4. Fix random exercise selection
 
 ### Phase 2 — UI/UX polish
+
 5. Design system: semantic color tokens, consistent spacing
 6. Gym page visual redesign
 7. Mobile responsive layout
@@ -69,30 +71,32 @@ npx playwright test  # E2E tests
 9. Better exercise tooltips
 
 ### Phase 3 — Features
+
 10. Velocity MIDI support
 11. Swing metronome
 12. Strict beat mode
 13. More exercises (dexterity, teacher exercises)
 
 ### Phase 4 — Quality
+
 14. Full test coverage for all exercise flows
 15. E2E tests for complete user journey
 16. Performance: VexFlow lazy loading, bundle size
 
 ## Agent team
 
-| Agent | Use for |
-|-------|---------|
-| `jazz-music-expert` | Music theory correctness, MIDI mappings, scales/chords/intervals |
-| `svelte-developer` | Svelte 5 components, routing, TypeScript, SvelteKit |
-| `exercise-builder` | New exercises, adding licks/patterns, BaseExercise integration |
-| `qa-inspector` | Running tests, verifying build, QA pass |
-| `ui-designer` | Visual design, dark mode, design system, gamification |
-| `mobile-developer` | Responsive layout, touch interactions, mobile UX |
-| `debugger` | Root cause analysis for bugs |
-| `curriculum-designer` | Learning progression, exercise ordering, pedagogical design |
-| `accessibility-fixer` | WCAG contrast, keyboard nav, screen reader support |
-| `performance-engineer` | MIDI latency, VexFlow perf, bundle size |
+| Agent                  | Use for                                                          |
+| ---------------------- | ---------------------------------------------------------------- |
+| `jazz-music-expert`    | Music theory correctness, MIDI mappings, scales/chords/intervals |
+| `svelte-developer`     | Svelte 5 components, routing, TypeScript, SvelteKit              |
+| `exercise-builder`     | New exercises, adding licks/patterns, BaseExercise integration   |
+| `qa-inspector`         | Running tests, verifying build, QA pass                          |
+| `ui-designer`          | Visual design, dark mode, design system, gamification            |
+| `mobile-developer`     | Responsive layout, touch interactions, mobile UX                 |
+| `debugger`             | Root cause analysis for bugs                                     |
+| `curriculum-designer`  | Learning progression, exercise ordering, pedagogical design      |
+| `accessibility-fixer`  | WCAG contrast, keyboard nav, screen reader support               |
+| `performance-engineer` | MIDI latency, VexFlow perf, bundle size                          |
 
 ## Code conventions
 

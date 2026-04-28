@@ -25,7 +25,7 @@ export class AudioManager {
 	 */
 	playNote(midiNote: number, velocity: number = 100, duration: number = 0.3): void {
 		if (!this.enabled || !this.unlocked) return;
-		
+
 		const ctx = this.getAudioContext();
 		if (!ctx) return;
 

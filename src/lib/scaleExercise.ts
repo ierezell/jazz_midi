@@ -37,7 +37,7 @@ export function generateExpectedNotesFor(
 		const rootMidi = NoteToMidi[(selectedNote + '3') as NoteFullName]; // Octave 3 for Right
 		notes.push(...intervals.map((interval) => (rootMidi + interval) as MidiNote));
 	}
-	
+
 	// If both, we might want to interleave them or just have them sequential?
 	// For now, let's sort them by pitch?
 	// Or if we want "C2, C3, D2, D3", we should interleave.

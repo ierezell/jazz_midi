@@ -52,24 +52,24 @@
 
 	// Rhythm mode - filter to progression-friendly patterns
 	let progressionPatterns = $derived(
-		rhythmPatterns.filter(p => p.isProgression).length > 0
-			? rhythmPatterns.filter(p => p.isProgression)
+		rhythmPatterns.filter((p) => p.isProgression).length > 0
+			? rhythmPatterns.filter((p) => p.isProgression)
 			: [...rhythmPatterns].sort((a, b) => {
-				const preferred = ['blues-shells', 'jazz-charleston'];
-				const ai = preferred.indexOf(a.id);
-				const bi = preferred.indexOf(b.id);
-				if (ai !== -1 && bi !== -1) return ai - bi;
-				if (ai !== -1) return -1;
-				if (bi !== -1) return 1;
-				return 0;
-			})
+					const preferred = ['blues-shells', 'jazz-charleston'];
+					const ai = preferred.indexOf(a.id);
+					const bi = preferred.indexOf(b.id);
+					if (ai !== -1 && bi !== -1) return ai - bi;
+					if (ai !== -1) return -1;
+					if (bi !== -1) return 1;
+					return 0;
+				})
 	);
 	let withRhythmMode = $state(false);
 	let progBeatValidator = $state<BeatValidator | null>(null);
 	let progCurrentBeat = $state(0);
 	let progSelectedPatternId = $state('');
 	let progSelectedPattern = $derived(
-		progressionPatterns.find(p => p.id === progSelectedPatternId) ?? progressionPatterns[0]
+		progressionPatterns.find((p) => p.id === progSelectedPatternId) ?? progressionPatterns[0]
 	);
 
 	// Initialise progSelectedPatternId once progressionPatterns is known
@@ -83,7 +83,9 @@
 		withRhythmMode = !withRhythmMode;
 		if (withRhythmMode) {
 			progBeatValidator = new BeatValidator();
-			progBeatValidator.start(progSelectedPattern.suggestedBpm, progSelectedPattern, (beat) => { progCurrentBeat = beat; });
+			progBeatValidator.start(progSelectedPattern.suggestedBpm, progSelectedPattern, (beat) => {
+				progCurrentBeat = beat;
+			});
 		} else {
 			progBeatValidator?.stop();
 			progBeatValidator = null;
@@ -145,7 +147,12 @@
 		if (withRhythmMode && progBeatValidator && currentNotes.length === 0) {
 			const beatResult = progBeatValidator.validateHit(event);
 			if (!beatResult.isHit) {
-				return { isCorrect: false, message: `Off beat! (${beatResult.label})`, collected: false, resetCollected: false };
+				return {
+					isCorrect: false,
+					message: `Off beat! (${beatResult.label})`,
+					collected: false,
+					resetCollected: false
+				};
 			}
 		}
 
@@ -299,7 +306,11 @@
 
 					<div class="rhythm-controls">
 						<label class="rhythm-toggle">
-							<input type="checkbox" bind:checked={withRhythmMode} onchange={toggleProgRhythmMode} />
+							<input
+								type="checkbox"
+								bind:checked={withRhythmMode}
+								onchange={toggleProgRhythmMode}
+							/>
 							<span>With Rhythm</span>
 						</label>
 						{#if withRhythmMode}
