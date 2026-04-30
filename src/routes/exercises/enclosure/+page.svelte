@@ -1,6 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import BaseExercise from '../../../components/BaseExercise.svelte';
@@ -166,10 +167,11 @@
 		startNewPattern(selectedNote);
 	}
 
-	// Initialize on mount
+	// Initialize on mount - use untrack to avoid state mutation warning
 	$effect(() => {
-		if (expectedNotes.length === 0) {
-			startNewPattern('C');
+		if (untrack(() => expectedNotes.length) === 0) {
+			// Use setTimeout to defer state mutation outside of effect
+			setTimeout(() => startNewPattern('C'), 0);
 		}
 	});
 </script>

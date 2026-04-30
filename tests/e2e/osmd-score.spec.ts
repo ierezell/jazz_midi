@@ -6,12 +6,12 @@ test.describe('OSMD Score Rendering', () => {
 		await page.waitForLoadState('networkidle');
 
 		// Should show OSMD container
-		await expect(page.locator('.osmd-container, .musicxml-score-container')).toBeVisible({
+		await expect(page.locator('.musicxml-score-container').first()).toBeVisible({
 			timeout: 15_000
 		});
 
 		// Score should load
-		await expect(page.locator('.osmd-container svg')).toBeVisible({ timeout: 15_000 });
+		await expect(page.locator('.musicxml-score-container svg').first()).toBeVisible({ timeout: 15_000 });
 	});
 
 	test('should render score in song-melody exercise', async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe('OSMD Score Rendering', () => {
 		await page.waitForLoadState('networkidle');
 
 		// Should show OSMD container
-		await expect(page.locator('.osmd-container, .musicxml-score-container')).toBeVisible({
+		await expect(page.locator('.musicxml-score-container').first()).toBeVisible({
 			timeout: 15_000
 		});
 	});
@@ -33,7 +33,7 @@ test.describe('OSMD Score Rendering', () => {
 		});
 
 		// Should disappear after load
-		await expect(page.locator('.osmd-container svg')).toBeVisible({ timeout: 15_000 });
+		await expect(page.locator('.musicxml-score-container svg').first()).toBeVisible({ timeout: 15_000 });
 	});
 
 	test('should handle zoom controls', async ({ page }) => {
@@ -41,11 +41,12 @@ test.describe('OSMD Score Rendering', () => {
 		await page.waitForLoadState('networkidle');
 
 		// Wait for score to load
-		await expect(page.locator('.osmd-container svg')).toBeVisible({ timeout: 15_000 });
+		await expect(page.locator('.musicxml-score-container svg').first()).toBeVisible({ timeout: 15_000 });
 
 		// Get initial width
 		const initialWidth = await page
-			.locator('.osmd-container svg')
+			.locator('.musicxml-score-container svg')
+			.first()
 			.evaluate((el) => el.getBoundingClientRect().width);
 
 		// Click zoom in if available
@@ -56,7 +57,8 @@ test.describe('OSMD Score Rendering', () => {
 
 			// Should be larger
 			const newWidth = await page
-				.locator('.osmd-container svg')
+				.locator('.musicxml-score-container svg')
+				.first()
 				.evaluate((el) => el.getBoundingClientRect().width);
 			expect(newWidth).toBeGreaterThan(initialWidth);
 		}
@@ -67,10 +69,10 @@ test.describe('OSMD Score Rendering', () => {
 		await page.waitForLoadState('networkidle');
 
 		// Wait for score
-		await expect(page.locator('.osmd-container svg')).toBeVisible({ timeout: 15_000 });
+		await expect(page.locator('.musicxml-score-container svg').first()).toBeVisible({ timeout: 15_000 });
 
 		// Should contain chord symbols (harmony elements)
-		const svgContent = await page.locator('.osmd-container svg').innerHTML();
+		const svgContent = await page.locator('.musicxml-score-container svg').first().innerHTML();
 		expect(svgContent).toMatch(/maj7|min7|7|m7|Δ/);
 	});
 
@@ -82,11 +84,12 @@ test.describe('OSMD Score Rendering', () => {
 		await page.waitForLoadState('networkidle');
 
 		// Should still render
-		await expect(page.locator('.osmd-container svg')).toBeVisible({ timeout: 15_000 });
+		await expect(page.locator('.musicxml-score-container svg').first()).toBeVisible({ timeout: 15_000 });
 
 		// Check that it fits within viewport
 		const svgWidth = await page
-			.locator('.osmd-container svg')
+			.locator('.musicxml-score-container svg')
+			.first()
 			.evaluate((el) => el.getBoundingClientRect().width);
 		expect(svgWidth).toBeLessThanOrEqual(375);
 	});

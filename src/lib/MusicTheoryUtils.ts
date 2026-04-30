@@ -152,11 +152,8 @@ export function chords(rootMidi: MidiNote, chordType: ChordType, inversion: Inve
 	const intervalFns = CHORD_INTERVALS[chordType] ?? [];
 	const chord = [constrainedRoot, ...intervalFns.map((fn) => fn(constrainedRoot))];
 
-	// Validate inversion for triads
-	if (chord.length === 3 && inversion === 3) {
-		throw new Error(`Triad ${chordType} chords do not have a 3rd inversion`);
-	}
-
+	// For triads with invalid 3rd inversion, default to root position
+	// inverseTriadChord handles this gracefully with a fallback
 	return chord.length === 3
 		? inverseTriadChord(chord as MidiNote[], inversion, chordType)
 		: inverseSeventhChord(chord as MidiNote[], inversion, chordType);

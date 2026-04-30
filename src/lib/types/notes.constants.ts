@@ -325,11 +325,6 @@ export const AllScaleModes: ScaleMode[] = [
 	'Blues',
 	'HarMin',
 	'MelMin',
-	'Dor',
-	'Phr',
-	'Lyd',
-	'Mix',
-	'Loc'
 ];
 
 export const DEFAULT_OCTAVE = '3';
@@ -352,11 +347,6 @@ export const SCALE_INTERVALS: Record<ScaleMode, number[]> = {
 	Blues: [0, 3, 5, 6, 7, 10, 12],
 	HarMin: [0, 2, 3, 5, 7, 8, 11, 12],
 	MelMin: [0, 2, 3, 5, 7, 9, 11, 12],
-	Dor: [0, 2, 3, 5, 7, 9, 10, 12],
-	Phr: [0, 1, 3, 5, 7, 8, 10, 12],
-	Lyd: [0, 2, 4, 6, 7, 9, 11, 12],
-	Mix: [0, 2, 4, 5, 7, 9, 10, 12],
-	Loc: [0, 1, 3, 5, 6, 8, 10, 12]
 };
 
 export const AllIntervals: IntervalType[] = [

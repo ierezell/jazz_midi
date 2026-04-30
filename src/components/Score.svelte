@@ -1,293 +1,568 @@
+<svelte:options runes={true} />
+
 <script lang="ts">
 	/**
-	 * @deprecated Use OSMDScore.svelte instead for unified MusicXML rendering
-	 * This component uses VexFlow directly and is kept for backward compatibility.
-	 * Migrate to OSMDScore for better MusicXML support, mobile display, and cursor tracking.
-	 * @see OSMDScore.svelte
+	 * Score.svelte - Unified OSMD-based score display component
+	 * 
+	 * This component replaces:
+	 * - OSMDScore.svelte
+	 * - OSMDExerciseScore.svelte  
+	 * - MusicXMLScore.svelte
+	 * - Old VexFlow-based Score.svelte
+	 * 
+	 * Features:
+	 * - MusicXML rendering via OSMD
+	 * - ScoreProps support (leftHand/rightHand) with automatic MusicXML generation
+	 * - Cursor tracking and note highlighting
+	 * - Zoom controls
+	 * - Annotation support
+	 * - Loading and error states
 	 */
-	import type { NoteFullName } from '$lib/types/notes';
-	import type { ScoreProps } from '$lib/types/types';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { generateMusicXML } from '$lib/MusicXMLGenerator';
+	import type { AnnotationType } from '$lib/types/musicxml';
+	import type { MidiNote, ScoreProps, NoteEvent, NoteFullName } from '$lib/types/types';
+	import { NoteToMidi } from '$lib/types/notes.constants';
 
-	let { leftHand, rightHand, selectedNote }: ScoreProps = $props();
+	interface Props {
+		// MusicXML input (primary)
+		musicXmlContent?: string;
+		url?: string;
+		
+		// ScoreProps input (alternative - for exercises)
+		scoreProps?: ScoreProps;
+		
+		// Note tracking
+		collectedNotes?: Set<number>;
+		playedNotes?: MidiNote[];
+		upcomingNotes?: MidiNote[];
+		cursorNote?: MidiNote | null;
+		
+		// Display options
+		showCursor?: boolean;
+		followCursor?: boolean;
+		zoom?: number;
+		
+		// Annotations
+		annotations?: AnnotationType[];
+		
+		// Callbacks
+		onError?: (error: Error) => void;
+		onLoad?: () => void;
+	}
 
-	// Dynamically import VexFlow to reduce initial bundle size
-	let VexFlow: typeof import('vexflow') | null = null;
-	let isVexFlowLoaded = $state(false);
+	let {
+		musicXmlContent = '',
+		url = '',
+		scoreProps,
+		collectedNotes = new Set(),
+		playedNotes = [],
+		upcomingNotes = [],
+		cursorNote = null,
+		showCursor = true,
+		followCursor = true,
+		zoom = 1.0,
+		annotations = [],
+		onError,
+		onLoad
+	}: Props = $props();
+
+	let containerRef: HTMLDivElement;
+	let osmdInstance: any = null;
+	let isLoading = $state(true);
+	let loadError = $state<string | null>(null);
+	let cursorElement: HTMLElement | null = $state(null);
+	let currentZoom = $state(zoom);
+
+	// Generate MusicXML from ScoreProps if provided
+	function generateMusicXMLFromProps(): string {
+		if (!scoreProps) return '';
+		
+		const allNotes = [
+			...(scoreProps.leftHand || []), 
+			...(scoreProps.rightHand || [])
+		].flat();
+		
+		return generateMusicXML(
+			allNotes.map((noteName, index) => {
+				const midiNote = NoteToMidi[noteName as NoteFullName];
+				return {
+					pitch: midiNote ?? 60,
+					duration: 4,
+					measure: Math.floor(index / 4) + 1,
+					voice: 1,
+					beat: (index % 4) + 1
+				};
+			}),
+			{
+				title: 'Exercise',
+				key: scoreProps.selectedNote,
+				divisions: 4
+			}
+		);
+	}
+
+	// Get effective MusicXML content
+	function getEffectiveMusicXML(): string {
+		if (musicXmlContent) return musicXmlContent;
+		if (url) return ''; // Will be loaded from URL
+		if (scoreProps) return generateMusicXMLFromProps();
+		return '';
+	}
 
 	onMount(async () => {
-		VexFlow = await import('vexflow');
-		isVexFlowLoaded = true;
-	});
+		if (!containerRef) return;
 
-	// VexFlow expects scientific pitch where middle C is C4 and prefers accidentals
-	// consistent with the key signature. Our app maps MIDI 60 to 'C3', so convert
-	// note octave to VexFlow convention by adding 1 to the octave number and
-	// choose flats vs sharps according to the selected key.
-	const FLAT_KEYS = new Set(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb']);
-	const SHARP_TO_FLAT: Record<string, string> = {
-		'A#': 'Bb',
-		'C#': 'Db',
-		'D#': 'Eb',
-		'F#': 'Gb',
-		'G#': 'Ab',
-		'E#': 'F',
-		'B#': 'C'
-	};
-
-	function prefersFlats(key: string): boolean {
-		if (key.includes('b')) return true;
-		return FLAT_KEYS.has(key);
-	}
-
-	function toValidKeySignature(key: string): string {
-		// VexFlow doesn't support certain sharp keys as key signatures
-		// Convert them to their flat equivalents
-		const KEY_SIGNATURE_CONVERSIONS: Record<string, string> = {
-			'A#': 'Bb',
-			'C#': 'Db',
-			'D#': 'Eb',
-			'F#': 'Gb',
-			'G#': 'Ab'
-		};
-
-		return KEY_SIGNATURE_CONVERSIONS[key] || key;
-	}
-
-	function toVexflow(note: NoteFullName): string {
-		const match = /(.*?)(\d+)$/.exec(note);
-		if (!match) return note;
-		let base = match[1];
-		const octave = parseInt(match[2], 10);
-
-		// VexFlow has issues with certain sharp notes like A#, D#, and G#
-		// Always convert these problematic sharps to their flat equivalents
-		if (base === 'A#' || base === 'D#' || base === 'G#') {
-			base = SHARP_TO_FLAT[base] ?? base;
-		} else if (prefersFlats(selectedNote) && base.includes('#')) {
-			// For other sharps, only convert if the key signature prefers flats
-			base = SHARP_TO_FLAT[base] ?? base;
-		}
-
-		return `${base}${octave + 1}` as NoteFullName;
-	}
-
-	const fmt = (group: NoteFullName[][]) =>
-		group
-			?.map((chord) =>
-				chord.length > 1 ? `(${chord.map((n) => toVexflow(n)).join(' ')})` : toVexflow(chord[0])
-			)
-			.join(', ') || '';
-
-	let stringRightHand = $derived(fmt(rightHand));
-	let stringLeftHand = $derived(fmt(leftHand));
-
-	function renderScore(width: number) {
-		if (!VexFlow || !isVexFlowLoaded) return;
-
-		const { Factory, Renderer, Voice } = VexFlow;
-
-		const isMobile = width < 768;
-		const isSmallMobile = width < 480;
-		const isVerySmallMobile = width < 360;
-		let height;
-		if (isVerySmallMobile) {
-			height = 200;
-		} else if (isSmallMobile) {
-			height = 240;
-		} else if (isMobile) {
-			height = 280;
-		} else {
-			height = 340;
-		}
-
-		const canvas = document.getElementById('output') as HTMLCanvasElement;
-		if (!canvas) return;
-
-		const ctx = canvas.getContext('2d');
-		if (!ctx) return;
-
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-		const f = new Factory({
-			renderer: {
-				elementId: 'output',
-				backend: Renderer.Backends.CANVAS,
-				width: Math.max(300, width),
-				height: Math.max(200, height)
-			}
-		});
-
-		const score = f.EasyScore({ throwOnError: false });
-
-		const spaceBetweenStaves = isMobile ? 10 : 20;
-		const system = f.System({
-			width: Math.max(300, width),
-			spaceBetweenStaves: spaceBetweenStaves,
-			noPadding: isMobile,
-			noJustification: isMobile,
-			formatOptions: {
-				alignRests: true,
-				autoBeam: true
-			}
-		});
-
-		// Only proceed if we have notes to render
-		if ((!rightHand || rightHand.length === 0) && (!leftHand || leftHand.length === 0)) {
-			// Render a test C major chord for debugging (use octave 3 as default)
-			const testRightHand = `${toVexflow('C3')}, ${toVexflow('E3')}, ${toVexflow('G3')}`;
-			try {
-				const stave = system.addStave({
-					voices: [
-						score
-							.voice(score.notes(testRightHand, { clef: 'treble', stem: 'up' }))
-							.setMode(Voice.Mode.SOFT)
-					]
-				});
-				stave.addClef('treble');
-				if (selectedNote) {
-					stave.addKeySignature(toValidKeySignature(selectedNote));
-				}
-				f.draw();
-			} catch (error) {
-				console.error('Error rendering test chord:', error);
-			}
+		const effectiveXML = getEffectiveMusicXML();
+		if (!effectiveXML && !url?.trim()) {
+			isLoading = false;
 			return;
 		}
 
 		try {
-			if (rightHand && rightHand.length > 0 && stringRightHand) {
-				const trebleStave = system.addStave({
-					voices: [
-						score
-							.voice(score.notes(stringRightHand, { clef: 'treble', stem: 'up' }))
-							.setMode(Voice.Mode.SOFT)
-					]
-				});
-				trebleStave.addClef('treble');
-				if (selectedNote) {
-					trebleStave.addKeySignature(toValidKeySignature(selectedNote));
+			const osmdModule = (await import('opensheetmusicdisplay')) as any;
+			const OpenSheetMusicDisplay = osmdModule.OpenSheetMusicDisplay;
+
+			osmdInstance = new OpenSheetMusicDisplay(containerRef, {
+				drawingParameters: {
+					drawTitle: true,
+					drawSubtitle: true,
+					drawComposer: true,
+					drawMetronomeMarks: true,
+					drawPartNames: true,
+					drawMeasureNumbers: true,
+					drawMeasureNumbersOnlyAtSystemStart: false,
+					drawTimeSignatures: true,
+					drawKeySignatures: true,
+					drawClefs: true,
+					drawNotes: true,
+					drawChordSymbols: true,
+					drawFingering: true,
+					drawExpressions: true,
+					drawDynamics: true,
+					drawArticulation: true,
+					drawRests: true,
+					drawRythmicNotation: true,
+					drawSlurs: true,
+					drawTies: true,
+					defaultColorNoteHead: '#000000',
+					defaultColorStem: '#000000',
+					defaultColorRest: '#000000'
+				},
+				autoResize: true,
+				enableTransformationCanvas: false,
+				rules: {
+					defaultFontFamily: 'Bravura, Arial, sans-serif',
+					defaultFontSize: 16
 				}
+			});
+
+			// Load content
+			if (url?.trim()) {
+				await osmdInstance.load(url);
+			} else {
+				await osmdInstance.load(effectiveXML);
 			}
 
-			if (leftHand && leftHand.length > 0 && stringLeftHand) {
-				const bassStave = system.addStave({
-					voices: [
-						score
-							.voice(score.notes(stringLeftHand, { clef: 'bass', stem: 'down' }))
-							.setMode(Voice.Mode.SOFT)
-					]
-				});
-				bassStave.addClef('bass');
-				if (selectedNote) {
-					bassStave.addKeySignature(toValidKeySignature(selectedNote));
-				}
+			// Apply annotations
+			if (annotations.length > 0) {
+				applyAnnotations(osmdInstance, annotations);
 			}
 
-			// Only add connectors if we have both hands
-			if (rightHand && rightHand.length > 0 && leftHand && leftHand.length > 0) {
-				system.addConnector('brace');
-				system.addConnector('single');
+			// Apply zoom
+			osmdInstance.Zoom = currentZoom;
+
+			await osmdInstance.render();
+
+			// Initialize cursor if enabled
+			if (showCursor) {
+				initializeCursor();
 			}
 
-			f.draw();
+			isLoading = false;
+			onLoad?.();
 		} catch (error) {
-			console.error('Error rendering VexFlow score:', error);
+			console.error('Error loading OSMD:', error);
+			loadError = error instanceof Error ? error.message : 'Failed to load score';
+			isLoading = false;
+			onError?.(error instanceof Error ? error : new Error(String(error)));
+		}
+	});
+
+	onDestroy(() => {
+		if (osmdInstance) {
+			osmdInstance.clear();
+			osmdInstance = null;
+		}
+		if (cursorElement) {
+			cursorElement.remove();
+			cursorElement = null;
+		}
+	});
+
+	// Re-render when content changes
+	$effect(() => {
+		if (osmdInstance && (musicXmlContent || url || scoreProps)) {
+			isLoading = true;
+			const effectiveXML = getEffectiveMusicXML();
+			
+			const loadPromise = url?.trim() 
+				? osmdInstance.load(url) 
+				: osmdInstance.load(effectiveXML);
+
+			loadPromise
+				.then(async () => {
+					if (annotations.length > 0) {
+						applyAnnotations(osmdInstance!, annotations);
+					}
+					osmdInstance!.Zoom = currentZoom;
+					await osmdInstance!.render();
+					updateNoteHighlights();
+					isLoading = false;
+				})
+				.catch((error: any) => {
+					console.error('Error reloading score:', error);
+					loadError = error instanceof Error ? error.message : 'Failed to reload score';
+					isLoading = false;
+					onError?.(error instanceof Error ? error : new Error(String(error)));
+				});
+		}
+	});
+
+	// Update cursor position when cursorNote changes
+	$effect(() => {
+		if (osmdInstance && cursorNote !== undefined) {
+			updateCursorPosition(cursorNote);
+			updateNoteHighlights();
+		}
+	});
+
+	// Update when played/upcoming notes change
+	$effect(() => {
+		if (osmdInstance) {
+			updateNoteHighlights();
+		}
+	});
+
+	function initializeCursor() {
+		if (!containerRef) return;
+
+		cursorElement = document.createElement('div');
+		cursorElement.className = 'osmd-cursor';
+		cursorElement.style.cssText = `
+			position: absolute;
+			width: 4px;
+			background: var(--color-primary, #58a6ff);
+			border-radius: 2px;
+			pointer-events: none;
+			z-index: 100;
+			transition: all 0.2s ease;
+			opacity: 0;
+		`;
+		containerRef.appendChild(cursorElement);
+	}
+
+	function updateCursorPosition(note: MidiNote | null) {
+		if (!cursorElement || !osmdInstance || !note) {
+			if (cursorElement) cursorElement.style.opacity = '0';
+			return;
+		}
+
+		const sheet = osmdInstance.Sheet;
+		if (!sheet) return;
+
+		// Search for note in all measures
+		for (const measure of sheet.SourceMeasures || []) {
+			for (const entry of measure.VerticalSourceStaffEntryContainers || []) {
+				for (const osmdNote of entry.Notes || []) {
+					if (osmdNote?.Pitch?.frequency) {
+						const midiNote = Math.round(69 + 12 * Math.log2(osmdNote.Pitch.frequency / 440));
+						if (midiNote === note && osmdNote.graphicalNote?.svgElement) {
+							const svgEl = osmdNote.graphicalNote.svgElement;
+							const rect = svgEl.getBoundingClientRect();
+							const containerRect = containerRef.getBoundingClientRect();
+
+							cursorElement.style.left = `${rect.left - containerRect.left}px`;
+							cursorElement.style.top = `${rect.top - containerRect.top}px`;
+							cursorElement.style.height = `${rect.height}px`;
+							cursorElement.style.opacity = '1';
+
+							if (followCursor) {
+								svgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+							}
+							return;
+						}
+					}
+				}
+			}
 		}
 	}
-	$effect(() => {
-		// Wait for VexFlow to load before rendering
-		if (!isVexFlowLoaded) return;
 
-		// This effect will re-run whenever leftHand, rightHand, or selectedNote changes
-		// Add a small delay to ensure DOM is ready
-		setTimeout(() => {
-			const container = document.getElementById('score-container');
-			if (container) {
-				const width = container.getBoundingClientRect().width;
-				if (width > 0) {
-					// Ensure container has dimensions
-					renderScore(width);
+	function updateNoteHighlights() {
+		if (!osmdInstance) return;
+
+		const sheet = osmdInstance.Sheet;
+		if (!sheet) return;
+
+		// Iterate through all graphical notes
+		for (const measure of sheet.SourceMeasures || []) {
+			for (const entry of measure.VerticalSourceStaffEntryContainers || []) {
+				for (const note of entry.Notes || []) {
+					if (note?.Pitch?.frequency && note.graphicalNote?.svgElement) {
+						const midiNote = Math.round(69 + 12 * Math.log2(note.Pitch.frequency / 440));
+						const svgEl = note.graphicalNote.svgElement;
+
+						// Apply color based on state
+						if (playedNotes.includes(midiNote as MidiNote)) {
+							svgEl.style.fill = '#94a3b8'; // Gray for played
+							svgEl.style.opacity = '0.6';
+						} else if (upcomingNotes.includes(midiNote as MidiNote)) {
+							svgEl.style.fill = '#22c55e'; // Green for upcoming/current
+							svgEl.style.opacity = '1';
+						} else {
+							svgEl.style.fill = ''; // Default
+							svgEl.style.opacity = '1';
+						}
+					}
 				}
 			}
-		}, 100);
-	});
-	onMount(() => {
-		const handleResize = () => {
-			const container = document.getElementById('score-container');
-			if (container) {
-				const width = container.getBoundingClientRect().width;
-				if (width > 0) {
-					renderScore(width);
-				}
+		}
+	}
+
+	function applyAnnotations(osmd: any, annots: AnnotationType[]) {
+		const sheet = osmd.Sheet;
+		if (!sheet) return;
+
+		for (const annotation of annots) {
+			switch (annotation.type) {
+				case 'ii-v-i':
+					highlightTwoFiveOne(sheet, annotation.measures);
+					break;
+				case 'chord-inversion':
+					annotateChordInversion(sheet, annotation.measure, annotation.voice, annotation.inversion);
+					break;
+				case 'root-third':
+					annotateRootThird(sheet, annotation.measure, annotation.voice, annotation.showFifth);
+					break;
 			}
-		};
+		}
+	}
 
-		window.addEventListener('resize', handleResize);
+	function highlightTwoFiveOne(sheet: any, measures: number[]) {
+		for (const measureIndex of measures) {
+			if (measureIndex < sheet.SourceMeasures.length) {
+				const measure = sheet.SourceMeasures[measureIndex];
+				(measure as any).customLabel = 'II-V-I';
+			}
+		}
+	}
 
-		// Clean up event listener
-		return () => {
-			window.removeEventListener('resize', handleResize);
-		};
-	});
+	function annotateChordInversion(sheet: any, measure: number, voice: number, inversion: string) {
+		if (measure < sheet.SourceMeasures.length) {
+			const sourceMeasure = sheet.SourceMeasures[measure];
+			// Implementation would add inversion labels
+		}
+	}
+
+	function annotateRootThird(sheet: any, measure: number, voice: number, showFifth = false) {
+		if (measure < sheet.SourceMeasures.length) {
+			const sourceMeasure = sheet.SourceMeasures[measure];
+			// Implementation would mark individual notes with their role
+		}
+	}
+
+	// Public methods
+	export function zoomIn() {
+		currentZoom = Math.min(currentZoom * 1.2, 2.0);
+		if (osmdInstance) {
+			osmdInstance.Zoom = currentZoom;
+			osmdInstance.render();
+		}
+	}
+
+	export function zoomOut() {
+		currentZoom = Math.max(currentZoom / 1.2, 0.5);
+		if (osmdInstance) {
+			osmdInstance.Zoom = currentZoom;
+			osmdInstance.render();
+		}
+	}
+
+	export function setZoom(newZoom: number) {
+		currentZoom = Math.max(0.5, Math.min(2.0, newZoom));
+		if (osmdInstance) {
+			osmdInstance.Zoom = currentZoom;
+			osmdInstance.render();
+		}
+	}
+
+	export function getOSMDInstance() {
+		return osmdInstance;
+	}
 </script>
 
-<div id="score-container">
-	<canvas id="output"></canvas>
+<div class="score-wrapper">
+	<div class="score-toolbar">
+		<div class="zoom-controls">
+			<button class="zoom-btn" onclick={zoomOut} title="Zoom out">−</button>
+			<span class="zoom-level">{Math.round(currentZoom * 100)}%</span>
+			<button class="zoom-btn" onclick={zoomIn} title="Zoom in">+</button>
+		</div>
+		{#if isLoading}
+			<span class="loading-indicator">Loading...</span>
+		{/if}
+	</div>
+
+	<div class="score-container">
+		{#if isLoading}
+			<div class="loading-overlay">
+				<div class="spinner"></div>
+				<p>Loading score...</p>
+			</div>
+		{/if}
+
+		{#if loadError}
+			<div class="error-overlay">
+				<p>⚠️ {loadError}</p>
+			</div>
+		{/if}
+
+		<div bind:this={containerRef} class="osmd-container" class:loading={isLoading}></div>
+	</div>
 </div>
 
 <style>
-	#score-container {
-		width: 100%;
-		min-height: 240px;
-		max-height: 400px;
-		height: auto;
-		overflow-x: auto;
-		overflow-y: hidden;
+	.score-wrapper {
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
+		gap: 0.5rem;
+		width: 100%;
+	}
+
+	.score-toolbar {
+		display: flex;
+		justify-content: space-between;
 		align-items: center;
+		padding: 0.5rem;
+		background: var(--color-surface);
+		border-radius: 8px;
+	}
+
+	.zoom-controls {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.zoom-btn {
+		width: 28px;
+		height: 28px;
+		border-radius: 4px;
+		border: 1px solid var(--color-border);
+		background: var(--color-surface-raised);
+		color: var(--color-text);
+		cursor: pointer;
+		font-size: 1rem;
+		line-height: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.zoom-btn:hover {
+		background: var(--color-primary);
+		color: white;
+	}
+
+	.zoom-level {
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+		min-width: 3rem;
+		text-align: center;
+	}
+
+	.loading-indicator {
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+		font-style: italic;
+	}
+
+	.score-container {
+		position: relative;
+		width: 100%;
+		min-height: 300px;
 		background: white;
 		border-radius: 8px;
-		border: 1px solid #e1e5e9;
+		border: 1px solid var(--color-border);
+		overflow: hidden;
 	}
-	#output {
+
+	.osmd-container {
 		width: 100%;
+		min-height: 300px;
+	}
+
+	.osmd-container :global(svg) {
 		max-width: 100%;
 		height: auto;
-		display: block;
 	}
+
+	.loading-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		background: rgba(255, 255, 255, 0.9);
+		z-index: 10;
+	}
+
+	.spinner {
+		width: 40px;
+		height: 40px;
+		border: 4px solid var(--color-border);
+		border-top-color: var(--color-primary);
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.error-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(248, 81, 73, 0.1);
+		z-index: 10;
+		padding: 2rem;
+		text-align: center;
+		color: var(--color-error);
+	}
+
+	:global(.osmd-cursor) {
+		box-shadow: 0 0 8px rgba(88, 166, 255, 0.6);
+	}
+
 	@media (max-width: 768px) {
-		#score-container {
+		.score-container {
 			min-height: 200px;
-			max-height: 340px;
-			border-radius: 6px;
 		}
-		#output {
-			max-width: none;
-			min-width: 300px;
-		}
-	}
-	@media (max-width: 480px) {
-		#score-container {
-			min-height: 180px;
-			max-height: 300px;
-			border-radius: 4px;
-			overflow-x: scroll;
-			-webkit-overflow-scrolling: touch;
-			scrollbar-width: thin;
-		}
-		#output {
-			min-width: 280px;
-		}
-	}
-	@media (max-width: 360px) {
-		#score-container {
-			min-height: 160px;
-			max-height: 260px;
-		}
-		#output {
-			min-width: 260px;
+
+		.osmd-container {
+			min-height: 200px;
 		}
 	}
 </style>

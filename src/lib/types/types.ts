@@ -31,6 +31,7 @@ export type ExerciseType =
 	| 'rhythm'
 	| 'hand_independence'
 	| 'dexterity';
+	
 export const allExerciseType: ExerciseType[] = [
 	'chord',
 	'scale',
