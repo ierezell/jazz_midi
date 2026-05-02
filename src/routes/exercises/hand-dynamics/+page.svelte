@@ -3,7 +3,7 @@
 <script lang="ts">
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import {
 		validateHandDynamics,
 		isHandDynamicsCompleted,
@@ -11,7 +11,7 @@
 		getAverageVelocities,
 		createHandDynamicsState,
 		type HandDynamicsState
-	} from '$lib/handDynamicsValidation';
+	} from './hand-dynamics';
 	import { MidiToNote } from '$lib/types/notes.constants';
 
 	const LH_TARGET = { min: 30, max: 50 };

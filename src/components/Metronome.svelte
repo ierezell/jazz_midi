@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Play, Pause } from 'lucide-svelte';
+	import { untrack } from 'svelte';
 
 	interface MetronomeProps {
 		initialBpm?: number;
@@ -7,7 +8,8 @@
 	}
 	let { initialBpm = 100, onTick }: MetronomeProps = $props();
 
-	let bpm = $state(initialBpm);
+	// @svelte-ignore state_referenced_locally
+	let bpm = $state(untrack(() => initialBpm));
 	let isPlaying = $state(false);
 	let swingEnabled = $state(false);
 	let timeSignature = $state(4);

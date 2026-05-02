@@ -1,7 +1,7 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import type { MidiNote, Note, ExerciseType, NoteEvent } from '$lib/types/types';
 	import type { ChordType, ScaleMode, ChordVoicing, Inversion } from '$lib/types/notes';
 	import {
@@ -15,8 +15,8 @@
 	import { calculateInterval } from '$lib/MusicTheoryUtils';
 	import { onDestroy, onMount } from 'svelte';
 
-	import { type FlashCard, type FlashCardType } from '$lib/FlashcardUtils';
-	import ConfigPopup from '../../../components/ConfigPopup.svelte';
+	import { type FlashCard, type FlashCardType } from './flashcard-types';
+	import ConfigPopup from '../../../components/exercise/ConfigPopup.svelte';
 	import ChordsPage from '../chords/+page.svelte';
 	import ScalesPage from '../scales/+page.svelte';
 	import TwoFiveOnesPage from '../two_five_ones/+page.svelte';

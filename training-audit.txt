@@ -1,0 +1,8 @@
+﻿
+Running 1 test using 1 worker
+
+
+ΓÜá∩╕Å Visible issues on /training: [ [32m'6 buttons without text found'[39m ]
+  Γ£ô  1 [chromium] ΓÇ║ tests\e2e\site-audit.spec.ts:124:5 ΓÇ║ Site-wide Audit ΓÇ║ audit /training (2.7s)
+
+  1 passed (7.1s)

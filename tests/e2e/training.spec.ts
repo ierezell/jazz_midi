@@ -1,171 +1,132 @@
-import { test, expect } from '@playwright/test';
+/**
+ * training.spec.ts - Playwright tests for the /training page.
+ * Uses JourneyService (CurriculumEngine was deleted).
+ */
+import { test, expect, type BrowserContext } from '@playwright/test';
 
-test.describe('Training System (Adaptive Workouts)', () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto('/training');
-		await page.waitForLoadState('networkidle');
-	});
+const SEED_PROFILE = {
+id: 'test-training-e2e',
+name: 'Training Tester',
+level: 1,
+experiencePoints: 10,
+streakDays: 1,
+lastPracticeDate: null,
+preferences: {}
+};
 
-	test('should display pillar stats overview', async ({ page }) => {
-		await expect(page.locator('h1')).toContainText('Training Plan');
-		await expect(page.locator('.pillars-grid')).toBeVisible();
+async function seedProfile(context: BrowserContext) {
+await context.addInitScript((profile) => {
+localStorage.setItem('jazz-midi-user-profile', JSON.stringify(profile));
+}, SEED_PROFILE);
+}
 
-		// Should show 4 pillars
-		const pillars = await page.locator('.pillar-card').count();
-		expect(pillars).toBe(4);
+test.describe('Training page � structure', () => {
+test.beforeEach(async ({ context }) => { await seedProfile(context); });
 
-		// Each pillar should have progress
-		await expect(page.locator('.pillar-card:has-text("Technique")')).toBeVisible();
-		await expect(page.locator('.pillar-card:has-text("Theory")')).toBeVisible();
-		await expect(page.locator('.pillar-card:has-text("Vocabulary")')).toBeVisible();
-		await expect(page.locator('.pillar-card:has-text("Repertoire")')).toBeVisible();
-	});
-
-	test('should show recommended daily focus', async ({ page }) => {
-		await expect(page.locator('.recommendation-banner')).toBeVisible();
-		await expect(page.locator('.recommendation-banner')).toContainText("Today's Focus");
-
-		// Should have a start button
-		await expect(page.locator('.recommendation-banner button')).toBeVisible();
-	});
-
-	test('should generate custom workout', async ({ page }) => {
-		// Seed some practice data first to create available skills
-		await page.evaluate(() => {
-			// Record practice on foundational skills to make them available
-			const curriculumEngine = (window as any).curriculumEngine;
-			if (curriculumEngine) {
-				// Make scale-geometry-single in-progress
-				curriculumEngine.recordPractice('scale-geometry-single', 75, 5);
-				// Make chord-shells in-progress  
-				curriculumEngine.recordPractice('chord-shells', 70, 5);
-			}
-		});
-		
-		// Wait a bit for state update
-		await page.waitForTimeout(500);
-		
-		// Set duration
-		await page.locator('input[type="range"]').fill('20');
-
-		// Click generate
-		await page.locator('button:has-text("Generate")').click();
-
-		// Should show workout session
-		await expect(page.locator('.workout-session')).toBeVisible({ timeout: 5_000 });
-
-		// Should have exercises
-		const exerciseCount = await page.locator('.exercise-item').count();
-		// With fresh state, might have 0 exercises - that's ok
-		expect(exerciseCount).toBeGreaterThanOrEqual(0);
-	});
-
-	test('should allow pillar focus selection', async ({ page }) => {
-		// Seed practice data
-		await page.evaluate(() => {
-			const curriculumEngine = (window as any).curriculumEngine;
-			if (curriculumEngine) {
-				curriculumEngine.recordPractice('scale-geometry-single', 75, 5);
-			}
-		});
-		await page.waitForTimeout(500);
-		
-		// Select technique pillar
-		await page.locator('.pillar-btn:has-text("Technique")').click();
-		// Generate workout
-		await page.locator('button:has-text("Generate")').click();
-
-		// Should show workout
-		await expect(page.locator('.workout-session')).toBeVisible({ timeout: 5_000 });
-	});
-
-	test('should display weakness areas', async ({ page }) => {
-		// Play some exercises first to generate weakness data
-		await page.goto('/exercises/ghost-notes');
-		await page.waitForLoadState('networkidle');
-
-		// Play wrong notes to create weakness
-		await page.evaluate(() => {
-			// Simulate MIDI input with high velocity (wrong for ghost notes)
-			const event = new CustomEvent('midi-message', {
-				detail: { noteNumber: 60, velocity: 100, type: 'on' }
-			});
-			window.dispatchEvent(event);
-		});
-
-		// Go back to training
-		await page.goto('/training');
-		await page.waitForLoadState('networkidle');
-
-		// Should show weaknesses section if any exist
-		const weaknessesSection = page.locator('.weaknesses-section');
-		if (await weaknessesSection.isVisible().catch(() => false)) {
-			await expect(weaknessesSection).toContainText('Areas Needing Attention');
-		}
-	});
-
-	test('should show curriculum path', async ({ page }) => {
-		await expect(page.locator('.curriculum-section')).toBeVisible();
-		await expect(page.locator('.curriculum-section')).toContainText('Curriculum Path');
-
-		// Should show skills
-		const skillCount = await page.locator('.curriculum-item').count();
-		expect(skillCount).toBeGreaterThan(0);
-	});
-
-	test('should navigate to exercise from workout', async ({ page }) => {
-		// Seed practice data first
-		await page.evaluate(() => {
-			const curriculumEngine = (window as any).curriculumEngine;
-			if (curriculumEngine) {
-				curriculumEngine.recordPractice('scale-geometry-single', 75, 5);
-			}
-		});
-		await page.waitForTimeout(500);
-		
-		// Generate workout
-		await page.locator('input[type="range"]').fill('10');
-		await page.locator('button:has-text("Generate")').click();
-
-		// Wait for workout
-		await expect(page.locator('.workout-session')).toBeVisible({ timeout: 5_000 });
-
-		// Click first exercise start button
-		await page.locator('.exercise-item .start-ex-btn').first().click();
-
-		// Should navigate to exercise
-		await expect(page).toHaveURL(/\/exercises\//, { timeout: 5_000 });
-	});
-
-	test('should track pillar progress', async ({ page }) => {
-		// Check each pillar has progress bar
-		const progressBars = await page.locator('.pillar-card .progress-bar').count();
-		expect(progressBars).toBe(4);
-
-		// Check each pillar has progress text
-		const progressTexts = await page.locator('.pillar-card .progress-text').count();
-		expect(progressTexts).toBe(4);
-	});
-
-	test('should update workout when duration changes', async ({ page }) => {
-		// Seed practice data
-		await page.evaluate(() => {
-			const curriculumEngine = (window as any).curriculumEngine;
-			if (curriculumEngine) {
-				curriculumEngine.recordPractice('scale-geometry-single', 75, 5);
-				curriculumEngine.recordPractice('chord-shells', 70, 5);
-			}
-		});
-		await page.waitForTimeout(500);
-		
-		// Set to 30 minutes
-		await page.locator('input[type="range"]').fill('30');
-		await page.waitForTimeout(200);
-
-		// Generate
-		await page.locator('button:has-text("Generate")').click();
-
-		// Should show workout session (check for 'min' which appears in duration)
-		await expect(page.locator('.workout-session')).toContainText('min');
-	});
+test('shows Daily Training header', async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+await expect(page.locator('h1')).toContainText(/Daily Training/i);
 });
+
+test('shows all four pillar progress chips', async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+await expect(page.locator('.pillars-strip')).toBeVisible();
+await expect(page.locator('.pillar-chip')).toHaveCount(4);
+for (const label of ['Technique', 'Theory', 'Vocabulary', 'Repertoire']) {
+await expect(page.locator('.pillars-strip')).toContainText(label);
+}
+});
+
+test("shows lesson cards in Today's Session", async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+await expect(page.locator('.session-section h2')).toContainText(/Today.s Session/i);
+expect(await page.locator('.lesson-card').count()).toBeGreaterThan(0);
+});
+
+test('lesson cards show title, pillar tag, star rating', async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+const firstCard = page.locator('.lesson-card').first();
+await expect(firstCard.locator('.lesson-body strong')).toBeVisible();
+await expect(firstCard.locator('.pillar-tag')).toBeVisible();
+await expect(firstCard.locator('.lesson-stars')).toBeVisible();
+});
+
+test('Go button visible on un-completed cards', async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+await expect(page.locator('.go-btn').first()).toBeVisible();
+});
+
+test('shows estimated session duration', async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+await expect(page.locator('.time-estimate')).toContainText(/min/i);
+});
+
+test('shows unit badge and difficulty badge', async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+await expect(page.locator('.unit-badge')).toBeVisible();
+await expect(page.locator('.difficulty-badge')).toBeVisible();
+});
+
+test('shows Unit Progress overview with rows', async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+await expect(page.locator('.unit-overview h2')).toContainText(/Unit Progress/i);
+expect(await page.locator('.overview-row').count()).toBeGreaterThan(2);
+});
+
+test('pillar percentages are shown', async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+const pcts = await page.locator('.pillar-pct').allTextContents();
+expect(pcts.length).toBe(4);
+for (const pct of pcts) expect(pct).toMatch(/\d+%/);
+});
+
+test('pillar fill bars are rendered', async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+await expect(page.locator('.pillar-fill')).toHaveCount(4);
+});
+});
+
+test.describe('Training page � interactions', () => {
+test.beforeEach(async ({ context }) => { await seedProfile(context); });
+
+test('Go button navigates to exercise with unitId + lessonId params', async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+await page.locator('.go-btn').first().click();
+// Wait for SvelteKit client-side navigation to complete
+await page.waitForURL(/\/exercises\//, { timeout: 10_000 });
+const url = page.url();
+expect(url).toContain('unitId=');
+expect(url).toContain('lessonId=');
+});
+
+test('Refresh button keeps page functional', async ({ page }) => {
+await page.goto('/training');
+await page.waitForSelector('.lesson-card', { state: 'visible', timeout: 15_000 });
+await page.locator('.icon-btn[title="Refresh session"]').click();
+await page.waitForTimeout(300);
+expect(await page.locator('.lesson-card').count()).toBeGreaterThan(0);
+await expect(page.locator('.pillar-chip')).toHaveCount(4);
+});
+
+test('returning with stars param marks lesson done', async ({ page }) => {
+// u1-five-finger (technique pillar) stays in the regenerated session after 3-star completion
+await page.goto('/training?unitId=unit-1&lessonId=u1-five-finger&stars=3');
+// Wait for lesson cards to render (populated in onMount)
+await expect(page.locator('.lesson-card').first()).toBeVisible();
+const done = page.locator('.lesson-card.done, .lesson-card .done-icon, .lesson-card .session-done-icon');
+await expect(done.first()).toBeVisible({ timeout: 8_000 });
+});
+});
+
+

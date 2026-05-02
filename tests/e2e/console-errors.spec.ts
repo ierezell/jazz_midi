@@ -164,3 +164,4 @@ test.describe('JavaScript Errors', () => {
 		expect(errors).toHaveLength(0);
 	});
 });
+

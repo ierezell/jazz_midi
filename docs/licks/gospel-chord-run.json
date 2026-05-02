@@ -1,0 +1,11 @@
+{
+	"id": "gospel-chord-run",
+	"name": "Gospel Chord Run",
+	"description": "Gospel-style arpeggio run over a major 7th chord. Adds expression to chord playing.",
+	"category": "jazz",
+	"hand": "right",
+	"difficulty": "intermediate",
+	"suggestedBpm": 90,
+	"notes": ["C4", "E4", "G4", "B4", "C5", "B4", "G4", "E4"],
+	"tags": ["gospel", "arpeggio", "major7", "expressive"]
+}

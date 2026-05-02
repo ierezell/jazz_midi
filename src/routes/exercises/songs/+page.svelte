@@ -4,10 +4,11 @@
 	import type { ChordType, Note, ChordVoicing, Inversion } from '$lib/types/notes';
 	import type { MidiNote, NoteEvent, ScoreProps, NoteFullName } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
+	import { untrack } from 'svelte';
 	import { generateChordNotesData, chords } from '$lib/MusicTheoryUtils';
 	import { NoteToMidi, AllNotes } from '$lib/types/notes.constants';
-	import { calculateVoiceLeadingDistance } from '$lib/music-validation';
+	import { calculateVoiceLeadingDistance } from '$lib/musicValidation';
 
 	const description =
 		'Practice chord progressions from real songs. Play each chord in the progression.';
@@ -33,10 +34,12 @@
 		};
 	}
 
+	// @svelte-ignore state_referenced_locally
 	let { data }: Props = $props();
-	const songs = data.songs;
+	const songs = untrack(() => data.songs);
 
-	let selectedSong: Song = $state(songs[data.initialIndex] ?? songs[0]);
+	// @svelte-ignore state_referenced_locally
+	let selectedSong: Song = $state(untrack(() => songs[data.initialIndex] ?? songs[0]));
 	let currentChordIndex = $state(0);
 	let voicing: ChordVoicing = $state('full-right');
 	let inversion: Inversion = $state(0);

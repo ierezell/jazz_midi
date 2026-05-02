@@ -1,22 +1,15 @@
 import type { MidiNote, Note } from './notes';
 
 /**
- * Discriminated union for validation results
+ * Result returned by exercise validation functions
  */
-export type ValidationResult =
-	| {
-			readonly isCorrect: true;
-			readonly message: string;
-			readonly collected: true;
-			readonly resetCollected: boolean;
-	  }
-	| {
-			readonly isCorrect: false;
-			readonly message: string;
-			readonly collected: false;
-			readonly resetCollected: boolean;
-			readonly resetMistakes?: boolean;
-	  };
+export type ValidationResult = {
+	readonly isCorrect: boolean;
+	readonly message: string;
+	readonly collected: boolean;
+	readonly resetCollected: boolean;
+	readonly resetMistakes?: boolean;
+};
 
 /**
  * Exercise API exposed to child components

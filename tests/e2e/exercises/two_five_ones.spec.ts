@@ -20,3 +20,4 @@ test.describe('Two-Five-One Exercise', () => {
 		await expect(page.locator('.exercise-main')).toBeVisible();
 	});
 });
+

@@ -20,3 +20,4 @@ test.describe('Chords Exercise', () => {
 		await expect(page.locator('.exercise-main')).toBeVisible();
 	});
 });
+

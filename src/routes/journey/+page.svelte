@@ -7,8 +7,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import { Star, Lock, Check, Play, MapPin, Flame, Zap, Trophy, Dumbbell } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import type { RouteId } from '$app/types';
+	import { base } from '$app/paths';
 
 	let units = $state(journeyService.getUnits());
 	let profile = $state(userStatsService.getProfile());
@@ -28,8 +27,8 @@
 		// Split the path and query params
 		const [path, query] = url.split('?');
 		return query
-			? `${resolve(path as unknown as RouteId)}?${query}`
-			: resolve(path as unknown as RouteId);
+			? `${base + path}?${query}`
+			: base + path;
 	}
 
 	function startPractice(unitId: string) {

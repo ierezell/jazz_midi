@@ -120,8 +120,8 @@ export function createVirtualMidiAccess(
 		addEventListener: virtualInput.addEventListener.bind(virtualInput),
 		removeEventListener: virtualInput.removeEventListener.bind(virtualInput),
 		dispatchEvent: () => false,
-		open: () => Promise.resolve(mockInput as any),
-		close: () => Promise.resolve(mockInput as any),
+		open: () => Promise.resolve(mockInput as unknown as MIDIInput),
+		close: () => Promise.resolve(mockInput as unknown as MIDIInput),
 		_virtualInput: virtualInput
 	} as unknown as MIDIInput & { _virtualInput: VirtualMidiInput };
 	Object.defineProperty(mockInput, 'onmidimessage', {

@@ -1,8 +1,11 @@
 {
 	"cSpell.words": [
 		"arpeggiated",
+		"checkmark",
 		"Cmaj",
+		"Duolingo",
 		"fira",
+		"gamified",
 		"Golson",
 		"Groovin",
 		"Groovitis",
@@ -14,7 +17,9 @@
 		"mixolydian",
 		"neoconfetti",
 		"onmidimessage",
+		"OSMD",
 		"Thelonious",
+		"unlockable",
 		"vexflow",
 		"voicings",
 		"webmidi"
@@ -22,6 +27,12 @@
 	"chat.tools.terminal.autoApprove": {
 		"npm install": true,
 		"npx --yes svelte-check": true,
-		"npx playwright": true
+		"npx playwright": true,
+		"ForEach-Object": true,
+		"ConvertFrom-Json": true,
+		"Out-File": true,
+		"npx vite": true,
+		"Join-String": true,
+		"npx svelte-check": true
 	}
 }

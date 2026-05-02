@@ -1,787 +1,518 @@
-<svelte:options runes={true} />
+﻿<svelte:options runes={true} />
 
 <script lang="ts">
-	import { curriculumEngine, type Pillar, CURRICULUM, type WorkoutSession } from '$lib/CurriculumEngine';
-	import { 
-		Dumbbell, 
-		Brain, 
-		Music2, 
-		BookOpen, 
-		Target, 
-		TrendingUp, 
-		AlertTriangle,
-		CheckCircle2,
-		Lock,
-		Play,
-		RotateCcw,
-		Clock,
-		Zap,
-		Award
-	} from 'lucide-svelte';
-	import { onMount } from 'svelte';
-	import { resolve } from '$app/paths';
+	import {
+		journeyService,
+		type TrainingSession,
+		type Lesson,
+		type Pillar
+	} from '$lib/JourneyService';
 	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
+	import { page } from '$app/state';
+	import { onMount } from 'svelte';
+	import {
+		Dumbbell,
+		Brain,
+		Music2,
+		BookOpen,
+		Play,
+		CheckCircle2,
+		Star,
+		Lock,
+		ChevronRight,
+		RefreshCw,
+		Trophy
+	} from 'lucide-svelte';
 
-	let selectedPillar: Pillar | undefined = $state(undefined);
-	let currentWorkout: WorkoutSession | null = $state(null);
-	let showWorkout = $state(false);
-	let workoutDuration = $state(20); // minutes
+	// --- State ----------------------------------------------------------------
 
-	// Computed data
-	let pillarStats = $derived(curriculumEngine.getPillarStats());
-	let weaknesses = $derived(curriculumEngine.identifyWeaknesses());
-	let availableSkills = $derived(curriculumEngine.getAvailableSkills());
-	let recommendedFocus = $derived(curriculumEngine.getRecommendedFocus());
-	let learningPath = $derived(curriculumEngine.getLearningPath());
+	let activeUnit = $derived(journeyService.getActiveUnit());
+	let session = $state<TrainingSession | undefined>(undefined);
+	let completedInSession = $state<Set<string>>(new Set());
+	let sessionStarted = $state(false);
 
-	const pillars: { id: Pillar; name: string; icon: any; color: string; desc: string }[] = [
-		{ id: 'technique', name: 'Technique', icon: Dumbbell, color: '#22c55e', desc: 'Physical dexterity & jazz touch' },
-		{ id: 'theory', name: 'Theory', icon: Brain, color: '#3b82f6', desc: 'Mental mapping & ear training' },
-		{ id: 'vocabulary', name: 'Vocabulary', icon: Music2, color: '#a855f7', desc: 'Patterns & transposition' },
-		{ id: 'repertoire', name: 'Repertoire', icon: BookOpen, color: '#f59e0b', desc: 'Real songs & application' }
-	];
+	// Pillar progress across all units
+	let pillarProgress = $derived(journeyService.getPillarProgress());
 
-	function generateWorkout() {
-		currentWorkout = curriculumEngine.generateWorkout({
-			duration: workoutDuration,
-			focusPillar: selectedPillar,
-			includeWeaknesses: true
-		});
-		showWorkout = true;
+	// On mount: generate session for active unit; handle returning from an exercise
+	onMount(() => {
+		if (activeUnit) {
+			session = journeyService.generateTraining(activeUnit.id);
+		}
+
+		// If returning from an exercise that completed a lesson
+		const unitId = page.url.searchParams.get('unitId');
+		const lessonId = page.url.searchParams.get('lessonId');
+		const stars = parseInt(page.url.searchParams.get('stars') ?? '0', 10);
+		if (unitId && lessonId && stars > 0) {
+			journeyService.completeLesson(unitId, lessonId, stars);
+			completedInSession = new Set([...completedInSession, lessonId]);
+			// Regenerate session so ordering updates
+			if (activeUnit) session = journeyService.generateTraining(activeUnit.id);
+		}
+	});
+
+	// --- Helpers --------------------------------------------------------------
+
+	const PILLAR_META: Record<Pillar, { label: string; icon: any; color: string }> = {
+		technique: { label: 'Technique', icon: Dumbbell, color: '#22c55e' },
+		theory: { label: 'Theory', icon: Brain, color: '#3b82f6' },
+		vocabulary: { label: 'Vocabulary', icon: Music2, color: '#a855f7' },
+		repertoire: { label: 'Repertoire', icon: BookOpen, color: '#f59e0b' }
+	};
+
+	const DIFFICULTY_LABEL: Record<string, string> = {
+		beginner: '?? Beginner',
+		intermediate: '?? Intermediate',
+		advanced: '?? Advanced'
+	};
+
+	function pillarPct(p: Pillar): number {
+		const { total, mastered } = pillarProgress[p];
+		return total === 0 ? 0 : Math.round((mastered / total) * 100);
 	}
 
-	function startExercise(route: string) {
-		goto(resolve(route as any));
+	function startExercise(lesson: Lesson): void {
+		if (!activeUnit) return;
+		sessionStarted = true;
+		const url = base + journeyService.getLessonUrl(activeUnit, lesson).replace(/^\/?\//, '/');
+		window.location.assign(url);
 	}
 
-	function getStatusIcon(status: string) {
-		switch (status) {
-			case 'mastered': return CheckCircle2;
-			case 'in-progress': return Play;
-			case 'available': return Target;
-			default: return Lock;
+	function refreshSession(): void {
+		if (activeUnit) {
+			session = journeyService.generateTraining(activeUnit.id);
+			completedInSession = new Set();
 		}
 	}
 
-	function getStatusColor(status: string): string {
-		switch (status) {
-			case 'mastered': return 'var(--color-success)';
-			case 'in-progress': return 'var(--color-primary)';
-			case 'available': return 'var(--color-warn)';
-			default: return 'var(--color-text-muted)';
-		}
+	function lessonDoneInSession(id: string): boolean {
+		return completedInSession.has(id);
 	}
 </script>
 
+<svelte:head>
+	<title>Training — Jazz MIDI</title>
+</svelte:head>
+
 <div class="training-page">
+	<!-- Header -->
 	<header class="page-header">
-		<h1>🏋️ Your Training Plan</h1>
-		<p class="subtitle">Personalized workouts based on your weaknesses and the jazz curriculum</p>
+		<div class="header-left">
+			<h1>??? Daily Training</h1>
+			{#if activeUnit}
+				<span class="unit-badge">{activeUnit.title}</span>
+				<span class="difficulty-badge">{DIFFICULTY_LABEL[activeUnit.difficulty]}</span>
+			{/if}
+		</div>
+		{#if session}
+			<div class="header-right">
+				<span class="time-estimate">~{session.estimatedMinutes} min</span>
+				<button type="button" class="icon-btn" onclick={refreshSession} title="Refresh session">
+					<RefreshCw size={18} />
+				</button>
+			</div>
+		{/if}
 	</header>
 
-	<!-- Pillar Stats Overview -->
-	<div class="pillars-grid">
-		{#each pillars as pillar}
-			{@const stats = pillarStats[pillar.id]}
-			<button
-				type="button"
-				class="pillar-card"
-				class:recommended={recommendedFocus.pillar === pillar.id}
-				style="--pillar-color: {pillar.color}"
-				onclick={() => selectedPillar = pillar.id}
-			>
-				<div class="pillar-header">
-					<pillar.icon size={28} style="color: {pillar.color}" />
-					<h3>{pillar.name}</h3>
-					{#if recommendedFocus.pillar === pillar.id}
-						<span class="recommended-badge">Recommended</span>
-					{/if}
+	<!-- Pillar Progress Strip -->
+	<section class="pillars-strip">
+		{#each Object.entries(PILLAR_META) as [id, meta]}
+			{@const pct = pillarPct(id as Pillar)}
+			<div class="pillar-chip" style="--pc: {meta.color}">
+				<meta.icon size={16} style="color: {meta.color}" />
+				<span class="pillar-label">{meta.label}</span>
+				<div class="pillar-bar">
+					<div class="pillar-fill" style="width: {pct}%"></div>
 				</div>
-				<p class="pillar-desc">{pillar.desc}</p>
-				<div class="pillar-progress">
-					<div class="progress-bar">
-						<div class="progress-fill" style="width: {(stats.mastered / stats.total) * 100}%; background: {pillar.color}"></div>
-					</div>
-					<span class="progress-text">{stats.mastered}/{stats.total} • {stats.averageAccuracy}% avg</span>
-				</div>
-			</button>
+				<span class="pillar-pct">{pct}%</span>
+			</div>
 		{/each}
-	</div>
+	</section>
 
-	<!-- Recommendation Banner -->
-	<div class="recommendation-banner card-premium">
-		<div class="rec-content">
-			<Zap size={32} class="rec-icon" />
-			<div>
-				<h3>Today's Focus: {pillars.find(p => p.id === recommendedFocus.pillar)?.name}</h3>
-				<p>{recommendedFocus.reason}</p>
-			</div>
-		</div>
-		<button class="primary-btn" onclick={() => { selectedPillar = recommendedFocus.pillar; generateWorkout(); }}>
-			Start Recommended Workout
-		</button>
-	</div>
-
-	<!-- Weaknesses Alert -->
-	{#if weaknesses.length > 0}
-		<div class="weaknesses-section card-premium">
-			<h3><AlertTriangle size={20} /> Areas Needing Attention</h3>
-			<div class="weakness-list">
-				{#each weaknesses.slice(0, 3) as weakness}
-					{@const skill = CURRICULUM.find(s => s.id === weakness.skillId)}
-					{#if skill}
-						<div class="weakness-item">
-							<div class="weakness-info">
-								<strong>{skill.name}</strong>
-								<span class="weakness-pillar">{skill.pillar}</span>
+	<!-- Training Session -->
+	{#if session && session.lessons.length > 0}
+		<section class="session-section">
+			<h2>Today's Session</h2>
+			<ol class="lesson-list">
+				{#each session.lessons as lesson, i}
+					{@const done = lessonDoneInSession(lesson.id) || lesson.completed}
+					{@const meta = PILLAR_META[lesson.pillar]}
+					<li class="lesson-card" class:done style="--pc: {meta.color}">
+						<span class="lesson-num">{i + 1}</span>
+						<div class="lesson-body">
+							<div class="lesson-top">
+								<strong>{lesson.title}</strong>
+								<span class="pillar-tag" style="color: {meta.color}">
+									<meta.icon size={12} />
+									{meta.label}
+								</span>
 							</div>
-							<div class="weakness-stats">
-								<span class="accuracy-badge low">{weakness.averageAccuracy}% accuracy</span>
-								<button class="practice-btn" onclick={() => startExercise(skill.exercises[0])}>
-									Practice
+							<div class="lesson-stars">
+								{#each [1, 2, 3] as s}
+									<Star
+										size={14}
+										fill={lesson.stars >= s ? 'gold' : 'none'}
+										stroke={lesson.stars >= s ? 'gold' : 'var(--color-text-muted)'}
+									/>
+								{/each}
+								{#if lesson.perfectCompletions > 0}
+									<span class="mastery-hint">
+										{lesson.perfectCompletions}/{lesson.requiredPerfectCompletions} perfect
+									</span>
+								{/if}
+							</div>
+						</div>
+						<div class="lesson-action">
+							{#if lesson.completed}
+								<CheckCircle2 size={28} class="done-icon" />
+							{:else if lessonDoneInSession(lesson.id)}
+								<CheckCircle2 size={28} class="session-done-icon" />
+							{:else}
+								<button type="button" class="go-btn" onclick={() => startExercise(lesson)}>
+									<Play size={18} />
 								</button>
-							</div>
+							{/if}
 						</div>
-					{/if}
+					</li>
 				{/each}
-			</div>
+			</ol>
+		</section>
+	{:else if !activeUnit}
+		<div class="empty-state">
+			<Trophy size={48} />
+			<h2>All units complete!</h2>
+			<p>You've mastered the full curriculum. Keep practising to maintain your skills.</p>
+			<a href="{base}/journey" class="cta-btn">View Journey</a>
 		</div>
 	{/if}
 
-	<!-- Workout Generator -->
-	<div class="workout-generator card-premium">
-		<h3>🎯 Generate Custom Workout</h3>
-		<div class="generator-controls">
-			<div class="duration-control">
-				<label for="duration-range">Duration: {workoutDuration} min</label>
-				<input id="duration-range" type="range" min="10" max="60" step="5" bind:value={workoutDuration} />
-			</div>
-			<div class="pillar-filter">
-				<span>Focus (optional):</span>
-				<div class="pillar-buttons">
-					<button class="pillar-btn" class:active={!selectedPillar} onclick={() => selectedPillar = undefined}>All</button>
-					{#each pillars as pillar}
-						<button 
-							class="pillar-btn" 
-							class:active={selectedPillar === pillar.id}
-							style="--btn-color: {pillar.color}"
-							onclick={() => selectedPillar = pillar.id}
-						>
-							{pillar.name}
-						</button>
-					{/each}
-				</div>
-			</div>
-			<button class="generate-btn" onclick={generateWorkout}>
-				<Dumbbell size={20} />
-				Generate {workoutDuration}-Min Workout
-			</button>
-		</div>
-	</div>
-
-	<!-- Current Workout -->
-	{#if showWorkout && currentWorkout}
-		<div class="workout-session card-premium">
-			<div class="workout-header">
-				<h3>💪 Your Personalized Workout</h3>
-				<div class="workout-meta">
-					<span><Clock size={16} /> {currentWorkout.duration} min</span>
-					{#if currentWorkout.weaknessBased}
-						<span class="weakness-tag">Targets Weaknesses</span>
-					{/if}
-				</div>
-			</div>
-			
-			<div class="exercise-list">
-				{#each currentWorkout.exercises as exercise, i}
-					<div class="exercise-item" style="--ex-color: {pillars.find(p => p.id === exercise.pillar)?.color}">
-						<div class="ex-number">{i + 1}</div>
-						<div class="ex-content">
-							<div class="ex-header">
-								<strong>{exercise.skillName}</strong>
-								<span class="ex-purpose" class:weakness={exercise.purpose === 'weakness'}>{exercise.purpose}</span>
-							</div>
-							<div class="ex-meta">
-								<span class="ex-pillar">{exercise.pillar}</span>
-								<span class="ex-difficulty">{exercise.difficulty}</span>
-								<span class="ex-duration">{exercise.duration} min</span>
-							</div>
-						</div>
-						<button class="start-ex-btn" onclick={() => startExercise(exercise.route)}>
-							<Play size={18} />
-						</button>
-					</div>
-				{/each}
-			</div>
-			
-			<button class="close-btn" onclick={() => showWorkout = false}>Close</button>
-		</div>
-	{/if}
-
-	<!-- Learning Path / Curriculum -->
-	<div class="curriculum-section card-premium">
-		<h3><TrendingUp size={20} /> Full Curriculum Path</h3>
-		<div class="curriculum-list">
-			{#each learningPath.filter(item => item.status !== 'locked').slice(0, 10) as item}
-				{@const StatusIcon = getStatusIcon(item.status)}
-				<div class="curriculum-item" class:mastered={item.status === 'mastered'}>
-					<div class="item-status" style="color: {getStatusColor(item.status)}">
-						<StatusIcon size={20} />
-					</div>
-					<div class="item-content">
-						<strong>{item.skill.name}</strong>
-						<p>{item.skill.description}</p>
-						{#if item.progress}
-							<div class="item-progress">
-								<div class="mini-bar">
-									<div class="mini-fill" style="width: {item.progress.accuracy}%"></div>
-								</div>
-								<span>{item.progress.accuracy}% • {item.progress.timesPracticed}×</span>
-							</div>
+	<!-- Unit Overview -->
+	{#if activeUnit}
+		<section class="unit-overview">
+			<h2>Unit Progress</h2>
+			<div class="all-lessons">
+				{#each activeUnit.lessons as lesson}
+					{@const meta = PILLAR_META[lesson.pillar]}
+					<div class="overview-row" class:completed={lesson.completed}>
+						{#if lesson.completed}
+							<CheckCircle2 size={16} class="ov-done" />
+						{:else}
+							<div class="ov-dot" style="background: {meta.color}"></div>
 						{/if}
+						<span class="ov-title">{lesson.title}</span>
+						<span class="ov-pillar" style="color: {meta.color}">{meta.label}</span>
+						<span class="ov-stars">
+							{#each [1, 2, 3] as s}
+								<Star
+									size={12}
+									fill={lesson.stars >= s ? 'gold' : 'none'}
+									stroke={lesson.stars >= s ? 'gold' : 'var(--color-text-muted)'}
+								/>
+							{/each}
+						</span>
 					</div>
-					<button 
-						class="item-action" 
-						disabled={item.status === 'locked'}
-						onclick={() => item.status !== 'locked' && startExercise(item.skill.exercises[0])}
-					>
-						{item.status === 'mastered' ? 'Review' : item.status === 'locked' ? 'Locked' : 'Practice'}
-					</button>
-				</div>
-			{/each}
-		</div>
-	</div>
+				{/each}
+			</div>
+		</section>
+	{/if}
 </div>
 
 <style>
 	.training-page {
-		max-width: 1000px;
+		max-width: 800px;
 		margin: 0 auto;
-		padding: 2rem;
-	}
-
-	.page-header {
-		text-align: center;
-		margin-bottom: 3rem;
-	}
-
-	.page-header h1 {
-		font-size: 2.5rem;
-		font-weight: 800;
-		background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-		background-clip: text;
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		margin-bottom: 0.5rem;
-	}
-
-	.subtitle {
-		color: var(--color-text-muted);
-		font-size: 1.1rem;
-	}
-
-	.pillars-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: 1rem;
-		margin-bottom: 2rem;
-	}
-
-	.pillar-card {
-		background: var(--color-surface);
-		border: 2px solid var(--color-border);
-		border-radius: 12px;
-		padding: 1.5rem;
-		cursor: pointer;
-		transition: all 0.2s;
-		/* Reset button styles */
-		font-family: inherit;
-		font-size: inherit;
-		color: inherit;
-		text-align: left;
-		width: 100%;
-	}
-
-	.pillar-card:focus-visible {
-		outline: 2px solid var(--pillar-color);
-		outline-offset: 2px;
-	}
-
-	.pillar-card:hover {
-		border-color: var(--pillar-color);
-		transform: translateY(-2px);
-	}
-
-	.pillar-card.recommended {
-		border-color: var(--pillar-color);
-		box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
-	}
-
-	.pillar-header {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 0.5rem;
-	}
-
-	.pillar-header h3 {
-		margin: 0;
-		color: var(--color-text);
-	}
-
-	.recommended-badge {
-		font-size: 0.7rem;
-		background: var(--color-primary);
-		color: white;
-		padding: 0.2rem 0.5rem;
-		border-radius: 4px;
-		margin-left: auto;
-	}
-
-	.pillar-desc {
-		font-size: 0.9rem;
-		color: var(--color-text-muted);
-		margin-bottom: 1rem;
-	}
-
-	.pillar-progress {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.progress-bar {
-		height: 6px;
-		background: var(--color-surface-raised);
-		border-radius: 3px;
-		overflow: hidden;
-	}
-
-	.progress-fill {
-		height: 100%;
-		transition: width 0.3s;
-	}
-
-	.progress-text {
-		font-size: 0.8rem;
-		color: var(--color-text-muted);
-	}
-
-	.recommendation-banner {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 1.5rem;
-		margin-bottom: 2rem;
-		background: linear-gradient(135deg, rgba(88, 166, 255, 0.1), rgba(139, 92, 246, 0.1));
-		border-color: var(--color-primary);
-	}
-
-	.rec-content {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.rec-content h3 {
-		margin: 0 0 0.25rem 0;
-		color: var(--color-text);
-	}
-
-	.rec-content p {
-		margin: 0;
-		color: var(--color-text-muted);
-	}
-
-	.primary-btn {
-		background: var(--color-primary);
-		color: white;
-		border: none;
-		padding: 0.75rem 1.5rem;
-		border-radius: 8px;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.primary-btn:hover {
-		transform: scale(1.05);
-	}
-
-	.weaknesses-section {
-		padding: 1.5rem;
-		margin-bottom: 2rem;
-		border-left: 4px solid var(--color-error);
-	}
-
-	.weaknesses-section h3 {
-		margin: 0 0 1rem 0;
-		color: var(--color-text);
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.weakness-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.weakness-item {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 1rem;
-		background: var(--color-surface-raised);
-		border-radius: 8px;
-	}
-
-	.weakness-info {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.weakness-info strong {
-		color: var(--color-text);
-	}
-
-	.weakness-pillar {
-		font-size: 0.8rem;
-		color: var(--color-text-muted);
-		text-transform: capitalize;
-	}
-
-	.weakness-stats {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.accuracy-badge {
-		padding: 0.25rem 0.5rem;
-		border-radius: 4px;
-		font-size: 0.8rem;
-		font-weight: 600;
-	}
-
-	.accuracy-badge.low {
-		background: rgba(239, 68, 68, 0.2);
-		color: var(--color-error);
-	}
-
-	.practice-btn {
-		background: var(--color-primary);
-		color: white;
-		border: none;
-		padding: 0.5rem 1rem;
-		border-radius: 6px;
-		font-size: 0.85rem;
-		cursor: pointer;
-	}
-
-	.workout-generator {
-		padding: 1.5rem;
-		margin-bottom: 2rem;
-	}
-
-	.workout-generator h3 {
-		margin: 0 0 1.5rem 0;
-		color: var(--color-text);
-	}
-
-	.generator-controls {
+		padding: 1rem 1.5rem 4rem;
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
 	}
 
-	.duration-control {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.duration-control input {
-		width: 100%;
-	}
-
-	.pillar-filter {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.pillar-buttons {
-		display: flex;
-		gap: 0.5rem;
-		flex-wrap: wrap;
-	}
-
-	.pillar-btn {
-		padding: 0.5rem 1rem;
-		border: 1px solid var(--color-border);
-		background: var(--color-surface-raised);
-		color: var(--color-text);
-		border-radius: 6px;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.pillar-btn.active {
-		background: var(--btn-color);
-		color: white;
-		border-color: var(--btn-color);
-	}
-
-	.generate-btn {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		background: var(--color-success);
-		color: white;
-		border: none;
-		padding: 1rem 2rem;
-		border-radius: 8px;
-		font-size: 1.1rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.generate-btn:hover {
-		transform: scale(1.02);
-	}
-
-	.workout-session {
-		padding: 1.5rem;
-		margin-bottom: 2rem;
-		border: 2px solid var(--color-success);
-	}
-
-	.workout-header {
+	.page-header {
 		display: flex;
 		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1.5rem;
+		align-items: flex-start;
+		flex-wrap: wrap;
+		gap: 0.5rem;
 	}
 
-	.workout-header h3 {
+	.header-left {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.page-header h1 {
 		margin: 0;
+		font-size: 1.5rem;
 		color: var(--color-text);
 	}
 
-	.workout-meta {
+	.unit-badge {
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
+	}
+
+	.difficulty-badge {
+		font-size: 0.8rem;
+		color: var(--color-primary);
+		font-weight: 600;
+	}
+
+	.header-right {
 		display: flex;
-		gap: 1rem;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.time-estimate {
+		font-size: 0.9rem;
+		color: var(--color-text-muted);
+	}
+
+	.icon-btn {
+		background: none;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		padding: 0.4rem;
+		cursor: pointer;
+		color: var(--color-text-muted);
+		display: flex;
 		align-items: center;
 	}
 
-	.weakness-tag {
-		background: var(--color-error);
-		color: white;
-		padding: 0.25rem 0.5rem;
-		border-radius: 4px;
-		font-size: 0.75rem;
+	/* Pillar strip */
+	.pillars-strip {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 0.75rem;
 	}
 
-	.exercise-list {
+	.pillar-chip {
+		background: var(--color-surface-raised);
+		border-radius: 10px;
+		padding: 0.6rem 0.8rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
+		gap: 0.3rem;
+		border-top: 3px solid var(--pc);
 	}
 
-	.exercise-item {
+	.pillar-label {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--color-text);
+	}
+
+	.pillar-bar {
+		height: 5px;
+		background: var(--color-surface);
+		border-radius: 3px;
+		overflow: hidden;
+	}
+
+	.pillar-fill {
+		height: 100%;
+		background: var(--pc);
+		border-radius: 3px;
+		transition: width 0.4s ease;
+	}
+
+	.pillar-pct {
+		font-size: 0.7rem;
+		color: var(--color-text-muted);
+		align-self: flex-end;
+	}
+
+	/* Session */
+	.session-section h2,
+	.unit-overview h2 {
+		margin: 0 0 0.75rem;
+		font-size: 1.1rem;
+		color: var(--color-text);
+	}
+
+	.lesson-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+	}
+
+	.lesson-card {
 		display: grid;
-		grid-template-columns: 40px 1fr 50px;
-		gap: 1rem;
+		grid-template-columns: 28px 1fr 44px;
 		align-items: center;
-		padding: 1rem;
+		gap: 0.75rem;
+		padding: 0.75rem 1rem;
 		background: var(--color-surface-raised);
-		border-radius: 8px;
-		border-left: 3px solid var(--ex-color);
+		border-radius: 10px;
+		border-left: 4px solid var(--pc);
+		transition: opacity 0.2s;
 	}
 
-	.ex-number {
-		width: 32px;
-		height: 32px;
-		background: var(--ex-color);
-		color: white;
+	.lesson-card.done {
+		opacity: 0.55;
+	}
+
+	.lesson-num {
+		width: 28px;
+		height: 28px;
+		background: var(--pc);
+		color: #fff;
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		font-weight: 700;
+		font-size: 0.85rem;
+		flex-shrink: 0;
 	}
 
-	.ex-content {
+	.lesson-body {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: 0.2rem;
+		min-width: 0;
 	}
 
-	.ex-header {
+	.lesson-top {
 		display: flex;
-		gap: 0.5rem;
 		align-items: center;
+		gap: 0.5rem;
+		flex-wrap: wrap;
 	}
 
-	.ex-purpose {
+	.lesson-top strong {
+		font-size: 0.9rem;
+		color: var(--color-text);
+	}
+
+	.pillar-tag {
 		font-size: 0.7rem;
-		padding: 0.1rem 0.4rem;
-		border-radius: 3px;
-		background: var(--color-surface);
-		color: var(--color-text-muted);
-		text-transform: uppercase;
-	}
-
-	.ex-purpose.weakness {
-		background: var(--color-error);
-		color: white;
-	}
-
-	.ex-meta {
 		display: flex;
-		gap: 0.75rem;
-		font-size: 0.8rem;
+		align-items: center;
+		gap: 0.2rem;
+		font-weight: 500;
+	}
+
+	.lesson-stars {
+		display: flex;
+		align-items: center;
+		gap: 0.15rem;
+	}
+
+	.mastery-hint {
+		font-size: 0.7rem;
 		color: var(--color-text-muted);
+		margin-left: 0.35rem;
 	}
 
-	.ex-pillar {
-		text-transform: capitalize;
+	.lesson-action {
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
-	.start-ex-btn {
+	.go-btn {
 		background: var(--color-primary);
-		color: white;
+		color: #fff;
 		border: none;
-		width: 40px;
-		height: 40px;
 		border-radius: 50%;
+		width: 36px;
+		height: 36px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
+		transition: transform 0.15s;
 	}
 
-	.close-btn {
-		width: 100%;
-		background: var(--color-surface-raised);
-		color: var(--color-text);
-		border: 1px solid var(--color-border);
-		padding: 0.75rem;
-		border-radius: 6px;
-		cursor: pointer;
+	.go-btn:hover {
+		transform: scale(1.1);
 	}
 
-	.curriculum-section {
-		padding: 1.5rem;
+	:global(.done-icon) {
+		color: var(--color-success);
+	}
+	:global(.session-done-icon) {
+		color: var(--color-primary);
 	}
 
-	.curriculum-section h3 {
-		margin: 0 0 1rem 0;
-		color: var(--color-text);
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.curriculum-list {
+	/* Unit overview */
+	.all-lessons {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.35rem;
 	}
 
-	.curriculum-item {
+	.overview-row {
 		display: grid;
-		grid-template-columns: 30px 1fr 100px;
-		gap: 1rem;
+		grid-template-columns: 20px 1fr auto auto;
 		align-items: center;
-		padding: 0.75rem 1rem;
-		background: var(--color-surface-raised);
-		border-radius: 8px;
-		opacity: 0.7;
+		gap: 0.6rem;
+		padding: 0.4rem 0.5rem;
+		border-radius: 6px;
+		font-size: 0.82rem;
 	}
 
-	.curriculum-item.mastered {
-		opacity: 1;
-		background: rgba(34, 197, 94, 0.1);
+	.overview-row.completed {
+		opacity: 0.6;
 	}
 
-	.item-content {
+	.ov-dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+	}
+
+	:global(.ov-done) {
+		color: var(--color-success);
+	}
+
+	.ov-title {
+		color: var(--color-text);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.ov-pillar {
+		font-size: 0.72rem;
+		font-weight: 500;
+	}
+
+	.ov-stars {
+		display: flex;
+		gap: 0.1rem;
+	}
+
+	/* Empty state */
+	.empty-state {
+		text-align: center;
+		padding: 3rem 1rem;
+		color: var(--color-text-muted);
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.item-content strong {
-		color: var(--color-text);
-	}
-
-	.item-content p {
-		margin: 0;
-		font-size: 0.85rem;
-		color: var(--color-text-muted);
-	}
-
-	.item-progress {
-		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.75rem;
-		color: var(--color-text-muted);
+		gap: 1rem;
 	}
 
-	.mini-bar {
-		width: 60px;
-		height: 4px;
-		background: var(--color-surface);
-		border-radius: 2px;
-		overflow: hidden;
-	}
-
-	.mini-fill {
-		height: 100%;
-		background: var(--color-success);
-	}
-
-	.item-action {
-		padding: 0.5rem;
+	.cta-btn {
 		background: var(--color-primary);
-		color: white;
-		border: none;
-		border-radius: 6px;
-		font-size: 0.8rem;
-		cursor: pointer;
+		color: #fff;
+		padding: 0.75rem 1.5rem;
+		border-radius: 8px;
+		text-decoration: none;
+		font-weight: 600;
 	}
 
-	.item-action:disabled {
-		background: var(--color-surface);
-		color: var(--color-text-muted);
-		cursor: not-allowed;
-	}
-
-	@media (max-width: 768px) {
-		.training-page {
-			padding: 1rem;
-		}
-
-		.recommendation-banner {
-			flex-direction: column;
-			gap: 1rem;
-			text-align: center;
-		}
-
-		.weakness-item {
-			flex-direction: column;
-			gap: 0.5rem;
-			align-items: flex-start;
-		}
-
-		.exercise-item {
-			grid-template-columns: 35px 1fr 45px;
+	@media (max-width: 600px) {
+		.pillars-strip {
+			grid-template-columns: repeat(2, 1fr);
 		}
 	}
 </style>

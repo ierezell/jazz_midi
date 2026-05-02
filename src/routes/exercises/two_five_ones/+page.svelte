@@ -18,11 +18,12 @@
 	} from '$lib/types/notes.constants';
 	import type { NoteEvent, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import { untrack } from 'svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import { page } from '$app/state';
-	import { BeatValidator } from '$lib/BeatValidator.js';
-	import { rhythmPatterns } from '$lib/data/rhythmPatterns.js';
-	import BeatIndicator from '$lib/../components/BeatIndicator.svelte';
+	import { RhythmMode } from '$lib/exercises/utils/RhythmMode.svelte.js';
+	import { rhythmPatterns } from '$lib/data/rhythmPatternsData';
+	import BeatIndicator from '../../../components/exercise/BeatIndicator.svelte';
 
 	const description =
 		'Play the II-V-I progression as shown. Use the correct chords and voicings for each step.';
@@ -51,57 +52,36 @@
 	const paramKey = $derived(page.url.searchParams.get('key') as Note);
 
 	// Rhythm mode - filter to progression-friendly patterns
-	let progressionPatterns = $derived(
-		rhythmPatterns.filter((p) => p.isProgression).length > 0
-			? rhythmPatterns.filter((p) => p.isProgression)
-			: [...rhythmPatterns].sort((a, b) => {
-					const preferred = ['blues-shells', 'jazz-charleston'];
-					const ai = preferred.indexOf(a.id);
-					const bi = preferred.indexOf(b.id);
-					if (ai !== -1 && bi !== -1) return ai - bi;
-					if (ai !== -1) return -1;
-					if (bi !== -1) return 1;
-					return 0;
-				})
-	);
-	let withRhythmMode = $state(false);
-	let progBeatValidator = $state<BeatValidator | null>(null);
-	let progCurrentBeat = $state(0);
-	let progSelectedPatternId = $state('');
-	let progSelectedPattern = $derived(
-		progressionPatterns.find((p) => p.id === progSelectedPatternId) ?? progressionPatterns[0]
-	);
-
-	// Initialise progSelectedPatternId once progressionPatterns is known
-	$effect(() => {
-		if (!progSelectedPatternId && progressionPatterns.length > 0) {
-			progSelectedPatternId = progressionPatterns[0].id;
-		}
-	});
-
-	function toggleProgRhythmMode(): void {
-		withRhythmMode = !withRhythmMode;
-		if (withRhythmMode) {
-			progBeatValidator = new BeatValidator();
-			progBeatValidator.start(progSelectedPattern.suggestedBpm, progSelectedPattern, (beat) => {
-				progCurrentBeat = beat;
-			});
-		} else {
-			progBeatValidator?.stop();
-			progBeatValidator = null;
-			progCurrentBeat = 0;
-		}
-	}
+	// Rhythm mode — filter to progression-friendly patterns
+	const progressionPatterns = (() => {
+		const filtered = rhythmPatterns.filter((p) => p.isProgression);
+		if (filtered.length > 0) return filtered;
+		const preferred = ['blues-shells', 'jazz-charleston'];
+		return [...rhythmPatterns].sort((a, b) => {
+			const ai = preferred.indexOf(a.id);
+			const bi = preferred.indexOf(b.id);
+			if (ai !== -1 && bi !== -1) return ai - bi;
+			if (ai !== -1) return -1;
+			if (bi !== -1) return 1;
+			return 0;
+		});
+	})();
+	const rhythm = new RhythmMode(progressionPatterns);
 
 	let currentChordIndex = $state(0);
+	// @svelte-ignore state_referenced_locally
 	let inversion: Inversion = $state(
-		propInversion ?? (randomMode ? (Math.floor(Math.random() * 4) as Inversion) : 0)
+		untrack(() => propInversion ?? (randomMode ? (Math.floor(Math.random() * 4) as Inversion) : 0))
 	);
+	// @svelte-ignore state_referenced_locally
 	let voicing: ChordVoicing = $state(
-		propVoicing ??
-			(randomMode
-				? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
-				: 'full-right')
+		untrack(
+			() =>
+				propVoicing ??
+				(randomMode
+					? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
+					: 'full-right')
+		)
 	);
 
 	let effectiveRootKey = $derived(paramKey ?? propKey ?? 'C');
@@ -144,16 +124,14 @@
 		expectedNotes: ReadonlyArray<MidiNote>,
 		currentNotes: ReadonlyArray<MidiNote>
 	): ValidationResult {
-		if (withRhythmMode && progBeatValidator && currentNotes.length === 0) {
-			const beatResult = progBeatValidator.validateHit(event);
-			if (!beatResult.isHit) {
-				return {
-					isCorrect: false,
-					message: `Off beat! (${beatResult.label})`,
-					collected: false,
-					resetCollected: false
-				};
-			}
+		const beatResult = currentNotes.length === 0 ? rhythm.validateHit(event) : null;
+		if (beatResult && !beatResult.isHit) {
+			return {
+				isCorrect: false,
+				message: `Off beat! (${beatResult.label})`,
+				collected: false,
+				resetCollected: false
+			};
 		}
 
 		const chordName = getChordNames(selectedNote)[currentChordIndex];
@@ -306,24 +284,20 @@
 
 					<div class="rhythm-controls">
 						<label class="rhythm-toggle">
-							<input
-								type="checkbox"
-								bind:checked={withRhythmMode}
-								onchange={toggleProgRhythmMode}
-							/>
+							<input type="checkbox" checked={rhythm.active} onchange={() => rhythm.toggle()} />
 							<span>With Rhythm</span>
 						</label>
-						{#if withRhythmMode}
-							<select bind:value={progSelectedPatternId} class="pattern-select">
-								{#each progressionPatterns as p}
+						{#if rhythm.active}
+							<select bind:value={rhythm.selectedPatternId} class="pattern-select">
+								{#each rhythm.patterns as p}
 									<option value={p.id}>{p.name} ({p.suggestedBpm} BPM)</option>
 								{/each}
 							</select>
 							<BeatIndicator
 								totalBeats={4}
-								currentBeat={progCurrentBeat}
-								hitPositions={progSelectedPattern.hits}
-								isActive={withRhythmMode}
+								currentBeat={rhythm.currentBeat}
+								hitPositions={rhythm.selectedPattern.hits}
+								isActive={rhythm.active}
 							/>
 						{/if}
 					</div>

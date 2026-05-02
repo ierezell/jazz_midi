@@ -1,6 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { playMidiChord, playMidiNote } from '../midi-helper';
-import { chordNotes } from '../music-theory';
+import { chords as buildChord } from '../../../src/lib/MusicTheoryUtils';
+import { NoteToMidi } from '../../../src/lib/types/notes.constants';
+import type { ChordType, NoteFullName } from '../../../src/lib/types/types';
+
+function chordNotes(root: string, type: string): number[] {
+	const rootMidi = NoteToMidi[`${root}4` as NoteFullName];
+	const chord = buildChord(rootMidi, type as ChordType);
+	return [chord.root, chord.third, chord.fifth, chord.seventh].filter(
+		(n) => n !== undefined
+	) as number[];
+}
 
 /** Parse chord string like "Am7" or "Gmaj7" into note and type */
 function parseChordString(str: string): { note: string; type: string } | null {
@@ -333,3 +343,4 @@ test.describe('Song Chords Exercise', () => {
 		}
 	});
 });
+

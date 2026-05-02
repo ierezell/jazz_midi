@@ -6,7 +6,7 @@
 	import type { MidiNote, Note, NoteEvent, ScoreProps, Lick } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import { licks } from '$lib/data/licksData';
 
 	const description =

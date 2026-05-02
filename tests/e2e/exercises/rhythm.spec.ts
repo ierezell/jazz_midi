@@ -26,3 +26,4 @@ test.describe('Rhythm Exercise', () => {
 		await expect(page.locator('h1')).toBeVisible();
 	});
 });
+

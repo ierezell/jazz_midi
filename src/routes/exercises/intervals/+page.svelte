@@ -18,17 +18,19 @@
 	} from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { calculateInterval } from '$lib/MusicTheoryUtils';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
+	import { untrack } from 'svelte';
 
 	const description =
 		'Play the interval shown on the staff using your MIDI keyboard. Listen and check your answer.';
 
+	// @svelte-ignore state_referenced_locally
 	const props = $props();
-	let randomMode = props.randomMode;
-	let onComplete = props.onComplete;
-	let propIntervalType = props.intervalType;
-	let propRightHandMode = props.rightHandMode;
-	let propKey = props.rootKey;
+	const randomMode = untrack(() => props.randomMode);
+	const onComplete = untrack(() => props.onComplete);
+	const propIntervalType = untrack(() => props.intervalType);
+	const propRightHandMode = untrack(() => props.rightHandMode);
+	const propKey = untrack(() => props.rootKey);
 
 	let intervalType: IntervalType = $state(
 		propIntervalType ??

@@ -20,3 +20,4 @@ test.describe('Scales Exercise', () => {
 		await expect(page.locator('.exercise-main')).toBeVisible();
 	});
 });
+

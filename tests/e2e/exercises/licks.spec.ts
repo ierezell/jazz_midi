@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Licks Exercise', () => {
 	test('should load and display licks exercise page', async ({ page }) => {
 		await page.goto('/exercises/licks');
+		await page.waitForSelector('.lick-header', { state: 'visible', timeout: 20_000 });
 
 		// Check page title/header
 		await expect(page.locator('h2')).toBeVisible();
@@ -37,6 +38,7 @@ test.describe('Licks Exercise', () => {
 
 	test('should filter by hand selection', async ({ page }) => {
 		await page.goto('/exercises/licks');
+		await page.waitForSelector('#hand-select', { state: 'visible', timeout: 20_000 });
 
 		// Select left hand
 		await page.selectOption('#hand-select', 'left');
@@ -69,3 +71,4 @@ test.describe('Licks Exercise', () => {
 		expect(consoleErrors).toHaveLength(0);
 	});
 });
+

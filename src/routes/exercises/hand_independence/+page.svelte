@@ -3,12 +3,12 @@
 <script lang="ts">
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import {
 		validateHandNote,
 		isHandIndependenceCompleted,
 		midiToNoteName
-	} from '$lib/handIndependenceValidation';
+	} from './hand-independence';
 
 	// Level 1 data: Cm7 shell voicing + C major scale
 	const L1_LH: MidiNote[] = [36, 58] as MidiNote[]; // C2 (root), Bb3 (minor 7th)

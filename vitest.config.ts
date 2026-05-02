@@ -5,10 +5,8 @@ export default defineConfig({
 	test: {
 		// Include patterns: tests in tests/unit and src/lib
 		include: [
-			'tests/unit/**/*.spec.{js,ts}',
-			'tests/unit/**/*.test.{js,ts}',
-			'src/**/*.spec.{js,ts}',
-			'src/**/*.test.{js,ts}'
+			'tests/unit/**/*.{spec,test}.{js,ts}',
+			'src/**/*.{spec,test}.{js,ts}'
 		],
 		environment: 'happy-dom',
 		setupFiles: ['./tests/setup.ts'],

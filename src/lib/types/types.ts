@@ -41,6 +41,7 @@ export const allExerciseType: ExerciseType[] = [
 	'partition',
 	'progression',
 	'rhythm',
+	'hand_independence',
 	'dexterity'
 ];
 export interface KeyboardProps {
@@ -65,14 +66,7 @@ export interface ExerciseStatistics {
 
 export interface ExerciseResult {
 	exerciseId: string;
-	exerciseType:
-		| 'chord'
-		| 'scale'
-		| 'progression'
-		| 'partition'
-		| 'rhythm'
-		| 'hand_independence'
-		| 'dexterity';
+	exerciseType: ExerciseType;
 	success: boolean;
 	accuracy: number;
 	timeElapsed: number;

@@ -1,4 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type BrowserContext } from '@playwright/test';
+
+async function seedProfile(context: BrowserContext) {
+	await context.addInitScript(() => {
+		localStorage.setItem('jazz-midi-user-profile', JSON.stringify({
+			id: 'nav-test', name: 'Nav Tester', level: 1, experiencePoints: 10,
+			streakDays: 0, lastPracticeDate: null, preferences: {}
+		}));
+	});
+}
 
 const ROUTES = [
 	'/',
@@ -31,6 +40,7 @@ const ROUTES = [
 ];
 
 test.describe('Navigation Flow', () => {
+	test.beforeEach(async ({ context }) => { await seedProfile(context); });
 	test('should show core nav links', async ({ page }) => {
 		await page.goto('/');
 
@@ -69,3 +79,4 @@ test.describe('Navigation Flow', () => {
 		}
 	});
 });
+

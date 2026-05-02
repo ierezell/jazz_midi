@@ -24,12 +24,13 @@
 		ScoreProps
 	} from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import { untrack } from 'svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import { page } from '$app/state';
 	import { browser } from '$app/environment';
-	import { BeatValidator } from '$lib/BeatValidator.js';
-	import { rhythmPatterns } from '$lib/data/rhythmPatterns.js';
-	import BeatIndicator from '$lib/../components/BeatIndicator.svelte';
+	import { RhythmMode } from '$lib/exercises/utils/RhythmMode.svelte.js';
+	import { rhythmPatterns } from '$lib/data/rhythmPatternsData';
+	import BeatIndicator from '../../../components/exercise/BeatIndicator.svelte';
 
 	const description =
 		'Play the notes of the displayed chord on your MIDI keyboard. Try to match the voicing and inversion shown.';
@@ -71,23 +72,35 @@
 	];
 
 	// Local state — gym deep-links sync from the URL in `afterNavigate` / `onMount` (see below).
+	// @svelte-ignore state_referenced_locally
 	let currentRoot: Note = $state(
-		propKey ?? (randomMode ? AllNotes[Math.floor(Math.random() * AllNotes.length)] : 'C')
+		untrack(
+			() => propKey ?? (randomMode ? AllNotes[Math.floor(Math.random() * AllNotes.length)] : 'C')
+		)
 	);
+	// @svelte-ignore state_referenced_locally
 	let currentChordType: ChordType = $state(
-		propChordType ??
-			(randomMode
-				? possibleChordTypes[Math.floor(Math.random() * possibleChordTypes.length)]
-				: 'maj7')
+		untrack(
+			() =>
+				propChordType ??
+				(randomMode
+					? possibleChordTypes[Math.floor(Math.random() * possibleChordTypes.length)]
+					: 'maj7')
+		)
 	);
+	// @svelte-ignore state_referenced_locally
 	let currentInversion: Inversion = $state(
-		propInversion ?? (randomMode ? (Math.floor(Math.random() * 4) as Inversion) : 0)
+		untrack(() => propInversion ?? (randomMode ? (Math.floor(Math.random() * 4) as Inversion) : 0))
 	);
+	// @svelte-ignore state_referenced_locally
 	let currentVoicing: ChordVoicing = $state(
-		propVoicing ??
-			(randomMode
-				? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
-				: 'full-right')
+		untrack(
+			() =>
+				propVoicing ??
+				(randomMode
+					? AllChordVoicings[Math.floor(Math.random() * AllChordVoicings.length)]
+					: 'full-right')
+		)
 	);
 
 	function applyChordQuery(sp: URLSearchParams): void {
@@ -133,27 +146,7 @@
 	let previousChordNotes: MidiNote[] = $state([]);
 
 	// Rhythm mode
-	let withRhythmMode = $state(false);
-	let beatValidator = $state<BeatValidator | null>(null);
-	let currentBeat = $state(0);
-	let selectedPatternId = $state(rhythmPatterns[0]?.id ?? '');
-	let selectedPattern = $derived(
-		rhythmPatterns.find((p) => p.id === selectedPatternId) ?? rhythmPatterns[0]
-	);
-
-	function toggleRhythmMode(): void {
-		withRhythmMode = !withRhythmMode;
-		if (withRhythmMode) {
-			beatValidator = new BeatValidator();
-			beatValidator.start(selectedPattern.suggestedBpm, selectedPattern, (beat) => {
-				currentBeat = beat;
-			});
-		} else {
-			beatValidator?.stop();
-			beatValidator = null;
-			currentBeat = 0;
-		}
-	}
+	const rhythm = new RhythmMode(rhythmPatterns);
 
 	function generateNewChallenge() {
 		const randomRoot = AllNotes[Math.floor(Math.random() * AllNotes.length)];
@@ -232,16 +225,14 @@
 		void selectedNote;
 		void currentNotes;
 
-		if (withRhythmMode && beatValidator && currentNotes.length === 0) {
-			const beatResult = beatValidator.validateHit(event);
-			if (!beatResult.isHit) {
-				return {
-					isCorrect: false,
-					message: `Off beat! (${beatResult.label})`,
-					collected: false,
-					resetCollected: false
-				};
-			}
+		const beatResult = currentNotes.length === 0 ? rhythm.validateHit(event) : null;
+		if (beatResult && !beatResult.isHit) {
+			return {
+				isCorrect: false,
+				message: `Off beat! (${beatResult.label})`,
+				collected: false,
+				resetCollected: false
+			};
 		}
 
 		const expectedClasses = expectedNotes.map((n) => n % 12);
@@ -394,20 +385,20 @@
 
 				<div class="rhythm-controls">
 					<label class="rhythm-toggle">
-						<input type="checkbox" bind:checked={withRhythmMode} onchange={toggleRhythmMode} />
+						<input type="checkbox" checked={rhythm.active} onchange={() => rhythm.toggle()} />
 						<span>With Rhythm</span>
 					</label>
-					{#if withRhythmMode}
-						<select bind:value={selectedPatternId} class="pattern-select">
-							{#each rhythmPatterns as p}
+					{#if rhythm.active}
+						<select bind:value={rhythm.selectedPatternId} class="pattern-select">
+							{#each rhythm.patterns as p}
 								<option value={p.id}>{p.name} ({p.suggestedBpm} BPM)</option>
 							{/each}
 						</select>
 						<BeatIndicator
 							totalBeats={4}
-							{currentBeat}
-							hitPositions={selectedPattern.hits}
-							isActive={withRhythmMode}
+							currentBeat={rhythm.currentBeat}
+							hitPositions={rhythm.selectedPattern.hits}
+							isActive={rhythm.active}
 						/>
 					{/if}
 				</div>

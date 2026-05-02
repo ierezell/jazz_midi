@@ -3,8 +3,8 @@
 <script lang="ts">
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
-	import { audioManager } from '$lib/AudioManager';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
+	import { audioManager } from '$lib/audio/AudioManager';
 	import { NoteToMidi, MidiToNote } from '$lib/types/notes.constants';
 
 	// Interval definitions with names

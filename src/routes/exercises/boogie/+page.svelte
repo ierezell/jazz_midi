@@ -4,7 +4,8 @@
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { NoteToMidi, MidiToNote } from '$lib/types/notes.constants';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
+	import { untrack } from 'svelte';
 
 	const description =
 		'Practice the boogie-woogie rhythm pattern. Left hand plays the walking bass line, right hand plays C6 chord on beats 1 and the & of 3.';
@@ -24,7 +25,8 @@
 	let currentBeat = $state(0); // 0-7 for 8 eighth notes in 4/4
 	let playedNotes: Set<MidiNote> = $state(new Set());
 	let lastTickTime = $state(0);
-	let currentKey: Note = $state(propKey);
+	// @svelte-ignore state_referenced_locally
+	let currentKey: Note = $state(untrack(() => propKey));
 
 	// Bass pattern notes relative to root (in semitones)
 	const bassPattern = [0, 9, 0, 7, 0, 9, 7, 0]; // C, A, C, G, C, A, G, C

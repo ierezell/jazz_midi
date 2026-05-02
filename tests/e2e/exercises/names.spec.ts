@@ -7,3 +7,4 @@ test.describe('Names Exercise', () => {
 		await expect(page.locator('h1')).toBeVisible();
 	});
 });
+

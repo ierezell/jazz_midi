@@ -4,7 +4,7 @@
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { AllNotes, MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
 	import { page } from '$app/state';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 
 	type DexMode = 'random' | 'chromatic' | 'five-finger' | 'thirds';
 

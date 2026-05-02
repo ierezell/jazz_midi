@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { resolve } from '$app/paths';
-	import type { RouteId } from '$app/types';
+	import { base } from '$app/paths';
 	import { Menu, X } from 'lucide-svelte';
 	import { fade, slide } from 'svelte/transition';
 
@@ -82,7 +81,7 @@
 									class:active={page.url.pathname === link.href ||
 										(link.href !== '/' && page.url.pathname.startsWith(link.href))}
 								>
-									<a href={resolve(link.href as unknown as RouteId)} onclick={closeMenu}>
+									<a href={base + link.href} onclick={closeMenu}>
 										<span class="icon">{link.icon}</span>
 										<span class="label">{link.label}</span>
 									</a>

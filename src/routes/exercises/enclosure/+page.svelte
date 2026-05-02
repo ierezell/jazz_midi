@@ -4,7 +4,7 @@
 	import { untrack } from 'svelte';
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import { NoteToMidi, MidiToNote } from '$lib/types/notes.constants';
 
 	// Enclosure patterns: circling target tones

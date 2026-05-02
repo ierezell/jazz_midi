@@ -1,4 +1,4 @@
-import type { ChordType, ExerciseResult, Note } from './types/types';
+import type { ChordType, ExerciseResult, ExerciseType, Note } from './types/types';
 export interface UserProfile {
 	id: string;
 	name: string;
@@ -11,7 +11,7 @@ export interface UserProfile {
 }
 export interface NoteProgress {
 	note: Note;
-	exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm';
+	exerciseType: ExerciseType;
 	chordType?: ChordType;
 	attempts: number;
 	successes: number;
@@ -122,87 +122,25 @@ export interface AchievementRequirement {
 }
 export class UserStatsService {
 	private static instance: UserStatsService;
-	// Helper to determine if a usable localStorage is available (works in SSR-safe way)
-	private static hasLocalStorage(): boolean {
-		try {
-			// globalThis used to support various environments
-			if (typeof globalThis === 'undefined') return false;
-			// Ensure localStorage exists and has the expected API
-			const ls = (globalThis as typeof globalThis & { localStorage?: Storage }).localStorage;
-			return (
-				!!ls &&
-				typeof ls.getItem === 'function' &&
-				typeof ls.setItem === 'function' &&
-				typeof ls.removeItem === 'function'
-			);
-		} catch (e) {
-			return false;
-		}
-	}
-	// Returns a storage-like object with getItem/setItem/removeItem.
-	// If the environment provides a working localStorage, return it.
-	// Otherwise provide an in-memory Map fallback so calls are safe in SSR/tests.
 	private static _memoryStorage: Map<string, string> | null = null;
-	// Cache whether we've already detected storage so we log once
-	private static _storageResolved = false;
-	private static _usingRealLocalStorage = false;
-	private static getStorage(): {
-		getItem(key: string): string | null;
-		setItem(key: string, value: string): void;
-		removeItem(key: string): void;
-	} {
+
+	/** Returns localStorage when available, falls back to an in-memory Map (SSR / tests). */
+	private static getStorage(): Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> {
 		try {
-			// prefer real localStorage when available and functional
-			const ls = (globalThis as typeof globalThis & { localStorage?: Storage }).localStorage;
-			if (
-				ls &&
-				typeof ls.getItem === 'function' &&
-				typeof ls.setItem === 'function' &&
-				typeof ls.removeItem === 'function'
-			) {
-				if (!UserStatsService._storageResolved) {
-					UserStatsService._usingRealLocalStorage = true;
-					UserStatsService._storageResolved = true;
-				}
-				return ls as typeof ls;
-			}
-			// If there is a localStorage-like object but missing methods, log once
-			if (!UserStatsService._storageResolved && ls) {
-				UserStatsService._usingRealLocalStorage = false;
-				UserStatsService._storageResolved = true;
-				console.warn(
-					'UserStatsService: localStorage object detected but missing expected methods — using in-memory fallback'
-				);
-			}
-		} catch (e) {
-			// accessing localStorage may throw in some environments — log once
-			if (!UserStatsService._storageResolved) {
-				UserStatsService._usingRealLocalStorage = false;
-				UserStatsService._storageResolved = true;
-			}
+			// Use window.localStorage for reliable browser detection
+			// (typeof localStorage check can be optimized away by Vite's SSR transform)
+			if (typeof window !== 'undefined' && window.localStorage) return window.localStorage;
+		} catch {
+			// localStorage access throws in some environments (e.g. sandboxed iframes)
 		}
-		// create in-memory storage if needed
-		if (!UserStatsService._memoryStorage)
+		if (!UserStatsService._memoryStorage) {
 			UserStatsService._memoryStorage = new Map<string, string>();
-		if (!UserStatsService._storageResolved) {
-			UserStatsService._usingRealLocalStorage = false;
-			UserStatsService._storageResolved = true;
-			// Only log if we're in the browser (not during SSR)
-			if (typeof window !== 'undefined') {
-			}
 		}
+		const mem = UserStatsService._memoryStorage;
 		return {
-			getItem(key: string) {
-				return UserStatsService._memoryStorage!.has(key)
-					? UserStatsService._memoryStorage!.get(key)!
-					: null;
-			},
-			setItem(key: string, value: string) {
-				UserStatsService._memoryStorage!.set(key, value);
-			},
-			removeItem(key: string) {
-				UserStatsService._memoryStorage!.delete(key);
-			}
+			getItem: (key) => mem.get(key) ?? null,
+			setItem: (key, value) => { mem.set(key, value); },
+			removeItem: (key) => { mem.delete(key); }
 		};
 	}
 	private storageKey = 'jazz-midi-user-stats';
@@ -222,6 +160,31 @@ export class UserStatsService {
 	}
 	getProfile(): UserProfile {
 		return { ...this.profile };
+	}
+	/** Re-read profile and statistics from storage (fixes stale SSR singleton in browser). */
+	refreshFromStorage(): void {
+		// Always read directly from window.localStorage in browser context.
+		// getStorage() may return the in-memory fallback if the singleton was created during SSR
+		// and getStorage() is evaluated in Node.js scope even when called from browser onMount.
+		if (typeof window !== 'undefined') {
+			try {
+				const rawProfile = window.localStorage.getItem(this.profileKey);
+				if (rawProfile) {
+					const parsed = JSON.parse(rawProfile);
+					this.profile = { ...parsed, createdAt: new Date(parsed.createdAt), lastActivity: new Date(parsed.lastActivity) };
+				} else {
+					this.profile = this.createDefaultProfile();
+				}
+				// Reload statistics via loadStatistics which calls getStorage() —
+				// may still use in-memory fallback, but stats are less critical for display
+				this.statistics = this.loadStatistics();
+				return;
+			} catch {
+				// Fall through to getStorage() path
+			}
+		}
+		this.profile = this.loadProfile();
+		this.statistics = this.loadStatistics();
 	}
 	updateProfile(updates: Partial<UserProfile>): void {
 		this.profile = { ...this.profile, ...updates, lastActivity: new Date() };
@@ -644,7 +607,7 @@ export class UserStatsService {
 	}
 	updateNoteProgress(
 		note: Note,
-		exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm',
+		exerciseType: ExerciseType,
 		chordType: ChordType | undefined,
 		success: boolean,
 		timeSpent: number,
@@ -691,14 +654,14 @@ export class UserStatsService {
 	}
 	getNoteProgress(
 		note: Note,
-		exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm',
+		exerciseType: ExerciseType,
 		chordType?: ChordType
 	): NoteProgress | undefined {
 		const key = this.generateProgressKey(note, exerciseType, chordType);
 		return this.statistics.noteProgress.get(key);
 	}
 	getProgressByType(
-		exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm'
+		exerciseType: ExerciseType
 	): NoteProgress[] {
 		return Array.from(this.statistics.noteProgress.values()).filter(
 			(progress) => progress.exerciseType === exerciseType
@@ -706,7 +669,7 @@ export class UserStatsService {
 	}
 	private generateProgressKey(
 		note: Note,
-		exerciseType: 'scale' | 'chord' | 'progression' | 'partition' | 'rhythm',
+		exerciseType: ExerciseType,
 		chordType?: ChordType
 	): string {
 		return chordType ? `${note}-${exerciseType}-${chordType}` : `${note}-${exerciseType}`;
@@ -943,3 +906,4 @@ export class UserStatsService {
 	}
 }
 export const userStatsService = UserStatsService.getInstance();
+

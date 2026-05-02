@@ -15,3 +15,4 @@ test.describe('Enclosure Drill Exercise', () => {
 		await expect(page.locator('.exercise-main')).toContainText(/enclosure|pattern|target/i);
 	});
 });
+

@@ -1,0 +1,11 @@
+{
+	"id": "whole-tone-lick",
+	"name": "Whole Tone Lick",
+	"description": "Whole tone scale run — creates the dreamy, unresolved sound used over dominant chords.",
+	"category": "bebop",
+	"hand": "right",
+	"difficulty": "advanced",
+	"suggestedBpm": 130,
+	"notes": ["C4", "D4", "E4", "F#4", "G#4", "A#4", "C5"],
+	"tags": ["whole-tone", "dominant", "advanced", "bebop"]
+}

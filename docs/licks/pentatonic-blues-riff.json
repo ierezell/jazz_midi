@@ -1,0 +1,11 @@
+{
+	"id": "pentatonic-blues-riff",
+	"name": "Pentatonic Blues Riff",
+	"description": "Classic blues pentatonic riff using the blues scale. Foundation of jazz-blues improvisation.",
+	"category": "blues",
+	"hand": "right",
+	"difficulty": "beginner",
+	"suggestedBpm": 100,
+	"notes": ["C4", "Eb4", "F4", "Gb4", "G4", "Bb4", "C5"],
+	"tags": ["blues", "pentatonic", "riff"]
+}

@@ -300,7 +300,11 @@ export type ScaleMode =
 	| 'Min'
 	| 'Blues'
 	| 'HarMin'
-	| 'MelMin';
+	| 'MelMin'
+	| 'Pentatonic'
+	| 'PentatonicMin'
+	| 'Dorian'
+	| 'Chromatic';
 export type ChordVoicing =
 	| 'full-right'
 	| 'full-left'

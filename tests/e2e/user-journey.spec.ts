@@ -1,6 +1,16 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type BrowserContext } from '@playwright/test';
+
+async function seedProfile(context: BrowserContext) {
+	await context.addInitScript(() => {
+		localStorage.setItem('jazz-midi-user-profile', JSON.stringify({
+			id: 'journey-test', name: 'Journey Tester', level: 1, experiencePoints: 10,
+			streakDays: 0, lastPracticeDate: null, preferences: {}
+		}));
+	});
+}
 
 test.describe('User Journey - Complete Exercise Flow', () => {
+	test.beforeEach(async ({ context }) => { await seedProfile(context); });
 	test('should complete a full exercise session', async ({ page }) => {
 		await page.goto('/');
 		await expect(page.locator('.logo-text')).toBeVisible();
@@ -54,6 +64,7 @@ test.describe('User Journey - Complete Exercise Flow', () => {
 });
 
 test.describe('User Journey - Exercise Type Access', () => {
+	test.beforeEach(async ({ context }) => { await seedProfile(context); });
 	const exercises = [
 		{ route: '/exercises/two_five_ones', name: 'II-V-I' },
 		{ route: '/exercises/scales', name: 'Scales' },
@@ -112,3 +123,4 @@ test.describe('User Journey - Navigation Persistence', () => {
 		await expect(page).toHaveURL('/journey');
 	});
 });
+

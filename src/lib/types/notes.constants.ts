@@ -325,6 +325,10 @@ export const AllScaleModes: ScaleMode[] = [
 	'Blues',
 	'HarMin',
 	'MelMin',
+	'Pentatonic',
+	'PentatonicMin',
+	'Dorian',
+	'Chromatic',
 ];
 
 export const DEFAULT_OCTAVE = '3';
@@ -347,6 +351,10 @@ export const SCALE_INTERVALS: Record<ScaleMode, number[]> = {
 	Blues: [0, 3, 5, 6, 7, 10, 12],
 	HarMin: [0, 2, 3, 5, 7, 8, 11, 12],
 	MelMin: [0, 2, 3, 5, 7, 9, 11, 12],
+	Pentatonic: [0, 2, 4, 7, 9, 12],
+	PentatonicMin: [0, 3, 5, 7, 10, 12],
+	Dorian: [0, 2, 3, 5, 7, 9, 10, 12],
+	Chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
 };
 
 export const AllIntervals: IntervalType[] = [
@@ -364,6 +372,27 @@ export const AllIntervals: IntervalType[] = [
 	'major7th',
 	'octave'
 ];
+
+/** Semitone offset (0–11) for each Note name, handling enharmonic equivalents. */
+export const NOTE_TO_CHROMA: Record<import('./notes').Note, number> = {
+	C: 0,
+	'C#': 1,
+	Db: 1,
+	D: 2,
+	'D#': 3,
+	Eb: 3,
+	E: 4,
+	F: 5,
+	'F#': 6,
+	Gb: 6,
+	G: 7,
+	'G#': 8,
+	Ab: 8,
+	A: 9,
+	'A#': 10,
+	Bb: 10,
+	B: 11
+};
 
 export const INTERVAL_SEMITONES: Record<IntervalType, number> = {
 	unison: 0,

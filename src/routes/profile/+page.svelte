@@ -4,8 +4,7 @@
 	import type { Achievement, UserProfile, UserStatistics } from '$lib/UserStatsService';
 	import { userStatsService } from '$lib/UserStatsService';
 	import { journeyService } from '$lib/JourneyService';
-	import { resolve } from '$app/paths';
-	import type { RouteId } from '$app/types';
+	import { resolve, base } from '$app/paths';
 	import { onMount } from 'svelte';
 	import StatsWidget from '../../components/StatsWidget.svelte';
 	import type { PageData } from './$types';
@@ -115,6 +114,25 @@
 	let weaknessRecommendations = $derived(userStatsService.getWeaknessRecommendations());
 
 	onMount(() => {
+		// Parse directly from localStorage — bypasses the potentially-stale SSR singleton cache.
+		try {
+			const rawProfile = localStorage.getItem('jazz-midi-user-profile');
+			if (rawProfile) {
+				const parsed = JSON.parse(rawProfile);
+				profile = {
+					...parsed,
+					createdAt: new Date(parsed.createdAt),
+					lastActivity: new Date(parsed.lastActivity)
+				};
+			}
+		} catch {
+			/* keep default */
+		}
+
+		userStatsService.refreshFromStorage();
+		statistics = userStatsService.getStatistics();
+		achievements = userStatsService.getAchievements();
+
 		const unsubscribe = userStatsService.subscribe((newStats) => {
 			statistics = newStats;
 			profile = userStatsService.getProfile();
@@ -230,7 +248,7 @@
 						<h4>Recommended Practice</h4>
 						<div class="recommendation-list">
 							{#each weaknessRecommendations as rec}
-								<a href={resolve(rec.path as unknown as RouteId)} class="recommendation-card">
+								<a href={base + rec.path} class="recommendation-card">
 									<div class="rec-header">
 										<TrendingUp size={20} />
 										<strong>{rec.weakness}</strong>

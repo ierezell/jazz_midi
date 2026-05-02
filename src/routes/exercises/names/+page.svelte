@@ -4,7 +4,8 @@
 	import { AllNotes, MidiToNote, NoteToMidi, DEFAULT_OCTAVE } from '$lib/types/notes.constants';
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
+	import { untrack } from 'svelte';
 
 	const description =
 		'Identify and play the note name shown. Use either English or Latin notation.';
@@ -66,7 +67,8 @@
 		rootKey: propKey
 	}: Props = $props();
 
-	let englishToLatin: boolean = $state(propEnglishToLatin ?? true);
+	// @svelte-ignore state_referenced_locally
+	let englishToLatin: boolean = $state(untrack(() => propEnglishToLatin ?? true));
 	let currentDisplayNote: string = $state('');
 	let currentTargetNote: Note = $state('C');
 	let playedCorrectly = $state(false);

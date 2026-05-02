@@ -85,3 +85,4 @@ test.describe('Ghost Note Challenge Exercise', () => {
 		await expect(page.locator('.feedback-toast')).toBeVisible({ timeout: 5_000 });
 	});
 });
+

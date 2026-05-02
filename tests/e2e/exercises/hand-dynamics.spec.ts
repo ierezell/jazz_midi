@@ -20,3 +20,4 @@ test.describe('Hand Dynamics Exercise', () => {
 		await expect(page.locator('.feedback-toast')).toBeVisible({ timeout: 5_000 });
 	});
 });
+

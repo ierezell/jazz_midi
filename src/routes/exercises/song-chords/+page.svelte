@@ -2,8 +2,9 @@
 
 <script lang="ts">
 	type PageData = { songs: import('$lib/types/musicxml').MusicXMLSong[] };
-	import BaseExercise from '../../../components/BaseExercise.svelte';
-	import MusicXMLScore from '../../../components/MusicXMLScore.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
+	import { untrack } from 'svelte';
+	import Score from '../../../components/exercise/Score.svelte';
 	import type { MusicXMLSong, SongChord } from '$lib/types/musicxml';
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import type { NoteEvent, ScoreProps } from '$lib/types/types';
@@ -19,8 +20,9 @@
 		data: PageData;
 	}
 
+	// @svelte-ignore state_referenced_locally
 	let { data }: Props = $props();
-	const songs = data.songs;
+	const songs = untrack(() => data.songs);
 
 	let selectedSong: MusicXMLSong = $state(songs[0]);
 	let currentChordIndex = $state(0);
@@ -261,7 +263,7 @@
 		<!-- MusicXML Score Display -->
 		{#if selectedSong}
 			<div class="score-section">
-				<MusicXMLScore url={selectedSong.url} annotations={getAnnotations()} />
+				<Score url={selectedSong.url} annotations={getAnnotations()} />
 			</div>
 		{/if}
 	{/snippet}

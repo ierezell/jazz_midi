@@ -1,4 +1,4 @@
-import { loadAllSongs } from '$lib/MusicXMLLoader';
+import { loadAllSongs } from '$lib/data/MusicXMLLoader';
 import type { MusicXMLSong } from '$lib/types/musicxml';
 
 export const load = async () => {

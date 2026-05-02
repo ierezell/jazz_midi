@@ -2,8 +2,8 @@
 
 <script lang="ts">
 	type PageData = { songs: import('$lib/types/musicxml').MusicXMLSong[] };
-	import BaseExercise from '../../../components/BaseExercise.svelte';
-	import MusicXMLScore from '../../../components/MusicXMLScore.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
+	import Score from '../../../components/exercise/Score.svelte';
 	import type { MusicXMLSong, SongExerciseType } from '$lib/types/musicxml';
 	import type { BarData, MistakeMode } from '$lib/types/rhythm';
 	import type { MidiNote, NoteEvent, ScoreProps } from '$lib/types/types';
@@ -22,7 +22,7 @@
 		getAutoRestartMessage,
 		getWaitForKeyMessage,
 		generateRhythmExerciseFromSong
-	} from '$lib/RhythmExercise';
+	} from '../rhythm/rhythm-logic';
 	import { NoteToMidi, MidiToNote } from '$lib/types/notes.constants';
 	import type { Note } from '$lib/types/notes';
 
@@ -302,7 +302,7 @@
 			<!-- MusicXML Score Display -->
 			{#if selectedSong}
 				<div class="score-section">
-					<MusicXMLScore url={selectedSong.url} {annotations} />
+					<Score url={selectedSong.url} {annotations} />
 				</div>
 			{/if}
 

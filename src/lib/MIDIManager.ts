@@ -3,7 +3,7 @@ import type { MIDIEventHandlers, MidiNote, Note, NoteEvent } from './types/types
 import { writable, type Writable } from 'svelte/store';
 
 import { createVirtualMidiAccess, setupKeyboardInput, type VirtualMidiInput } from './virtualMidi';
-import { audioInputService } from './AudioInputService';
+import { audioInputService } from './audio/AudioInputService';
 import { logger } from './LoggingService';
 
 class MIDIManager {
@@ -45,7 +45,7 @@ class MIDIManager {
 
 	public ensurePlaywrightMidiDispatchHook(): void {
 		if (typeof window === 'undefined') return;
-		const w = window as any;
+		const w = window as Window & { __dispatchMidi?: (data: Uint8Array) => void };
 		if (typeof w.__dispatchMidi === 'function') return;
 
 		w.__dispatchMidi = (data: Uint8Array) => {

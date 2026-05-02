@@ -1,0 +1,11 @@
+{
+	"id": "minor-blues-head",
+	"name": "Minor Blues Head",
+	"description": "A classic minor blues melody using the minor pentatonic. Foundation for jazz-blues improvisation.",
+	"category": "blues",
+	"hand": "right",
+	"difficulty": "advanced",
+	"suggestedBpm": 110,
+	"notes": ["C4", "Eb4", "F4", "G4", "Bb4", "C5", "Bb4", "G4", "F4", "Eb4"],
+	"tags": ["blues", "minor", "melody", "head"]
+}

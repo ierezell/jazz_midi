@@ -1,0 +1,18 @@
+{
+	"id": "level4-stride-pattern",
+	"title": "Stride Piano Pattern",
+	"level": 4,
+	"description": "Classic stride: LH alternates low bass note with mid-register chord. RH plays melody.",
+	"lhPattern": [
+		{ "beat": 1.0, "semitones": [0] },
+		{ "beat": 2.0, "semitones": [4, 7, 12] },
+		{ "beat": 3.0, "semitones": [0] },
+		{ "beat": 4.0, "semitones": [4, 7, 12] }
+	],
+	"rhPattern": [12, 11, 9, 7, 5, 4, 2, 0],
+	"rootMidi": 36,
+	"rhStartMidi": 60,
+	"suggestedBpm": 90,
+	"measures": 2,
+	"instructions": "LH: Bass note on 1&3, chord on 2&4 (stride pattern). RH: Descending melody over the stride."
+}

@@ -7,7 +7,7 @@ import {
 	INTERVAL_SEMITONES
 } from './types/notes.constants';
 import type { Chord, ChordType, MidiNote, Note, NoteFullName, NoteRole } from './types/types';
-import { calculateVoiceLeadingDistance } from './music-validation';
+import { calculateVoiceLeadingDistance } from './musicValidation';
 
 const inverseTriadChord = (
 	notes: MidiNote[],
@@ -413,3 +413,4 @@ export function calculateInterval(
 
 	return targetMidi;
 }
+

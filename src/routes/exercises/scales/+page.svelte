@@ -11,16 +11,17 @@
 	} from '$lib/types/notes.constants';
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import { untrack } from 'svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import { page } from '$app/state';
 	import { userStatsService } from '$lib/UserStatsService';
-	import { BeatValidator } from '$lib/BeatValidator.js';
-	import { rhythmPatterns } from '$lib/data/rhythmPatterns.js';
-	import BeatIndicator from '$lib/../components/BeatIndicator.svelte';
+	import { RhythmMode } from '$lib/exercises/utils/RhythmMode.svelte.js';
+	import { rhythmPatterns } from '$lib/data/rhythmPatternsData';
+	import BeatIndicator from '../../../components/exercise/BeatIndicator.svelte';
 
 	const description =
 		'Play the scale shown, ascending and/or descending, using your MIDI keyboard. Try to follow the correct order.';
-	import { generateExpectedNotesFor, type HandMode } from '$lib/scaleExercise';
+	import { generateExpectedNotesFor, type HandMode } from './scales-logic';
 
 	interface Props {
 		randomMode: boolean;
@@ -73,12 +74,17 @@
 	let unlockedNotes = $derived(getUnlockedRootNotes(userLevel));
 	let showUnlockInfo = $state(false);
 
-	// State
-	let sequentialMode = $state(propSequentialMode ?? false);
-	let handMode = $state(propHandMode ?? 'right');
-	let scaleMode = $state(propScaleMode ?? 'Maj');
-	let octaves = $state(propOctaves);
-	let direction = $state(propDirection);
+	// State — props are initial values only; local state diverges after mount
+	// @svelte-ignore state_referenced_locally
+	let sequentialMode = $state(untrack(() => propSequentialMode ?? false));
+	// @svelte-ignore state_referenced_locally
+	let handMode = $state(untrack(() => propHandMode ?? 'right'));
+	// @svelte-ignore state_referenced_locally
+	let scaleMode = $state(untrack(() => propScaleMode ?? 'Maj'));
+	// @svelte-ignore state_referenced_locally
+	let octaves = $state(untrack(() => propOctaves));
+	// @svelte-ignore state_referenced_locally
+	let direction = $state(untrack(() => propDirection));
 	let currentRootKey = $state<Note>('C');
 	let effectiveRootKey = $derived(propKey ?? currentRootKey);
 
@@ -95,33 +101,13 @@
 	let playedNotes: Set<MidiNote> = $state(new Set());
 
 	// Rhythm mode
-	let rhythmicMode = $state(false);
-	let scaleBeatValidator = $state<BeatValidator | null>(null);
-	let scaleCurrentBeat = $state(0);
-	let scaleSelectedPatternId = $state(rhythmPatterns[0]?.id ?? '');
-	let scaleSelectedPattern = $derived(
-		rhythmPatterns.find((p) => p.id === scaleSelectedPatternId) ?? rhythmPatterns[0]
-	);
+	const rhythm = new RhythmMode(rhythmPatterns);
 
 	// Derived
 	let computedPrompt = $derived(
 		`${effectiveRootKey} ${scaleMode === 'Maj' ? 'Major' : 'Minor'} Scale`
 	);
 	let effectivePrompt = $derived(prompt ?? computedPrompt);
-
-	function toggleRhythmicMode(): void {
-		rhythmicMode = !rhythmicMode;
-		if (rhythmicMode) {
-			scaleBeatValidator = new BeatValidator();
-			scaleBeatValidator.start(scaleSelectedPattern.suggestedBpm, scaleSelectedPattern, (beat) => {
-				scaleCurrentBeat = beat;
-			});
-		} else {
-			scaleBeatValidator?.stop();
-			scaleBeatValidator = null;
-			scaleCurrentBeat = 0;
-		}
-	}
 
 	function handleParentReset(): void {
 		playedSequence = [];
@@ -213,16 +199,14 @@
 	): ValidationResult {
 		void currentNotes;
 
-		if (rhythmicMode && scaleBeatValidator) {
-			const beatResult = scaleBeatValidator.validateHit(event);
-			if (!beatResult.isHit) {
-				return {
-					isCorrect: false,
-					message: `Off beat! (${beatResult.label})`,
-					collected: false,
-					resetCollected: false
-				};
-			}
+		const beatResult = rhythm.validateHit(event);
+		if (beatResult && !beatResult.isHit) {
+			return {
+				isCorrect: false,
+				message: `Off beat! (${beatResult.label})`,
+				collected: false,
+				resetCollected: false
+			};
 		}
 
 		const nextExpectedIndex = playedSequence.length;
@@ -409,7 +393,7 @@
 	prompt={effectivePrompt}
 	showTempoControl={true}
 	timingModeLabel="Play scale on beat"
-	perNoteTiming={rhythmicMode}
+	perNoteTiming={rhythm.active}
 >
 	{#snippet children()}
 		<div class="scale-controls">
@@ -491,20 +475,20 @@
 
 					<div class="rhythm-controls">
 						<label class="rhythm-toggle">
-							<input type="checkbox" bind:checked={rhythmicMode} onchange={toggleRhythmicMode} />
+							<input type="checkbox" checked={rhythm.active} onchange={() => rhythm.toggle()} />
 							<span>Rhythmic Mode</span>
 						</label>
-						{#if rhythmicMode}
-							<select bind:value={scaleSelectedPatternId} class="pattern-select">
-								{#each rhythmPatterns as p}
+						{#if rhythm.active}
+							<select bind:value={rhythm.selectedPatternId} class="pattern-select">
+								{#each rhythm.patterns as p}
 									<option value={p.id}>{p.name} ({p.suggestedBpm} BPM)</option>
 								{/each}
 							</select>
 							<BeatIndicator
 								totalBeats={4}
-								currentBeat={scaleCurrentBeat}
-								hitPositions={scaleSelectedPattern.hits}
-								isActive={rhythmicMode}
+								currentBeat={rhythm.currentBeat}
+								hitPositions={rhythm.selectedPattern.hits}
+								isActive={rhythm.active}
 							/>
 						{/if}
 					</div>

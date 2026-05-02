@@ -1,11 +1,11 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { AllNotes, MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 
 	const description =
 		'Read and play the sequence of notes shown on the musical staff. Perfect for improving sight-reading skills!';
@@ -19,7 +19,8 @@
 
 	let { randomMode, onComplete, rootKey: propKey, range: propRange }: Props = $props();
 
-	let range = $state<[NoteFullName, NoteFullName]>(propRange || ['C3', 'C6']);
+	// @svelte-ignore state_referenced_locally
+	let range = $state<[NoteFullName, NoteFullName]>(untrack(() => propRange || ['C3', 'C6']));
 	let currentSequence: NoteFullName[] = $state([]);
 	let hand: 'left' | 'right' = $state('right');
 	let playedCount = $state(0);

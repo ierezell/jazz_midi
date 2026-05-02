@@ -20,3 +20,4 @@ test.describe('Intervals Exercise', () => {
 		await expect(page.locator('.exercise-main')).toBeVisible();
 	});
 });
+

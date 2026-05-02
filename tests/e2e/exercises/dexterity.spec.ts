@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { playMidiNote } from '../midi-helper';
-import { midiFromName } from '../music-theory';
+import { NoteToMidi } from '../../../src/lib/types/notes.constants';
+import type { NoteFullName } from '../../../src/lib/types/types';
 
 test.describe('Dexterity Exercise', () => {
 	test('Tracks correct sequence played', async ({ page }) => {
@@ -23,10 +24,10 @@ test.describe('Dexterity Exercise', () => {
 			// e.g. "C#3", "Bb4" — allow 1+ digit octave
 			const match = name.match(/^([A-Ga-g][#b]?)(\d+)$/);
 			if (!match) return null;
-			return midiFromName(match[1], parseInt(match[2]));
+			return NoteToMidi[`${match[1]}${match[2]}` as NoteFullName];
 		};
 
-		const midiNotes = noteNames.map(parseMidi).filter((n): n is number => n !== null);
+		const midiNotes = noteNames.map(parseMidi).filter((n) => n !== null) as number[];
 
 		// 1. Play wrong first note
 		if (midiNotes.length > 0) {
@@ -45,3 +46,4 @@ test.describe('Dexterity Exercise', () => {
 		await expect(page.locator('.feedback-toast')).toContainText('success', { ignoreCase: true });
 	});
 });
+

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import type { Note, NoteEvent, MidiNote, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import { rhythmPatterns } from '$lib/data/rhythmPatterns';
+	import { rhythmPatterns } from '$lib/data/rhythmPatternsData';
 
 	let bpm = $state(100);
 	let isPlaying = $state(false);

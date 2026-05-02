@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { playMidiNote, playMidiChord } from '../midi-helper';
-import { midiFromName } from '../music-theory';
+import { NoteToMidi } from '../../../src/lib/types/notes.constants';
+import type { NoteFullName } from '../../../src/lib/types/types';
 
 test.describe('Flashcards Exercise', () => {
 	test('Tracks random cards (note or chord)', async ({ page }) => {
@@ -23,10 +24,10 @@ test.describe('Flashcards Exercise', () => {
 		const parseMidi = (name: string) => {
 			const match = name.match(/^([A-Ga-g][#b]?)(\d+)$/);
 			if (!match) return null;
-			return midiFromName(match[1], parseInt(match[2]));
+			return NoteToMidi[`${match[1]}${match[2]}` as NoteFullName];
 		};
 
-		const midiNotes = noteNames.map(parseMidi).filter((n): n is number => n !== null);
+		const midiNotes = noteNames.map(parseMidi).filter((n) => n !== null) as number[];
 
 		// 1. Play wrong note
 		if (midiNotes.length > 0) {
@@ -48,7 +49,7 @@ test.describe('Flashcards Exercise', () => {
 			.map((s) => s.trim())
 			.filter(Boolean)
 			.map(parseMidi)
-			.filter((n): n is number => n !== null);
+			.filter((n) => n !== null) as number[];
 
 		if (newNotes.length === 1) {
 			await playMidiNote(page, newNotes[0], 80);
@@ -59,3 +60,4 @@ test.describe('Flashcards Exercise', () => {
 		await expect(page.locator('.feedback-toast')).toContainText('success', { ignoreCase: true });
 	});
 });
+

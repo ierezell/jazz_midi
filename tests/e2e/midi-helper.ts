@@ -63,3 +63,4 @@ export async function playMidiChord(page: Page, notes: number[], durationMs = 10
 		await releaseMidiNote(page, note);
 	}
 }
+

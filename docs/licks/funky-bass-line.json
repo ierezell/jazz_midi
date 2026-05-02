@@ -1,0 +1,11 @@
+{
+	"id": "funky-bass-line",
+	"name": "Funky Bass Line",
+	"description": "Syncopated funk bass ostinato in the left hand. Groove foundation for funk-jazz.",
+	"category": "funk",
+	"hand": "left",
+	"difficulty": "intermediate",
+	"suggestedBpm": 105,
+	"notes": ["C2", "C2", "Eb2", "F2", "G2", "F2", "Eb2", "C2"],
+	"tags": ["funk", "bass", "groove", "ostinato"]
+}

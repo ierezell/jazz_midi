@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { audioOutputService } from '$lib/AudioOutputService';
+	import { audioOutputService } from '$lib/audio/AudioOutputService';
 
 	onMount(() => {
 		audioOutputService.refreshDevices();

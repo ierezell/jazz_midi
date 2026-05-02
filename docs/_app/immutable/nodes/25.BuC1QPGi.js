@@ -1,0 +1,1 @@
+import{t as e}from"../chunks/BQCup3ka2.js";export{e as component};

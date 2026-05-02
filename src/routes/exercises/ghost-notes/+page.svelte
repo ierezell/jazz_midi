@@ -3,14 +3,14 @@
 <script lang="ts">
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import BaseExercise from '../../../components/BaseExercise.svelte';
+	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import {
 		validateGhostNote,
 		isGhostNoteChallengeCompleted,
 		getExpectedGhostNote,
 		createGhostNoteState,
 		type GhostNoteState
-	} from '$lib/ghostNoteValidation';
+	} from '$lib/exercises/utils/ghostNoteValidation';
 	import { MidiToNote } from '$lib/types/notes.constants';
 
 	// Ghost Note Challenge: 8th-note scales where downbeats are soft (< 40) and upbeats are accented (> 80)
@@ -235,3 +235,4 @@
 		color: var(--color-error);
 	}
 </style>
+

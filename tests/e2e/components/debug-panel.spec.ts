@@ -9,3 +9,4 @@ test.describe('Debug Panel', () => {
 		await expect(page.locator('#debug-toggle')).toBeVisible();
 	});
 });
+

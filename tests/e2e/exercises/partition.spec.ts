@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { playMidiNote } from '../midi-helper';
-import { midiFromName } from '../music-theory';
+import { NoteToMidi } from '../../../src/lib/types/notes.constants';
+import type { NoteFullName } from '../../../src/lib/types/types';
 
 test.describe('Partition Exercise', () => {
 	test('Sight-reading tracks correct sequence and handles wrong notes', async ({ page }) => {
@@ -26,7 +27,7 @@ test.describe('Partition Exercise', () => {
 
 			const m = noteName.trim().match(/^([A-Ga-g][#b]?)(\d+)$/);
 			if (!m) break;
-			const midi = midiFromName(m[1], parseInt(m[2]));
+			const midi = NoteToMidi[`${m[1]}${m[2]}` as NoteFullName];
 
 			// On first note, also play a wrong note first to test error
 			if (i === 0) {
@@ -49,3 +50,4 @@ test.describe('Partition Exercise', () => {
 		}
 	});
 });
+

@@ -4,15 +4,13 @@
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { ArrowRight, CheckCircle, Star } from 'lucide-svelte';
-	import { resolve } from '$app/paths';
-	import type { RouteId } from '$app/types';
+	import { resolve, base } from '$app/paths';
 	import { goto } from '$app/navigation';
 
 	let profile = $state(userStatsService.getProfile());
 	let stats = $state(userStatsService.getStatistics());
 	let units = $state(journeyService.getUnits());
-	// Prefer the first 'active' unit; fall back to the last non-locked unit so that
-	// a fully-completed journey doesn't silently revert to level 0.
+
 	let activeUnit = $derived(
 		units.find((u) => u.status === 'active') ??
 			[...units].reverse().find((u) => u.status !== 'locked') ??
@@ -20,11 +18,29 @@
 	);
 
 	onMount(() => {
-		// Redirect to login if using default profile
-		if (profile.name === 'Jazz Student' && profile.experiencePoints === 0) {
+		// Redirect unauthenticated users (no profile in localStorage).
+		const rawProfile = localStorage.getItem('jazz-midi-user-profile');
+		if (!rawProfile) {
 			goto(resolve('/login'));
 			return;
 		}
+
+		// Parse profile directly from localStorage to bypass stale SSR singleton cache.
+		try {
+			const parsed = JSON.parse(rawProfile);
+			profile = {
+				...parsed,
+				createdAt: new Date(parsed.createdAt),
+				lastActivity: new Date(parsed.lastActivity)
+			};
+		} catch {
+			goto(resolve('/login'));
+			return;
+		}
+
+		userStatsService.refreshFromStorage();
+		stats = userStatsService.getStatistics();
+		units = journeyService.getUnits();
 
 		const unsubscribe = userStatsService.subscribe(() => {
 			profile = userStatsService.getProfile();
@@ -44,14 +60,15 @@
 		const url = journeyService.getLessonUrl(unit, lesson);
 		// Split the path and query params
 		const [path, query] = url.split('?');
-		return query ? `${resolve(path as unknown as RouteId)}?${query}` : resolve(path as unknown as RouteId);
+		return query ? `${base + path}?${query}` : base + path;
 	}
 
 	function startDailyPractice(): void {
 		// Pick a random lesson at click-time from the active unit only.
 		const practice = journeyService.getPracticeLesson(activeUnit.id);
 		const lesson = practice?.lesson ?? activeUnit.lessons[0];
-		goto(getLessonUrl(activeUnit, lesson));
+		const url = getLessonUrl(activeUnit, lesson);
+		window.location.assign(url);
 	}
 </script>
 
@@ -123,7 +140,7 @@
 				<p>Focus on what needs improvement based on your history.</p>
 				<div class="recommendations-list">
 					{#each userStatsService.getWeaknessRecommendations().slice(0, 2) as rec}
-						<a href={resolve(rec.path as unknown as RouteId)} class="recommendation-link">
+						<a href={base + rec.path} class="recommendation-link">
 							<span>{rec.recommendedExercise}</span>
 							<ArrowRight size={14} />
 						</a>

@@ -22,38 +22,35 @@ export type {
 export type {
 	Unit,
 	Lesson,
-	DailyPracticeItem,
-	DailyPracticeRoutine
-} from './JourneyService';
-
-export type {
 	Pillar,
-	WorkoutSession,
-	WorkoutExercise
-} from './CurriculumEngine';
+	TrainingSession
+} from './JourneyService';
 
 // Services
 export { userStatsService } from './UserStatsService';
 export { journeyService } from './JourneyService';
-export { curriculumEngine } from './CurriculumEngine';
 
 // Exercise Engine
-export { createExerciseEngine, type ExerciseEngine } from './exercise/ExerciseEngine.svelte';
 export {
-	SCORE_SHOW_AFTER_MISTAKES,
-	KEYBOARD_SHOW_AFTER_MISTAKES,
-	EXPECTED_NOTES_SHOW_AFTER_MISTAKES,
-	STRICT_TOLERANCE_MS,
-	NORMAL_TOLERANCE_MS,
-	type ExerciseState,
-	type ExerciseConfig,
-	type TempoState,
-	type FeedbackState
-} from './exercise/ExerciseEngine.svelte';
+	createExerciseController,
+	type ExerciseControllerConfig,
+	type ExerciseState
+} from './exercises/ExerciseController';
+export { createTempoManager, type TempoConfig } from './exercises/TempoManager';
+export { type ExerciseMusicXMLData, loadLickMusicXML } from './exercises/exerciseMusicXML';
+
+// Validators (lib-level only — exercise-specific validators live in their route's page.ts)
+export { type GhostNoteState, validateGhostNote, isGhostNoteChallengeCompleted, getExpectedGhostNote, createGhostNoteState } from './exercises/utils/ghostNoteValidation';
 
 // Managers
 export { midiManager } from './MIDIManager';
-export { audioManager } from './AudioManager';
+export { audioManager } from './audio/AudioManager';
+export { audioOutputService } from './audio/AudioOutputService';
+export { audioInputService } from './audio/AudioInputService';
+
+// Data
+export { loadAllSongs, getSongUrl } from './data/MusicXMLLoader';
+export { generateMusicXML } from './data/MusicXMLGenerator';
 
 // Music Theory Utils
 export {
@@ -68,12 +65,15 @@ export {
 } from './MusicTheoryUtils';
 
 // Validation
-export { validateNoteTiming } from './music-validation';
+export { validateNoteTiming } from './musicValidation';
 
 // Note Constants
 export {
 	AllNotes,
 	NoteToMidi,
 	MidiToNote,
+	NOTE_TO_CHROMA,
 	DEFAULT_OCTAVE
 } from './types/notes.constants';
+
+
