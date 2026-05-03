@@ -336,6 +336,9 @@
 		color: var(--color-text-muted);
 		display: flex;
 		align-items: center;
+		min-width: 44px;
+		min-height: 44px;
+		justify-content: center;
 	}
 
 	/* Pillar strip */
@@ -478,8 +481,8 @@
 		color: #fff;
 		border: none;
 		border-radius: 50%;
-		width: 36px;
-		height: 36px;
+		width: 44px;
+		height: 44px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -655,5 +658,29 @@
 	.session-more-btn {
 		background: var(--color-primary);
 		color: #fff;
+	}
+
+	@media (max-width: 480px) {
+		.session-complete-actions {
+			flex-direction: column;
+			width: 100%;
+		}
+		.session-home-btn,
+		.session-more-btn {
+			width: 100%;
+			justify-content: center;
+		}
+	}
+
+	@media (orientation: landscape) and (max-height: 600px) {
+		.training-page {
+			padding: 0.5rem 1rem 0.5rem;
+		}
+		.overview-row {
+			padding: 0.25rem 0.5rem;
+		}
+		.session-complete {
+			padding: 1rem;
+		}
 	}
 </style>

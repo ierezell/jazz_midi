@@ -483,7 +483,7 @@
 	}
 
 	.profile-name {
-		font-size: 2.5rem;
+		font-size: clamp(1.5rem, 5vw, 2.5rem);
 		font-weight: bold;
 		margin: 0;
 		background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
@@ -511,6 +511,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		min-width: 44px;
+		min-height: 44px;
 		transition: all 0.2s;
 	}
 
@@ -792,8 +794,8 @@
 		font-size: 1.5rem;
 		cursor: pointer;
 		padding: 0;
-		width: 30px;
-		height: 30px;
+		width: 44px;
+		height: 44px;
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
@@ -879,6 +881,8 @@
 		align-items: center;
 		color: var(--color-text);
 		border: 1px solid var(--color-border);
+		flex-wrap: wrap;
+		gap: 0.5rem;
 	}
 
 	.profile-meta {
@@ -949,6 +953,21 @@
 		}
 		.export-textarea {
 			height: 200px;
+		}
+	}
+
+	@media (orientation: landscape) and (max-height: 600px) {
+		.profile-container {
+			padding: 0.5rem 1rem;
+		}
+		.avatar-section {
+			flex-direction: row;
+			gap: 1rem;
+		}
+		.avatar {
+			width: 60px;
+			height: 60px;
+			font-size: 1.5rem;
 		}
 	}
 </style>

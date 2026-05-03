@@ -165,12 +165,19 @@
 		}
 	}
 
-	@media (orientation: landscape) and (max-height: 500px) {
+	@media (orientation: landscape) and (max-height: 600px) {
 		header {
 			display: none;
 		}
+		.mobile-nav {
+			display: none !important;
+		}
+		.app {
+			padding-bottom: 0;
+		}
 		main {
-			padding-top: 0.5rem;
+			padding: 0;
+			max-width: 100%;
 		}
 		footer {
 			display: none;

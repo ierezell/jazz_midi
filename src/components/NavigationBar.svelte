@@ -89,16 +89,19 @@
 			border-left: none;
 			border-right: none;
 			justify-content: space-around;
-			padding: 0.75rem 0.5rem;
+			padding: 0.5rem;
 			z-index: 100;
 			background: var(--color-surface); /* Ensure solid bg on mobile */
 		}
 
 		.nav-item {
 			flex-direction: column;
-			gap: 0.25rem;
-			padding: 0.5rem;
+			gap: 0.2rem;
+			padding: 0.5rem 0.75rem;
 			font-size: 0.7rem;
+			min-height: 52px;
+			min-width: 52px;
+			justify-content: center;
 			background: transparent !important; /* Remove bg active state on mobile to stay clean */
 			border: none !important;
 		}

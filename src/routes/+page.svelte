@@ -224,11 +224,12 @@
 	.home-container {
 		max-width: 900px;
 		margin: 0 auto;
+		padding: 0 0.5rem;
 	}
 
 	.hero {
 		text-align: center;
-		margin-bottom: 3rem;
+		margin-bottom: 1.5rem;
 	}
 
 	h1 {
@@ -256,7 +257,7 @@
 		background: var(--color-surface);
 		border: 1px solid var(--color-border);
 		border-radius: 1.5rem;
-		padding: 2.5rem;
+		padding: 1.5rem;
 		box-shadow: var(--shadow-lg);
 	}
 
@@ -318,7 +319,7 @@
 
 	.exercises-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
 		gap: 1rem;
 	}
 
@@ -371,7 +372,7 @@
 
 	.quick-links {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
 		gap: 1rem;
 	}
 
@@ -410,7 +411,7 @@
 	}
 	.dashboard-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
 		gap: 1.5rem;
 		margin-bottom: 2rem;
 	}
@@ -535,12 +536,13 @@
 	}
 
 	.stat-pill {
-		padding: 0.6rem 1.2rem;
+		padding: 0.5rem 1rem;
 		border-radius: 12px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		background: var(--color-surface-raised);
+		min-width: 60px;
 	}
 
 	.stat-pill.highlight {
@@ -564,5 +566,39 @@
 		font-size: 0.75rem;
 		color: var(--color-text-muted);
 		margin-top: 2px;
+	}
+
+	@media (max-width: 480px) {
+		.hero {
+			margin-bottom: 0.75rem;
+		}
+		h1 {
+			font-size: clamp(1.5rem, 7vw, 2.5rem);
+		}
+		.subtitle {
+			font-size: 1rem;
+		}
+		.stats-bar {
+			justify-content: center;
+		}
+		.level-info h2 {
+			font-size: 1.4rem;
+		}
+		.level-header {
+			flex-wrap: wrap;
+			gap: 0.5rem;
+		}
+	}
+
+	@media (orientation: landscape) and (max-height: 600px) {
+		.hero {
+			margin-bottom: 0.5rem;
+		}
+		.journey-section {
+			gap: 1rem;
+		}
+		.level-card {
+			padding: 1rem;
+		}
 	}
 </style>

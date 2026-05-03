@@ -32,6 +32,7 @@
 	import Keyboard from './Keyboard.svelte';
 	import Score from './Score.svelte';
 	import LessonCompleteModal from '../LessonCompleteModal.svelte';
+	import MidiStatusPill from '../MidiStatusPill.svelte';
 
 	interface BaseExerciseProps {
 		randomMode: boolean;
@@ -120,6 +121,8 @@
 
 	let feedbackMessage = $state('');
 	let showNotesRoles = $state(false);
+	let showMobileSidebar = $state(false);
+	let isLandscapeMobile = $state(false);
 
 	let stopOnMistake = $state(false);
 	let tempoMode = $state(false);
@@ -137,6 +140,7 @@
 	// If progressiveHints is true, we hide score until mistakes threshold is reached
 	// If showScore prop is explicitly provided, it overrides default behavior but progressiveHints can still force hide
 	let showScoreState = $derived.by(() => {
+		if (isLandscapeMobile) return true; // always show score in landscape
 		if (showScore === false) return false; // Explicitly hidden
 		if (exerciseType === 'partition') return true; // Always show for sight reading
 		if (progressiveHints) {
@@ -166,7 +170,7 @@
 	let expectedNotes = $derived(generateExpectedNotes(selectedNote));
 	let scoreProps = $derived(generateScoreProps(selectedNote));
 	let showKeyboard = $derived(
-		debugMode || (progressiveHints && mistakes >= KEYBOARD_SHOW_AFTER_MISTAKES)
+		isLandscapeMobile || debugMode || (progressiveHints && mistakes >= KEYBOARD_SHOW_AFTER_MISTAKES)
 	);
 	let keyboardProps = $derived({
 		...calculateOptimalRange(expectedNotes),
@@ -237,11 +241,24 @@
 	onDestroy(() => {
 		if (typeof window !== 'undefined') {
 			(window as any).__midiExerciseReady = false;
+			(window as any).__landscapeMqCleanup?.();
 		}
 		midiManager.cleanup();
 	});
 
 	onMount(async () => {
+		// Detect landscape mobile mode (no header, constrained height)
+		const landscapeMq = window.matchMedia('(orientation: landscape) and (max-height: 600px)');
+		isLandscapeMobile = landscapeMq.matches;
+		const onMqChange = (e: MediaQueryListEvent) => {
+			isLandscapeMobile = e.matches;
+		};
+		landscapeMq.addEventListener('change', onMqChange);
+		// Cleanup handled via onDestroy below; store ref for cleanup
+		const mqCleanup = () => landscapeMq.removeEventListener('change', onMqChange);
+		// Store for onDestroy (attach to window temporarily)
+		(window as any).__landscapeMqCleanup = mqCleanup;
+
 		await midiManager.initialize();
 		midiManager.setupVirtualKeyboard();
 		midiManager.setEventHandlers({
@@ -528,35 +545,49 @@
 </script>
 
 <div class="exercise-layout">
-	<!-- Sidebar for Controls -->
-	<ExerciseSidebar
-		{randomMode}
-		{selectedNote}
-		{tempoMode}
-		{strictBeat}
-		{stopOnMistake}
-		{debugMode}
-		{showTempoControl}
-		{showTrainingControl}
-		{timingModeLabel}
-		{defaultBpm}
-		strictToleranceMs={STRICT_TOLERANCE_MS}
-		normalToleranceMs={NORMAL_TOLERANCE_MS}
-		onNoteChange={(n) => {
-			selectedNote = n;
-			resetExercise();
-		}}
-		onTempoToggle={toggleTempoMode}
-		onStrictToggle={() => {
-			strictBeat = !strictBeat;
-		}}
-		onStopToggle={() => {
-			stopOnMistake = !stopOnMistake;
-		}}
-		onDebugToggle={toggleDebug}
-		onTick={handleTick}
-		onReset={() => resetExercise()}
-	/>
+	<!-- Mobile landscape: backdrop overlay when sidebar is open -->
+	{#if showMobileSidebar}
+		<div
+			class="sidebar-backdrop"
+			onclick={() => (showMobileSidebar = false)}
+			role="presentation"
+			aria-hidden="true"
+		></div>
+	{/if}
+
+	<!-- Sidebar wrapper — normal flex child on desktop, fixed overlay on mobile landscape -->
+	<div class="sidebar-wrapper" class:open={showMobileSidebar}>
+		<!-- Sidebar for Controls -->
+		<ExerciseSidebar
+			{randomMode}
+			{selectedNote}
+			{tempoMode}
+			{strictBeat}
+			{stopOnMistake}
+			{debugMode}
+			{showTempoControl}
+			{showTrainingControl}
+			{timingModeLabel}
+			{defaultBpm}
+			strictToleranceMs={STRICT_TOLERANCE_MS}
+			normalToleranceMs={NORMAL_TOLERANCE_MS}
+			onNoteChange={(n) => {
+				selectedNote = n;
+				resetExercise();
+			}}
+			onTempoToggle={toggleTempoMode}
+			onStrictToggle={() => {
+				strictBeat = !strictBeat;
+			}}
+			onStopToggle={() => {
+				stopOnMistake = !stopOnMistake;
+			}}
+			onDebugToggle={toggleDebug}
+			onTick={handleTick}
+			onReset={() => resetExercise()}
+		/>
+	</div>
+	<!-- /sidebar-wrapper -->
 
 	<!-- Main Exercise Area -->
 	<main class="exercise-main">
@@ -630,6 +661,18 @@
 							></span>
 						</span>
 						<span class="value">{lastVelocity}</span>
+					</div>
+				{/if}
+				<!-- Mobile landscape: MIDI status + settings toggle -->
+				{#if isLandscapeMobile}
+					<div class="mobile-header-controls">
+						<MidiStatusPill />
+						<button
+							class="sidebar-toggle-btn"
+							onclick={() => (showMobileSidebar = !showMobileSidebar)}
+							aria-label="Toggle exercise controls"
+							title="Exercise Controls">⚙</button
+						>
 					</div>
 				{/if}
 			</div>
@@ -727,6 +770,23 @@
 		gap: 1rem;
 		padding: 1rem;
 		background: var(--color-bg);
+	}
+
+	/* Sidebar wrapper — transparent wrapper on desktop */
+	.sidebar-wrapper {
+		display: flex;
+		flex-direction: column;
+		flex-shrink: 0;
+	}
+
+	/* Backdrop overlay (mobile landscape only — hidden by default) */
+	.sidebar-backdrop {
+		display: none;
+	}
+
+	/* Mobile landscape controls (hidden on desktop) */
+	.mobile-header-controls {
+		display: none;
 	}
 
 	.exercise-main {
@@ -963,37 +1023,148 @@
 		}
 	}
 
-	@media (orientation: landscape) and (max-height: 500px) {
+	/* ── Mobile landscape: full-screen exercise mode ── */
+	@media (orientation: landscape) and (max-height: 600px) {
 		:global(.exercise-layout) {
-			height: calc(100vh - 52px);
-			padding: 0.25rem;
-			gap: 0.25rem;
+			height: 100vh;
+			padding: 0;
+			gap: 0;
 			overflow: hidden;
+			/* Reset the column layout applied at max-width: 1024px */
+			flex-direction: row;
 		}
-		.info-group h1 {
-			font-size: 1rem;
-		}
-		.stat-pill {
-			padding: 0.25rem 0.5rem;
-			font-size: 0.7rem;
-		}
-		.prompt-card {
-			padding: 1rem;
-		}
-		.prompt-text {
-			font-size: 2rem;
-		}
-		.score-container {
-			min-height: 120px;
-		}
-		.focus-area {
-			gap: 0.5rem;
+
+		/* Sidebar becomes a fixed overlay, not a flex child */
+		.sidebar-wrapper {
+			position: fixed;
+			top: 0;
+			left: 0;
+			height: 100%;
+			width: 240px;
+			z-index: 200;
+			transform: translateX(-100%);
+			transition: transform 0.2s ease;
 			overflow-y: auto;
 		}
+
+		.sidebar-wrapper.open {
+			transform: translateX(0);
+		}
+
+		/* Semi-transparent backdrop */
+		.sidebar-backdrop {
+			display: block;
+			position: fixed;
+			inset: 0;
+			background: rgba(0, 0, 0, 0.5);
+			z-index: 199;
+		}
+
+		/* Main area takes full width */
+		.exercise-main {
+			flex: 1;
+			width: 100%;
+			padding: 0;
+			gap: 0;
+			overflow: hidden;
+		}
+
+		/* Hide breadcrumbs to save vertical space */
+		.breadcrumbs {
+			display: none;
+		}
+
+		/* Compact header */
+		.exercise-header {
+			padding: 0.2rem 0.5rem;
+			min-height: 36px;
+			flex-shrink: 0;
+		}
+
+		.info-group h1 {
+			font-size: 0.85rem;
+		}
+
+		.stat-pill {
+			padding: 0.15rem 0.4rem;
+			font-size: 0.65rem;
+			border-radius: 10px;
+		}
+
+		/* Show mobile-only controls */
+		.mobile-header-controls {
+			display: flex;
+			align-items: center;
+			gap: 0.25rem;
+			margin-left: 0.25rem;
+		}
+
+		.sidebar-toggle-btn {
+			background: var(--color-surface);
+			border: 1px solid var(--color-border);
+			color: var(--color-text-muted);
+			border-radius: 6px;
+			padding: 0.15rem 0.4rem;
+			font-size: 0.85rem;
+			cursor: pointer;
+			line-height: 1;
+		}
+
+		/* Focus area: flex column, score grows, keyboard is fixed at bottom */
+		.focus-area {
+			flex: 1;
+			gap: 0;
+			overflow: hidden;
+			justify-content: stretch;
+			display: flex;
+			flex-direction: column;
+		}
+
+		/* Hide non-essential elements */
+		.star-criteria,
+		.adaptive-help-text {
+			display: none;
+		}
+
+		/* Compact prompt */
+		.prompt-card {
+			padding: 0.25rem 0.5rem;
+			flex-shrink: 0;
+		}
+
+		.prompt-text {
+			font-size: 1.5rem;
+		}
+
+		/* Score fills available space */
+		.score-container {
+			flex: 1;
+			min-height: 0;
+			padding: 0;
+			align-items: stretch;
+		}
+
+		/* Keyboard: fixed height, always visible */
+		.keyboard-container {
+			height: 130px;
+			flex-shrink: 0;
+		}
+
+		.keyboard-container.hidden {
+			/* Override hidden in landscape — keyboard always shown */
+			display: block;
+		}
+
+		/* Minimal progress bar */
+		.exercise-footer {
+			padding: 0;
+			flex-shrink: 0;
+		}
+
 		.feedback-toast {
-			top: 60px;
-			padding: 0.5rem 1rem;
-			font-size: 0.8rem;
+			top: 40px;
+			padding: 0.35rem 0.75rem;
+			font-size: 0.75rem;
 		}
 	}
 

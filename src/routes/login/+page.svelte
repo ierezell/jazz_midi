@@ -64,6 +64,8 @@
 		justify-content: center;
 		align-items: center;
 		min-height: 80vh;
+		padding: 1rem;
+		box-sizing: border-box;
 	}
 
 	.login-card {
@@ -78,7 +80,7 @@
 	}
 
 	h1 {
-		font-size: 2rem;
+		font-size: clamp(1.4rem, 5vw, 2rem);
 		margin-bottom: 0.5rem;
 		background: linear-gradient(135deg, var(--color-text) 0%, var(--color-primary) 100%);
 		background-clip: text;
@@ -166,5 +168,34 @@
 
 	.start-btn:active {
 		transform: translateY(0);
+	}
+
+	@media (max-width: 480px) {
+		.login-card {
+			padding: 1.5rem;
+			border-radius: 1rem;
+		}
+	}
+
+	@media (orientation: landscape) and (max-height: 600px) {
+		.login-container {
+			align-items: flex-start;
+			min-height: 100%;
+			overflow-y: auto;
+		}
+		.login-card {
+			padding: 1rem 1.5rem;
+			border-radius: 0.75rem;
+			margin: 0.5rem auto;
+		}
+		.subtitle {
+			margin-bottom: 0.75rem;
+		}
+		.features-list {
+			display: none;
+		}
+		.input-group {
+			margin-bottom: 1rem;
+		}
 	}
 </style>

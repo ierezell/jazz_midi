@@ -26,9 +26,7 @@
 		const url = journeyService.getLessonUrl(unit, lesson);
 		// Split the path and query params
 		const [path, query] = url.split('?');
-		return query
-			? `${base + path}?${query}`
-			: base + path;
+		return query ? `${base + path}?${query}` : base + path;
 	}
 
 	function startPractice(unitId: string) {
@@ -191,6 +189,8 @@
 		align-items: center;
 		z-index: 90; /* Below main header (z-index: 100) */
 		box-shadow: var(--shadow-lg);
+		flex-wrap: wrap;
+		padding: 0 1rem;
 	}
 
 	.stat-item {
@@ -238,7 +238,7 @@
 	}
 
 	h1 {
-		font-size: 2.5rem;
+		font-size: clamp(1.6rem, 5vw, 2.5rem);
 		margin-bottom: 0.5rem;
 		background: var(--header-gradient);
 		background-clip: text;
@@ -302,8 +302,8 @@
 		border: 1px solid var(--color-border);
 		color: var(--color-text);
 		border-radius: 50%;
-		width: 32px;
-		height: 32px;
+		width: 44px;
+		height: 44px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -515,11 +515,14 @@
 		}
 	}
 
-	@media (orientation: landscape) and (max-height: 500px) {
+	@media (orientation: landscape) and (max-height: 600px) {
 		.stats-header {
 			top: 0;
 			height: 44px;
 			gap: 0.75rem;
+		}
+		.journey-container {
+			padding-top: 3rem; /* space for compact stats-header (44px) */
 		}
 		.stat-label {
 			display: none;
@@ -528,7 +531,7 @@
 			font-size: 0.8rem;
 		}
 		.journey-header h1 {
-			font-size: 1.5rem;
+			font-size: 1.4rem;
 		}
 		.journey-header p {
 			display: none;

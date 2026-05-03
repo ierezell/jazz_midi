@@ -1,0 +1,1 @@
+import{t as e}from"../chunks/BTec52Tl.js";export{e as component};

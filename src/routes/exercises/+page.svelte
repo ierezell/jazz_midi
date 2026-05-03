@@ -242,17 +242,18 @@
 	.gym-dashboard {
 		max-width: 1200px;
 		margin: 0 auto;
+		padding: 0 0.5rem;
 		animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
 	.dashboard-header {
 		text-align: center;
-		margin-bottom: 4rem;
+		margin-bottom: 2rem;
 		position: relative;
 	}
 
 	h1 {
-		font-size: 3.5rem;
+		font-size: clamp(2rem, 8vw, 3.5rem);
 		font-weight: 800;
 		margin-bottom: 1rem;
 		color: var(--color-primary); /* Fallback if gradient unsupported */
@@ -407,6 +408,15 @@
 		to {
 			opacity: 1;
 			transform: translateY(0);
+		}
+	}
+
+	@media (orientation: landscape) and (max-height: 600px) {
+		.dashboard-header {
+			margin-bottom: 0.75rem;
+		}
+		.exercise-grid {
+			padding-bottom: 1rem;
 		}
 	}
 </style>
