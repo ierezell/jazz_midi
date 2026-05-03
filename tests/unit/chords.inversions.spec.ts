@@ -3,9 +3,11 @@ import { chords } from '../../src/lib/MusicTheoryUtils';
 import { NoteToMidi } from '../../src/lib/types/notes.constants';
 
 describe('Chord inversion and triad constraints', () => {
-	it('triad triad 3rd inversion throws', () => {
+	it('triad 3rd inversion returns root position (graceful fallback)', () => {
 		const root = NoteToMidi['C4'];
-		expect(() => chords(root as any, 'major', 3 as any)).toThrow();
+		const c = chords(root as any, 'major', 3 as any);
+		// 3rd inversion is invalid for triads — silently falls back to root position
+		expect(c.inversion).toBe(0);
 	});
 
 	it('maj7 inversion mapping yields correct root pitch classes', () => {

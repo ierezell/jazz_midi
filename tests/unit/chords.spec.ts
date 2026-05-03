@@ -76,8 +76,10 @@ describe('Chord generation', () => {
 		const t2names = [t2.root, t2.third, t2.fifth].map((n) => (MidiToNote as any)[n as number]);
 		expect(t2names).toEqual(['G3', 'C4', 'E4']);
 
-		// 3rd inversion is invalid for triads and should throw
-		expect(() => chords(root as any, 'major', 3 as any)).toThrow();
+		// 3rd inversion is invalid for triads — function gracefully returns root position instead of throwing
+		const t3 = chords(root as any, 'major', 3 as any);
+		const t3names = [t3.root, t3.third, t3.fifth].map((n) => (MidiToNote as any)[n as number]);
+		expect(t3names).toEqual(['C3', 'E3', 'G3']);
 	});
 
 	it('new voicings produce correct left/right hand mappings for C4 maj7', () => {

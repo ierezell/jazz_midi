@@ -2,14 +2,21 @@
  * JourneyService unit tests
  * Replaces the old CurriculumEngine.spec.ts tests after CurriculumEngine was merged into JourneyService.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// $app/environment is a SvelteKit virtual module; mock it before JourneyService is imported.
+// vi.mock is hoisted to the top of the file by Vitest's transform.
+vi.mock('$app/environment', () => ({ browser: true, dev: true, building: false, version: 'test' }));
+
 import { JourneyService, type Pillar } from '../../src/lib/JourneyService';
 
-// Bypass the singleton to get a fresh instance each test
+// Bypass the singleton to get a fresh instance each test; clear localStorage
+// so loadProgress() doesn't carry over state from previous tests.
 function freshService(): JourneyService {
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(JourneyService as any).instance = undefined;
-return JourneyService.getInstance();
+	localStorage.removeItem('journey_progress_v2');
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	(JourneyService as any).instance = undefined;
+	return JourneyService.getInstance();
 }
 
 describe('JourneyService', () => {
@@ -132,7 +139,7 @@ expect(result!.unit.id).toBe('unit-1');
 });
 
 it('returns undefined for locked unit (no lessons reachable)', () => {
-// unit-12 is locked but still has lessons — getPracticeLesson still works
+// unit-12 is locked but still has lessons ï¿½ getPracticeLesson still works
 const result = service.getPracticeLesson('unit-12');
 expect(result).toBeDefined();
 });

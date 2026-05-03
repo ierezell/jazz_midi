@@ -1,5 +1,6 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
+
 export default defineConfig({
 	plugins: [sveltekit()],
 	test: {
@@ -12,7 +13,6 @@ export default defineConfig({
 		setupFiles: ['./tests/setup.ts'],
 		globals: true,
 		alias: {
-			$app: '@sveltejs/kit/app',
 			$env: '@sveltejs/kit/env'
 		}
 	}

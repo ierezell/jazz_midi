@@ -155,6 +155,8 @@
 	let completedStars = $state(0);
 	let completedAccuracy = $state(0);
 	let completedXp = $state(0);
+	let completedPerfectCompletions = $state(0);
+	let completedRequiredPerfectCompletions = $state(1);
 
 	let showExpected = $derived.by(() => {
 		return mistakes >= EXPECTED_NOTES_SHOW_AFTER_MISTAKES;
@@ -439,6 +441,13 @@
 			completedXp = Math.max(0, 100 - mistakes * 10);
 
 			journeyService.completeLesson(unitId, lessonId, completedStars);
+
+			// Read updated mastery progress from service after recording
+			const unit = journeyService.getUnit(unitId);
+			const lesson = unit?.lessons.find((l) => l.id === lessonId);
+			completedPerfectCompletions = lesson?.perfectCompletions ?? 0;
+			completedRequiredPerfectCompletions = lesson?.requiredPerfectCompletions ?? 1;
+
 			showCompleteModal = true;
 		} else {
 			// Non-journey mode: just call onComplete and reset
@@ -451,7 +460,17 @@
 
 	function handleModalContinue() {
 		showCompleteModal = false;
-		goto(resolve('/journey'));
+		// Return to training page with context so it can advance the session
+		if (unitId && lessonId) {
+			const params = new URLSearchParams({
+				unitId,
+				lessonId,
+				stars: String(completedStars)
+			});
+			window.location.assign(resolve(`/training?${params.toString()}`));
+		} else {
+			goto(resolve('/training'));
+		}
 	}
 
 	function handleModalRetry() {
@@ -694,6 +713,8 @@
 	stars={completedStars}
 	accuracy={completedAccuracy}
 	xp={completedXp}
+	perfectCompletions={completedPerfectCompletions}
+	requiredPerfectCompletions={completedRequiredPerfectCompletions}
 	onContinue={handleModalContinue}
 	onRetry={handleModalRetry}
 />

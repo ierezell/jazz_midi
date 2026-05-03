@@ -47,7 +47,10 @@ estimatedMinutes: number;
 
 export class JourneyService {
 private static instance: JourneyService;
-private units: Unit[] = [...JOURNEY_UNITS];
+private units: Unit[] = JOURNEY_UNITS.map((u) => ({
+		...u,
+		lessons: u.lessons.map((l) => ({ ...l }))
+	}));
 
 private constructor() {
 this.loadProgress();

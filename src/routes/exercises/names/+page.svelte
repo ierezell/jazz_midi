@@ -5,6 +5,7 @@
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
+	import { page } from '$app/state';
 	import { untrack } from 'svelte';
 
 	const description =
@@ -51,7 +52,26 @@
 		Si: 'B'
 	};
 
-	const ALL_LATIN_NOTES = Object.values(ENGLISH_TO_LATIN);
+	// Pitch class (0-11) for each note name
+	const NOTE_TO_PC: Record<Note, number> = {
+		C: 0,
+		'C#': 1,
+		Db: 1,
+		D: 2,
+		'D#': 3,
+		Eb: 3,
+		E: 4,
+		F: 5,
+		'F#': 6,
+		Gb: 6,
+		G: 7,
+		'G#': 8,
+		Ab: 8,
+		A: 9,
+		'A#': 10,
+		Bb: 10,
+		B: 11
+	};
 
 	interface Props {
 		randomMode: boolean;
@@ -67,6 +87,56 @@
 		rootKey: propKey
 	}: Props = $props();
 
+	// --- Derive target note pool from URL params ---
+	// range=C4,B4  →  white keys C D E F G A B
+	// includeBlackKeys=true  →  add sharps/flats
+	// Falls back to all 17 note names if no range given.
+	function buildTargetPool(): Note[] {
+		const sp =
+			typeof window !== 'undefined'
+				? new URLSearchParams(window.location.search)
+				: page.url.searchParams;
+
+		const rangeParam = sp.get('range');
+		const includeBlack = sp.get('includeBlackKeys') === 'true';
+
+		if (!rangeParam) {
+			// No constraint — use all notes
+			return [...AllNotes];
+		}
+
+		// Parse "C4,B4" → note names in the chromatic range C–B
+		const [loStr, hiStr] = rangeParam.split(',').map((s) => s.trim()) as [
+			NoteFullName,
+			NoteFullName
+		];
+		const loMidi = NoteToMidi[loStr];
+		const hiMidi = NoteToMidi[hiStr];
+		if (!loMidi || !hiMidi) return [...AllNotes];
+
+		// Collect unique note names whose pitch class falls in [lo, hi] (wrapped in same octave)
+		const pool: Note[] = [];
+		const seen = new Set<number>();
+		for (let midi = loMidi; midi <= hiMidi; midi++) {
+			const fullName = MidiToNote[midi as MidiNote];
+			if (!fullName) continue;
+			const noteName = fullName.slice(0, -1) as Note; // strip octave digit
+			const pc = midi % 12;
+			if (seen.has(pc)) continue;
+			// Filter black keys unless requested
+			const isBlack = [1, 3, 6, 8, 10].includes(pc);
+			if (isBlack && !includeBlack) continue;
+			seen.add(pc);
+			pool.push(noteName);
+		}
+		return pool.length > 0 ? pool : [...AllNotes];
+	}
+
+	// Target pitch-class set (one per note in the pool)
+	const targetPool: Note[] = untrack(buildTargetPool);
+	const targetPitchClasses: Set<number> = new Set(targetPool.map((n) => NOTE_TO_PC[n]));
+	const totalTarget = targetPitchClasses.size;
+
 	// @svelte-ignore state_referenced_locally
 	let englishToLatin: boolean = $state(untrack(() => propEnglishToLatin ?? true));
 	let currentDisplayNote: string = $state('');
@@ -74,6 +144,13 @@
 	let playedCorrectly = $state(false);
 	let exerciseCompleted = $state(false);
 	let coveredPitchClasses: Set<number> = $state(new Set());
+
+	// Only pick from uncovered notes so the student sees variety
+	function pickNextNote(): Note {
+		const uncovered = targetPool.filter((n) => !coveredPitchClasses.has(NOTE_TO_PC[n]));
+		const pool = uncovered.length > 0 ? uncovered : targetPool;
+		return pool[Math.floor(Math.random() * pool.length)];
+	}
 
 	function handleParentReset(): void {
 		playedCorrectly = false;
@@ -89,39 +166,25 @@
 	});
 
 	function generateNewNote(): void {
-		// Generate a random note for the exercise
-		const randomNote = AllNotes[Math.floor(Math.random() * AllNotes.length)];
+		const randomNote = pickNextNote();
 		currentTargetNote = randomNote;
-
-		if (englishToLatin) {
-			// Show English note, expect Latin equivalent
-			currentDisplayNote = randomNote;
-		} else {
-			// Show Latin note, expect English equivalent
-			const latinNote = ENGLISH_TO_LATIN[randomNote];
-			currentDisplayNote = latinNote;
-		}
+		currentDisplayNote = englishToLatin ? randomNote : ENGLISH_TO_LATIN[randomNote];
 		playedCorrectly = false;
 	}
 
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
-		// For this exercise, we use our own random currentTargetNote instead of selectedNote
 		const rootNoteName = (currentTargetNote + DEFAULT_OCTAVE) as NoteFullName;
 		const rootMidi = NoteToMidi[rootNoteName];
-
 		return [rootMidi];
 	}
 
 	function generateScoreProps(selectedNote: Note): ScoreProps {
 		const expectedNotes = generateExpectedNotes(selectedNote);
 		const noteNames = expectedNotes.map((midi) => MidiToNote[midi]);
-		// Show the expected note in the right hand
-		const rightNotes = noteNames.map((note) => [note]);
-		const leftNotes: NoteFullName[][] = [];
 		return {
 			selectedNote,
-			leftHand: leftNotes,
-			rightHand: rightNotes
+			leftHand: [],
+			rightHand: noteNames.map((note) => [note])
 		};
 	}
 
@@ -133,14 +196,14 @@
 	): ValidationResult {
 		if (expectedNotes.includes(event.noteNumber)) {
 			playedCorrectly = true;
-			coveredPitchClasses = new Set([...coveredPitchClasses, event.noteNumber % 12]);
+			const pc = event.noteNumber % 12;
+			coveredPitchClasses = new Set([...coveredPitchClasses, pc]);
 			const sourceNotation = englishToLatin ? 'English' : 'Latin';
 			const targetNotation = englishToLatin ? 'Latin' : 'English';
 			const correctAnswer = englishToLatin
 				? ENGLISH_TO_LATIN[currentTargetNote]
 				: currentTargetNote;
 
-			// Auto-advance to next note after a short delay
 			setTimeout(() => {
 				generateNewNote();
 			}, 1500);
@@ -169,26 +232,20 @@
 		currentNotes: ReadonlyArray<MidiNote>,
 		expectedNotes: ReadonlyArray<MidiNote>
 	): boolean {
-		// Complete once all 12 chromatic pitch classes have been correctly played
-		return coveredPitchClasses.size >= 12;
+		// Done when every target pitch class has been played correctly at least once
+		return (
+			targetPitchClasses.size > 0 &&
+			[...targetPitchClasses].every((pc) => coveredPitchClasses.has(pc))
+		);
 	}
 
 	function handleDirectionToggle(event: Event): void {
 		const target = event.target as HTMLInputElement;
 		englishToLatin = target.checked;
-		// If we're in English -> Latin mode we should display the English note (currentTargetNote).
-		// If we're in Latin -> English mode we display the Latin form for the target note.
-		if (englishToLatin) {
-			// Show English note, expect Latin equivalent
-			currentDisplayNote = currentTargetNote;
-		} else {
-			// Show Latin note, expect English equivalent
-			currentDisplayNote = ENGLISH_TO_LATIN[currentTargetNote];
-		}
+		currentDisplayNote = englishToLatin ? currentTargetNote : ENGLISH_TO_LATIN[currentTargetNote];
 	}
 
 	function handleNextNote(): void {
-		// Generate a new random note for the next exercise
 		playedCorrectly = false;
 		exerciseCompleted = false;
 		generateNewNote();
@@ -237,6 +294,22 @@
 						Play the English equivalent of this Latin (Solfège) note:
 					{/if}
 				</p>
+			</div>
+
+			<!-- Progress bar -->
+			<div
+				class="progress-bar-wrap"
+				title="{coveredPitchClasses.size} / {totalTarget} notes covered"
+			>
+				<div class="progress-label">{coveredPitchClasses.size} / {totalTarget}</div>
+				<div class="progress-track">
+					<div
+						class="progress-fill"
+						style="width: {totalTarget > 0
+							? Math.round((coveredPitchClasses.size / totalTarget) * 100)
+							: 0}%"
+					></div>
+				</div>
 			</div>
 
 			<div class="note-display">
@@ -298,6 +371,38 @@
 
 	.exercise-info {
 		text-align: center;
+	}
+
+	.progress-bar-wrap {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		width: 100%;
+		max-width: 320px;
+	}
+
+	.progress-label {
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
+		white-space: nowrap;
+		min-width: 3rem;
+		text-align: right;
+	}
+
+	.progress-track {
+		flex: 1;
+		height: 8px;
+		border-radius: 4px;
+		background: var(--color-border);
+		overflow: hidden;
+	}
+
+	.progress-fill {
+		height: 100%;
+		border-radius: 4px;
+		background: var(--color-primary, #3b82f6);
+		transition: width 0.4s ease;
 	}
 
 	.exercise-info h2 {

@@ -7,6 +7,7 @@
 		type Lesson,
 		type Pillar
 	} from '$lib/JourneyService';
+	import { userStatsService } from '$lib/UserStatsService';
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
@@ -19,10 +20,10 @@
 		Play,
 		CheckCircle2,
 		Star,
-		Lock,
-		ChevronRight,
 		RefreshCw,
-		Trophy
+		Trophy,
+		Flame,
+		Home
 	} from 'lucide-svelte';
 
 	// --- State ----------------------------------------------------------------
@@ -31,6 +32,8 @@
 	let session = $state<TrainingSession | undefined>(undefined);
 	let completedInSession = $state<Set<string>>(new Set());
 	let sessionStarted = $state(false);
+	let sessionComplete = $state(false);
+	let sessionXpGained = $state(0);
 
 	// Pillar progress across all units
 	let pillarProgress = $derived(journeyService.getPillarProgress());
@@ -46,10 +49,19 @@
 		const lessonId = page.url.searchParams.get('lessonId');
 		const stars = parseInt(page.url.searchParams.get('stars') ?? '0', 10);
 		if (unitId && lessonId && stars > 0) {
-			journeyService.completeLesson(unitId, lessonId, stars);
+			// completeLesson already called by BaseExercise before navigating back, so just track session
 			completedInSession = new Set([...completedInSession, lessonId]);
+			sessionXpGained += Math.max(0, 100 - (3 - stars) * 20);
 			// Regenerate session so ordering updates
 			if (activeUnit) session = journeyService.generateTraining(activeUnit.id);
+
+			// Check if all session lessons are now done (completed or mastered in this session)
+			if (session) {
+				const allDone = session.lessons.every((l) => completedInSession.has(l.id) || l.completed);
+				if (allDone && completedInSession.size > 0) {
+					sessionComplete = true;
+				}
+			}
 		}
 	});
 
@@ -89,6 +101,13 @@
 
 	function lessonDoneInSession(id: string): boolean {
 		return completedInSession.has(id);
+	}
+
+	function dismissSessionComplete(): void {
+		sessionComplete = false;
+		completedInSession = new Set();
+		sessionXpGained = 0;
+		if (activeUnit) session = journeyService.generateTraining(activeUnit.id);
 	}
 </script>
 
@@ -131,8 +150,45 @@
 		{/each}
 	</section>
 
+	<!-- Session Complete Banner -->
+	{#if sessionComplete}
+		<section class="session-complete">
+			<div class="session-complete-inner">
+				<Trophy size={48} class="trophy-icon" />
+				<h2>Session Complete! 🎉</h2>
+				<p>You finished today's practice session.</p>
+				<div class="session-stats">
+					<div class="stat-chip">
+						<Star size={18} fill="gold" stroke="gold" />
+						<span
+							>{completedInSession.size} lesson{completedInSession.size !== 1 ? 's' : ''} done</span
+						>
+					</div>
+					<div class="stat-chip">
+						<Flame size={18} style="color: #f59e0b" />
+						<span>+{sessionXpGained} XP</span>
+					</div>
+					<div class="stat-chip">
+						<CheckCircle2 size={18} style="color: var(--color-success)" />
+						<span>Streak: {userStatsService.getStatistics().currentStreak} days</span>
+					</div>
+				</div>
+				<div class="session-complete-actions">
+					<button class="session-home-btn" onclick={() => goto(base + '/')}>
+						<Home size={18} />
+						Back to Home
+					</button>
+					<button class="session-more-btn" onclick={dismissSessionComplete}>
+						<RefreshCw size={18} />
+						Practice More
+					</button>
+				</div>
+			</div>
+		</section>
+	{/if}
+
 	<!-- Training Session -->
-	{#if session && session.lessons.length > 0}
+	{#if !sessionComplete && session && session.lessons.length > 0}
 		<section class="session-section">
 			<h2>Today's Session</h2>
 			<ol class="lesson-list">
@@ -514,5 +570,90 @@
 		.pillars-strip {
 			grid-template-columns: repeat(2, 1fr);
 		}
+	}
+
+	/* Session complete */
+	.session-complete {
+		background: linear-gradient(135deg, rgba(76, 175, 80, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+		border: 1px solid rgba(76, 175, 80, 0.4);
+		border-radius: 1.25rem;
+		padding: 2rem 1.5rem;
+	}
+
+	.session-complete-inner {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		text-align: center;
+	}
+
+	.session-complete h2 {
+		margin: 0;
+		font-size: 1.6rem;
+		color: var(--color-text);
+	}
+
+	.session-complete p {
+		margin: 0;
+		color: var(--color-text-muted);
+	}
+
+	:global(.trophy-icon) {
+		color: #ffd700;
+		filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.5));
+	}
+
+	.session-stats {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.stat-chip {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		background: var(--color-surface-raised);
+		padding: 0.4rem 0.8rem;
+		border-radius: 20px;
+		font-size: 0.9rem;
+		font-weight: 500;
+	}
+
+	.session-complete-actions {
+		display: flex;
+		gap: 0.75rem;
+		margin-top: 0.5rem;
+	}
+
+	.session-home-btn,
+	.session-more-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.65rem 1.25rem;
+		border-radius: 10px;
+		font-weight: 600;
+		cursor: pointer;
+		border: none;
+		font-size: 0.95rem;
+		transition: transform 0.15s;
+	}
+
+	.session-home-btn:hover,
+	.session-more-btn:hover {
+		transform: translateY(-2px);
+	}
+
+	.session-home-btn {
+		background: var(--color-surface-raised);
+		color: var(--color-text);
+	}
+
+	.session-more-btn {
+		background: var(--color-primary);
+		color: #fff;
 	}
 </style>

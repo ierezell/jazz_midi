@@ -1,24 +1,47 @@
 <script lang="ts">
 	import { fade, scale } from 'svelte/transition';
-	import { Star, ArrowRight, RotateCcw } from 'lucide-svelte';
+	import { Star, ArrowRight, RotateCcw, Trophy } from 'lucide-svelte';
 
 	interface Props {
 		isOpen: boolean;
 		stars: number; // 0-3
 		accuracy: number;
 		xp: number;
+		/** How many perfect completions the student has so far (after this attempt). */
+		perfectCompletions: number;
+		/** How many are needed to master this lesson. */
+		requiredPerfectCompletions: number;
 		onContinue: () => void;
 		onRetry: () => void;
 	}
 
-	let { isOpen, stars, accuracy, xp, onContinue, onRetry }: Props = $props();
+	let {
+		isOpen,
+		stars,
+		accuracy,
+		xp,
+		perfectCompletions,
+		requiredPerfectCompletions,
+		onContinue,
+		onRetry
+	}: Props = $props();
+
+	const isMastered = $derived(perfectCompletions >= requiredPerfectCompletions);
+	const isPerfect = $derived(stars === 3);
 </script>
 
 {#if isOpen}
 	<div class="modal-overlay" transition:fade>
 		<div class="modal-content" transition:scale>
 			<div class="modal-header">
-				<h2>Lesson Complete!</h2>
+				{#if isMastered}
+					<div class="mastered-badge">
+						<Trophy size={32} />
+						<span>Mastered!</span>
+					</div>
+				{:else}
+					<h2>{isPerfect ? '🎵 Perfect!' : 'Round Complete'}</h2>
+				{/if}
 				<div class="stars-container">
 					{#each Array(3) as _, i}
 						<div class="star-wrapper" style="animation-delay: {i * 200}ms">
@@ -44,13 +67,41 @@
 				</div>
 			</div>
 
+			<!-- Mastery progress bar -->
+			<div class="mastery-section">
+				<div class="mastery-label">
+					<span>Mastery progress</span>
+					<span class="mastery-count"
+						>{perfectCompletions}/{requiredPerfectCompletions} perfect</span
+					>
+				</div>
+				<div class="mastery-bar">
+					<div
+						class="mastery-fill"
+						class:mastered={isMastered}
+						style="width: {Math.min(100, (perfectCompletions / requiredPerfectCompletions) * 100)}%"
+					></div>
+				</div>
+				{#if !isMastered && !isPerfect}
+					<p class="mastery-tip">Play perfectly (0 mistakes) to build mastery</p>
+				{:else if !isMastered}
+					<p class="mastery-tip">
+						{requiredPerfectCompletions - perfectCompletions} more perfect {requiredPerfectCompletions -
+							perfectCompletions ===
+						1
+							? 'run'
+							: 'runs'} to master this lesson
+					</p>
+				{/if}
+			</div>
+
 			<div class="modal-actions">
 				<button class="retry-btn" onclick={onRetry}>
 					<RotateCcw size={20} />
-					Retry
+					{isMastered ? 'Play Again' : 'Retry'}
 				</button>
 				<button class="continue-btn" onclick={onContinue}>
-					Continue
+					{isMastered ? 'Next Lesson' : isPerfect ? 'Keep Going' : 'Continue'}
 					<ArrowRight size={20} />
 				</button>
 			</div>
@@ -171,6 +222,60 @@
 	.continue-btn {
 		background: #4caf50;
 		color: var(--color-text);
+	}
+
+	.mastered-badge {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		font-size: 1.8rem;
+		font-weight: bold;
+		color: #ffd700;
+		filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.5));
+		margin-bottom: 1rem;
+	}
+
+	.mastery-section {
+		margin-bottom: 1.5rem;
+		text-align: left;
+	}
+
+	.mastery-label {
+		display: flex;
+		justify-content: space-between;
+		font-size: 0.85rem;
+		color: rgba(255, 255, 255, 0.6);
+		margin-bottom: 0.4rem;
+	}
+
+	.mastery-count {
+		font-weight: bold;
+		color: rgba(255, 255, 255, 0.9);
+	}
+
+	.mastery-bar {
+		height: 8px;
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 4px;
+		overflow: hidden;
+	}
+
+	.mastery-fill {
+		height: 100%;
+		background: #4caf50;
+		border-radius: 4px;
+		transition: width 0.5s ease;
+	}
+
+	.mastery-fill.mastered {
+		background: #ffd700;
+	}
+
+	.mastery-tip {
+		font-size: 0.8rem;
+		color: rgba(255, 255, 255, 0.5);
+		margin: 0.4rem 0 0 0;
 	}
 
 	@keyframes popIn {
