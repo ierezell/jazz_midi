@@ -123,6 +123,16 @@
 	let showNotesRoles = $state(false);
 	let showMobileSidebar = $state(false);
 	let isLandscapeMobile = $state(false);
+	let lastNoteDisplay = $state<{ note: string; correct: boolean } | null>(null);
+
+	// Landscape phase: name-only → score → keyboard
+	let landscapePhase = $derived.by((): 'name' | 'score' | 'keyboard' => {
+		if (!isLandscapeMobile) return 'name';
+		if (exerciseType === 'partition') return 'score'; // sight-reading always shows score
+		if (mistakes < SCORE_SHOW_AFTER_MISTAKES) return 'name';
+		if (mistakes < KEYBOARD_SHOW_AFTER_MISTAKES) return 'score';
+		return 'keyboard';
+	});
 
 	let stopOnMistake = $state(false);
 	let tempoMode = $state(false);
@@ -140,9 +150,9 @@
 	// If progressiveHints is true, we hide score until mistakes threshold is reached
 	// If showScore prop is explicitly provided, it overrides default behavior but progressiveHints can still force hide
 	let showScoreState = $derived.by(() => {
-		if (isLandscapeMobile) return true; // always show score in landscape
 		if (showScore === false) return false; // Explicitly hidden
 		if (exerciseType === 'partition') return true; // Always show for sight reading
+		if (isLandscapeMobile) return landscapePhase === 'score';
 		if (progressiveHints) {
 			return mistakes >= SCORE_SHOW_AFTER_MISTAKES;
 		}
@@ -170,7 +180,10 @@
 	let expectedNotes = $derived(generateExpectedNotes(selectedNote));
 	let scoreProps = $derived(generateScoreProps(selectedNote));
 	let showKeyboard = $derived(
-		isLandscapeMobile || debugMode || (progressiveHints && mistakes >= KEYBOARD_SHOW_AFTER_MISTAKES)
+		debugMode ||
+			(isLandscapeMobile
+				? landscapePhase === 'keyboard'
+				: progressiveHints && mistakes >= KEYBOARD_SHOW_AFTER_MISTAKES)
 	);
 	let keyboardProps = $derived({
 		...calculateOptimalRange(expectedNotes),
@@ -334,6 +347,9 @@
 		const updatedNotes = noteEvents.map((e) => e.noteNumber);
 		const result = validateNoteEvent(selectedNote, note, expectedNotes, updatedNotes);
 
+		// Track last played note for landscape name-phase feedback
+		lastNoteDisplay = { note: note.noteName, correct: result.isCorrect && !isOffBeat };
+
 		if (result.resetCollected) {
 			collectedNotes = new Set();
 		}
@@ -411,6 +427,7 @@
 		if (!options?.preserveFeedback) {
 			feedbackMessage = '';
 		}
+		lastNoteDisplay = null;
 		startTime = Date.now();
 		selectedNote = selectedNote;
 		collectedNotes = new Set();
@@ -678,6 +695,17 @@
 			</div>
 		</header>
 
+		<!-- Landscape phase progress indicator -->
+		{#if isLandscapeMobile}
+			<div class="landscape-phase-bar" role="status" aria-label="Exercise hint phase">
+				<div class="lp-seg" class:active={landscapePhase === 'name'}>🎵 Play</div>
+				<div class="lp-arrow">›</div>
+				<div class="lp-seg" class:active={landscapePhase === 'score'}>♩ Score</div>
+				<div class="lp-arrow">›</div>
+				<div class="lp-seg" class:active={landscapePhase === 'keyboard'}>⌨ Keys</div>
+			</div>
+		{/if}
+
 		{#if feedbackMessage}
 			<div class="feedback-toast" transition:fade>
 				{feedbackMessage}
@@ -685,7 +713,7 @@
 		{/if}
 
 		<div class="focus-area">
-			{#if isJourneyMode && mistakes === 0 && !completed}
+			{#if isJourneyMode && mistakes === 0 && !completed && !isLandscapeMobile}
 				<div class="star-criteria" aria-label="Star criteria">
 					<span class="star-chip gold">⭐⭐⭐ No mistakes</span>
 					<span class="star-sep">·</span>
@@ -695,7 +723,42 @@
 				</div>
 			{/if}
 
-			{#if prompt}
+			<!-- Landscape name phase: big exercise name + live note feedback -->
+			{#if isLandscapeMobile && landscapePhase === 'name'}
+				<div
+					class="landscape-name-panel"
+					class:note-correct={lastNoteDisplay?.correct === true}
+					class:note-wrong={lastNoteDisplay?.correct === false}
+					transition:fade
+				>
+					<div class="lnp-title">{exerciseType?.replace(/_/g, ' ') || 'Practice'}</div>
+					{#if prompt}
+						<div class="lnp-prompt">{prompt}</div>
+					{/if}
+					<div class="lnp-feedback">
+						{#if lastNoteDisplay}
+							<span
+								class="lnp-note"
+								class:correct={lastNoteDisplay.correct}
+								class:wrong={!lastNoteDisplay.correct}
+							>
+								{lastNoteDisplay.note}
+								<span class="lnp-icon">{lastNoteDisplay.correct ? '✓' : '✗'}</span>
+							</span>
+						{:else}
+							<span class="lnp-cue">🎹 Play a note</span>
+						{/if}
+					</div>
+					<div class="lnp-hint">
+						{mistakes === 0
+							? 'A wrong note will reveal the score'
+							: `${SCORE_SHOW_AFTER_MISTAKES - mistakes} more mistake→ score`}
+					</div>
+				</div>
+			{/if}
+
+			<!-- Prompt card: not shown during landscape name phase (name panel replaces it) -->
+			{#if prompt && !(isLandscapeMobile && landscapePhase === 'name')}
 				<div class="prompt-card card-premium">
 					<div class="prompt-text">{prompt}</div>
 				</div>
@@ -707,7 +770,7 @@
 				</div>
 			{/if}
 
-			{#if helpMessage}
+			{#if helpMessage && !isLandscapeMobile}
 				<div class="adaptive-help-text">
 					{helpMessage}
 				</div>
@@ -716,6 +779,13 @@
 			{#if expectedNotes.length > 0}
 				<div class="expected-notes visually-hidden" aria-live="polite">
 					{expectedNotes.map((n) => MidiToNote[n]).join(', ')}
+				</div>
+			{/if}
+
+			<!-- Landscape keyboard phase: show expected notes as text above keyboard -->
+			{#if isLandscapeMobile && landscapePhase === 'keyboard'}
+				<div class="landscape-keyboard-hint" transition:fade>
+					Expected: {expectedNotes.map((n) => MidiToNote[n]).join(' · ')}
 				</div>
 			{/if}
 
@@ -786,6 +856,13 @@
 
 	/* Mobile landscape controls (hidden on desktop) */
 	.mobile-header-controls {
+		display: none;
+	}
+
+	/* Landscape-only elements — hidden outside landscape */
+	.landscape-phase-bar,
+	.landscape-name-panel,
+	.landscape-keyboard-hint {
 		display: none;
 	}
 
@@ -1023,18 +1100,17 @@
 		}
 	}
 
-	/* ── Mobile landscape: full-screen exercise mode ── */
+	/* ── Mobile landscape: progressive phase layout ── */
 	@media (orientation: landscape) and (max-height: 600px) {
 		:global(.exercise-layout) {
 			height: 100vh;
 			padding: 0;
 			gap: 0;
 			overflow: hidden;
-			/* Reset the column layout applied at max-width: 1024px */
 			flex-direction: row;
 		}
 
-		/* Sidebar becomes a fixed overlay, not a flex child */
+		/* Sidebar becomes a fixed overlay */
 		.sidebar-wrapper {
 			position: fixed;
 			top: 0;
@@ -1051,7 +1127,6 @@
 			transform: translateX(0);
 		}
 
-		/* Semi-transparent backdrop */
 		.sidebar-backdrop {
 			display: block;
 			position: fixed;
@@ -1060,21 +1135,21 @@
 			z-index: 199;
 		}
 
-		/* Main area takes full width */
 		.exercise-main {
 			flex: 1;
 			width: 100%;
 			padding: 0;
 			gap: 0;
 			overflow: hidden;
+			display: flex;
+			flex-direction: column;
 		}
 
-		/* Hide breadcrumbs to save vertical space */
 		.breadcrumbs {
 			display: none;
 		}
 
-		/* Compact header */
+		/* Compact header row */
 		.exercise-header {
 			padding: 0.2rem 0.5rem;
 			min-height: 36px;
@@ -1091,7 +1166,6 @@
 			border-radius: 10px;
 		}
 
-		/* Show mobile-only controls */
 		.mobile-header-controls {
 			display: flex;
 			align-items: center;
@@ -1110,7 +1184,41 @@
 			line-height: 1;
 		}
 
-		/* Focus area: flex column, score grows, keyboard is fixed at bottom */
+		/* Phase progress bar */
+		.landscape-phase-bar {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 0.3rem;
+			padding: 0.15rem 0.5rem;
+			background: var(--color-surface);
+			border-bottom: 1px solid var(--color-border);
+			flex-shrink: 0;
+		}
+
+		.lp-seg {
+			font-size: 0.62rem;
+			font-weight: 600;
+			color: var(--color-text-muted);
+			padding: 0.1rem 0.4rem;
+			border-radius: 8px;
+			transition:
+				color 0.2s,
+				background 0.2s;
+		}
+
+		.lp-seg.active {
+			color: var(--color-primary);
+			background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+		}
+
+		.lp-arrow {
+			font-size: 0.65rem;
+			color: var(--color-text-muted);
+			opacity: 0.5;
+		}
+
+		/* Focus area fills everything below header + phase bar */
 		.focus-area {
 			flex: 1;
 			gap: 0;
@@ -1118,25 +1226,96 @@
 			justify-content: stretch;
 			display: flex;
 			flex-direction: column;
+			min-height: 0;
 		}
 
-		/* Hide non-essential elements */
 		.star-criteria,
 		.adaptive-help-text {
 			display: none;
 		}
 
-		/* Compact prompt */
-		.prompt-card {
-			padding: 0.25rem 0.5rem;
-			flex-shrink: 0;
+		/* ── Phase: name ── */
+		.landscape-name-panel {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 0.4rem;
+			padding: 0.5rem 1rem;
+			min-height: 0;
+			border: 2px solid var(--color-border);
+			border-radius: 10px;
+			margin: 0.3rem;
+			transition:
+				border-color 0.15s,
+				background 0.15s;
 		}
 
-		.prompt-text {
-			font-size: 1.5rem;
+		.landscape-name-panel.note-correct {
+			border-color: var(--color-success);
+			background: color-mix(in srgb, var(--color-success) 8%, var(--color-surface-raised));
 		}
 
-		/* Score fills available space */
+		.landscape-name-panel.note-wrong {
+			border-color: var(--color-error, #f87171);
+			background: color-mix(in srgb, var(--color-error, #f87171) 8%, var(--color-surface-raised));
+		}
+
+		.lnp-title {
+			font-size: 1.2rem;
+			font-weight: 800;
+			text-transform: uppercase;
+			color: var(--color-primary);
+			letter-spacing: 0.05em;
+		}
+
+		.lnp-prompt {
+			font-size: 1rem;
+			font-weight: 700;
+			color: var(--color-text);
+		}
+
+		.lnp-feedback {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 2.5rem;
+		}
+
+		.lnp-note {
+			font-size: 2rem;
+			font-weight: 800;
+			display: flex;
+			align-items: center;
+			gap: 0.3rem;
+			transition: color 0.1s;
+		}
+
+		.lnp-note.correct {
+			color: var(--color-success);
+		}
+
+		.lnp-note.wrong {
+			color: var(--color-error, #f87171);
+		}
+
+		.lnp-icon {
+			font-size: 1.2rem;
+		}
+
+		.lnp-cue {
+			font-size: 1rem;
+			color: var(--color-text-muted);
+		}
+
+		.lnp-hint {
+			font-size: 0.65rem;
+			color: var(--color-text-muted);
+			opacity: 0.7;
+		}
+
+		/* ── Phase: score ── */
 		.score-container {
 			flex: 1;
 			min-height: 0;
@@ -1144,25 +1323,48 @@
 			align-items: stretch;
 		}
 
-		/* Keyboard: fixed height, always visible */
+		/* Compact prompt above score */
+		.prompt-card {
+			padding: 0.2rem 0.5rem;
+			flex-shrink: 0;
+			min-height: 0;
+		}
+
+		.prompt-text {
+			font-size: 1.1rem;
+		}
+
+		/* ── Phase: keyboard ── */
+		.landscape-keyboard-hint {
+			font-size: 0.7rem;
+			font-weight: 600;
+			color: var(--color-text-muted);
+			text-align: center;
+			padding: 0.2rem 0.5rem;
+			flex-shrink: 0;
+			letter-spacing: 0.03em;
+		}
+
 		.keyboard-container {
-			height: 130px;
+			flex: 1;
+			min-height: 100px;
+			max-height: 55vh;
 			flex-shrink: 0;
 		}
 
+		/* Override: hidden class still hides keyboard in non-keyboard phases */
 		.keyboard-container.hidden {
-			/* Override hidden in landscape — keyboard always shown */
-			display: block;
+			display: none;
 		}
 
-		/* Minimal progress bar */
+		/* Minimal footer */
 		.exercise-footer {
 			padding: 0;
 			flex-shrink: 0;
 		}
 
 		.feedback-toast {
-			top: 40px;
+			top: 60px;
 			padding: 0.35rem 0.75rem;
 			font-size: 0.75rem;
 		}
