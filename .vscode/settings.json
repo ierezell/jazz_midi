@@ -1,0 +1,39 @@
+{
+	"cSpell.words": [
+		"arpeggiated",
+		"checkmark",
+		"Cmaj",
+		"Duolingo",
+		"fira",
+		"gamified",
+		"Golson",
+		"Groovin",
+		"Groovitis",
+		"Imaj",
+		"IMIDI",
+		"Ipanema",
+		"locrian",
+		"midimessage",
+		"mixolydian",
+		"neoconfetti",
+		"onmidimessage",
+		"OSMD",
+		"Thelonious",
+		"unlockable",
+		"vexflow",
+		"voicings",
+		"webmidi"
+	],
+	"chat.tools.terminal.autoApprove": {
+		"pnpm install": true,
+		"pnpm dlx svelte-check": true,
+		"pnpm exec playwright": true,
+		"ForEach-Object": true,
+		"ConvertFrom-Json": true,
+		"Out-File": true,
+		"pnpm exec vite": true,
+		"Join-String": true,
+		"pnpm exec svelte-check": true,
+		"Test-Path": true
+	}
+}
