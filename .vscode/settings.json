@@ -25,14 +25,15 @@
 		"webmidi"
 	],
 	"chat.tools.terminal.autoApprove": {
-		"npm install": true,
-		"npx --yes svelte-check": true,
-		"npx playwright": true,
+		"pnpm install": true,
+		"pnpm dlx svelte-check": true,
+		"pnpm exec playwright": true,
 		"ForEach-Object": true,
 		"ConvertFrom-Json": true,
 		"Out-File": true,
-		"npx vite": true,
+		"pnpm exec vite": true,
 		"Join-String": true,
-		"npx svelte-check": true
+		"pnpm exec svelte-check": true,
+		"Test-Path": true
 	}
 }

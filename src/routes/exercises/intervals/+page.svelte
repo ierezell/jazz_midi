@@ -8,6 +8,7 @@
 		NoteToMidi,
 		AllNotes
 	} from '$lib/types/notes.constants';
+	import { page } from '$app/state';
 	import type {
 		MidiNote,
 		Note,
@@ -215,6 +216,8 @@
 
 	// Generate prompt from current state
 	let computedPrompt = $derived(`${INTERVAL_NAMES[intervalType]} from ${currentRoot}`);
+
+	const isGymMode = !page.url.searchParams.get('unitId');
 </script>
 
 <BaseExercise
@@ -240,7 +243,7 @@
 			{(exerciseCompleted = false)}
 		{/if}
 
-		{#if !randomMode}
+		{#if !randomMode && isGymMode}
 			<div class="controls-area">
 				<div class="control-group">
 					<label for="intervalType">Interval Type</label>

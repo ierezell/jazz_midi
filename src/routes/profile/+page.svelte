@@ -4,6 +4,7 @@
 	import type { Achievement, UserProfile, UserStatistics } from '$lib/UserStatsService';
 	import { userStatsService } from '$lib/UserStatsService';
 	import { journeyService } from '$lib/JourneyService';
+	import { authService } from '$lib/AuthService.svelte';
 	import { resolve, base } from '$app/paths';
 	import { onMount } from 'svelte';
 	import StatsWidget from '../../components/StatsWidget.svelte';
@@ -19,7 +20,8 @@
 		X,
 		Download,
 		Upload,
-		TrendingUp
+		TrendingUp,
+		LogOut
 	} from 'lucide-svelte';
 	import NoteHeatmap from '../../components/NoteHeatmap.svelte';
 	import StreakCalendar from '../../components/StreakCalendar.svelte';
@@ -196,7 +198,17 @@
 					<span class="meta-item">{profile.experiencePoints} XP</span>
 					<span class="meta-divider">•</span>
 					<span class="meta-item">Joined {formatDate(profile.createdAt)}</span>
+					{#if authService.userEmail}
+						<span class="meta-divider">•</span>
+						<span class="meta-item email">{authService.userEmail}</span>
+					{/if}
 				</div>
+				<button
+					onclick={() => authService.signOut()}
+					class="signout-btn"
+					title="Sign Out"
+					aria-label="Sign out"><LogOut size={16} /> Sign Out</button
+				>
 			</div>
 		</div>
 	</header>
@@ -526,6 +538,34 @@
 		color: var(--color-text-muted);
 		font-size: 0.9rem;
 		align-items: center;
+		flex-wrap: wrap;
+	}
+
+	.email {
+		font-size: 0.8rem;
+		opacity: 0.7;
+	}
+
+	.signout-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.35rem 0.75rem;
+		border: 1px solid var(--color-border);
+		border-radius: 0.5rem;
+		background: transparent;
+		color: var(--color-text-muted);
+		font-size: 0.8rem;
+		cursor: pointer;
+		transition:
+			color 0.2s,
+			border-color 0.2s;
+		margin-top: 0.5rem;
+	}
+
+	.signout-btn:hover {
+		color: #ef4444;
+		border-color: #ef4444;
 	}
 
 	.level-tag {

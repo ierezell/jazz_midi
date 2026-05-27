@@ -3,12 +3,15 @@
 <script lang="ts">
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
+	import { page } from '$app/state';
 	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import {
 		validateHandNote,
 		isHandIndependenceCompleted,
 		midiToNoteName
 	} from './hand-independence';
+
+	const isGymMode = !page.url.searchParams.get('unitId');
 
 	// Level 1 data: Cm7 shell voicing + C major scale
 	const L1_LH: MidiNote[] = [36, 58] as MidiNote[]; // C2 (root), Bb3 (minor 7th)
@@ -89,19 +92,21 @@
 	{#snippet children(_api: import('$lib/types/exercise-api').ExerciseAPI)}
 		<div class="hi-content">
 			<!-- Level selector -->
-			<div class="level-selector card-premium">
-				<span class="section-label">Level</span>
-				<div class="level-toggle" role="group" aria-label="Exercise level">
-					<button class="level-btn" class:active={level === 1} onclick={() => (level = 1)}>
-						<span class="level-num">1</span>
-						<span class="level-name">Shell Voicings + Major Scale</span>
-					</button>
-					<button class="level-btn" class:active={level === 2} onclick={() => (level = 2)}>
-						<span class="level-num">2</span>
-						<span class="level-name">Walking Bass + Pentatonic</span>
-					</button>
+			{#if isGymMode}
+				<div class="level-selector card-premium">
+					<span class="section-label">Level</span>
+					<div class="level-toggle" role="group" aria-label="Exercise level">
+						<button class="level-btn" class:active={level === 1} onclick={() => (level = 1)}>
+							<span class="level-num">1</span>
+							<span class="level-name">Shell Voicings + Major Scale</span>
+						</button>
+						<button class="level-btn" class:active={level === 2} onclick={() => (level = 2)}>
+							<span class="level-num">2</span>
+							<span class="level-name">Walking Bass + Pentatonic</span>
+						</button>
+					</div>
 				</div>
-			</div>
+			{/if}
 
 			<!-- Pattern guide -->
 			<div class="pattern-guide card-premium">

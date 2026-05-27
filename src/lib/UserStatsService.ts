@@ -502,19 +502,22 @@ export class UserStatsService {
 			case 'chord':
 				return this.statistics.chordStats;
 			case 'scale':
+			case 'interval':
 				return this.statistics.scaleStats;
+			case 'II-V-I':
 			case 'progression':
 				return this.statistics.progressionStats;
+			case 'note':
 			case 'partition':
 				return this.statistics.partitionStats;
 			case 'rhythm':
 				return this.statistics.rhythmStats;
 			case 'hand_independence':
 			case 'dexterity':
-				// Map to rhythm stats bucket (closest fit for motor-skill exercises)
 				return this.statistics.rhythmStats;
 			default:
-				throw new Error(`Unknown exercise type: ${type}`);
+				// Fallback — never crash exercise completion due to stats
+				return this.statistics.partitionStats;
 		}
 	}
 	private calculateMasteryLevel(stats: ExerciseTypeStats): ExerciseTypeStats['masteryLevel'] {
@@ -674,10 +677,129 @@ export class UserStatsService {
 	): string {
 		return chordType ? `${note}-${exerciseType}-${chordType}` : `${note}-${exerciseType}`;
 	}
+	private supabaseUserId: string | null = null;
+
+	setSupabaseUser(userId: string | null): void {
+		this.supabaseUserId = userId;
+	}
+
+	/** Load profile + all stats from normalized Supabase tables. */
+	async loadFromSupabase(userId: string): Promise<void> {
+		this.supabaseUserId = userId;
+		const { supabase } = await import('./supabaseClient');
+
+		const [profileResult, statsResult, etStatsResult, noteProgResult,
+			missedNotesResult, missedChordsResult, calendarResult,
+			chordResult, scaleResult, progressionResult, sessionsResult] = await Promise.all([
+				supabase.from('profiles').select('*').eq('id', userId).single(),
+				supabase.from('user_stats').select('*').eq('user_id', userId).single(),
+				supabase.from('exercise_type_stats').select('*').eq('user_id', userId),
+				supabase.from('note_progress').select('*').eq('user_id', userId),
+				supabase.from('missed_notes').select('*').eq('user_id', userId),
+				supabase.from('missed_chords').select('*').eq('user_id', userId),
+				supabase.from('practice_calendar').select('*').eq('user_id', userId),
+				supabase.from('chord_mastery').select('*').eq('user_id', userId),
+				supabase.from('scale_mastery').select('*').eq('user_id', userId),
+				supabase.from('progression_mastery').select('*').eq('user_id', userId),
+				supabase.from('practice_sessions').select('*').eq('user_id', userId)
+					.order('session_date', { ascending: false }).limit(10)
+			]);
+
+		if (profileResult.data) {
+			const p = profileResult.data;
+			this.profile = {
+				id: userId,
+				name: p.name,
+				avatar: p.avatar ?? undefined,
+				createdAt: new Date(p.created_at),
+				lastActivity: new Date(p.last_activity),
+				totalPracticeTime: Number(p.total_practice_time),
+				level: p.level,
+				experiencePoints: p.experience_points
+			};
+			this.saveProfile();
+		}
+
+		const s = statsResult.data;
+		const etMap = new Map((etStatsResult.data ?? []).map(r => [r.exercise_type, r]));
+		const toTypeStats = (type: string): ExerciseTypeStats => {
+			const r = etMap.get(type);
+			return r ? {
+				attempted: r.attempted, completed: r.completed,
+				averageAccuracy: Number(r.average_accuracy), averageScore: Number(r.average_score),
+				bestScore: Number(r.best_score), totalTime: Number(r.total_time),
+				masteryLevel: r.mastery_level as ExerciseTypeStats['masteryLevel'],
+				avgDeviationMs: r.avg_deviation_ms ? Number(r.avg_deviation_ms) : undefined
+			} : this.createDefaultTypeStats();
+		};
+
+		this.statistics = {
+			totalExercises: s?.total_exercises ?? 0,
+			completedExercises: s?.completed_exercises ?? 0,
+			averageAccuracy: Number(s?.average_accuracy ?? 0),
+			averageScore: Number(s?.average_score ?? 0),
+			totalPracticeTime: Number(s?.total_practice_time ?? 0),
+			currentStreak: s?.current_streak ?? 0,
+			longestStreak: s?.longest_streak ?? 0,
+			improvementTrend: Number(s?.improvement_trend ?? 0),
+			chordStats: toTypeStats('chord'),
+			scaleStats: toTypeStats('scale'),
+			progressionStats: toTypeStats('II-V-I'),
+			partitionStats: toTypeStats('partition'),
+			rhythmStats: toTypeStats('rhythm'),
+			noteProgress: new Map((noteProgResult.data ?? []).map(r => [r.note_key, {
+				note: r.note as never, exerciseType: r.exercise_type as never,
+				chordType: r.chord_type, attempts: r.attempts, successes: r.successes,
+				averageAccuracy: Number(r.average_accuracy), bestTime: Number(r.best_time),
+				lastPracticed: new Date(r.last_practiced),
+				masteryLevel: r.mastery_level as NoteProgress['masteryLevel']
+			}])),
+			missedNotes: new Map((missedNotesResult.data ?? []).map(r => [r.note_key, {
+				count: r.count, lastMissed: new Date(r.last_missed), exerciseType: r.exercise_type
+			}])),
+			missedChords: new Map((missedChordsResult.data ?? []).map(r => [r.chord_key, {
+				count: r.count, lastMissed: new Date(r.last_missed), exerciseType: r.exercise_type
+			}])),
+			practiceCalendar: new Map((calendarResult.data ?? []).map(r => [r.practice_date, {
+				date: r.practice_date, exercisesCompleted: r.exercises_completed,
+				practiceTime: Number(r.practice_time)
+			}])),
+			masteredChords: (chordResult.data ?? []).map(r => ({
+				root: r.root as never, chordType: r.chord_type as never,
+				masteryLevel: r.mastery_level, attemptsCount: r.attempts_count,
+				bestScore: Number(r.best_score), averageAccuracy: Number(r.average_accuracy),
+				lastPracticed: new Date(r.last_practiced),
+				isLearning: r.is_learning, isMastered: r.is_mastered
+			})),
+			masteredScales: (scaleResult.data ?? []).map(r => ({
+				root: r.root as never, scaleType: r.scale_type as never,
+				masteryLevel: r.mastery_level, attemptsCount: r.attempts_count,
+				bestScore: Number(r.best_score), averageAccuracy: Number(r.average_accuracy),
+				lastPracticed: new Date(r.last_practiced),
+				isLearning: r.is_learning, isMastered: r.is_mastered
+			})),
+			masteredProgressions: (progressionResult.data ?? []).map(r => ({
+				key: r.key as never, progressionType: r.progression_type as never,
+				masteryLevel: r.mastery_level, attemptsCount: r.attempts_count,
+				bestScore: Number(r.best_score), averageAccuracy: Number(r.average_accuracy),
+				lastPracticed: new Date(r.last_practiced),
+				isLearning: r.is_learning, isMastered: r.is_mastered
+			})),
+			recentSessions: (sessionsResult.data ?? []).map(r => ({
+				date: new Date(r.session_date), duration: Number(r.duration),
+				exercisesCompleted: r.exercises_completed, averageScore: Number(r.average_score),
+				topCategory: r.top_category as never, improvements: r.improvements ?? []
+			}))
+		};
+		this.saveStatistics();
+		this.notifyListeners();
+	}
+
 	private saveProfile(): void {
 		try {
 			const storage = UserStatsService.getStorage();
 			storage.setItem(this.profileKey, JSON.stringify(this.profile));
+			this.syncProfileToSupabase();
 		} catch (error) {
 			console.warn('Failed to save user profile:', error);
 		}
@@ -696,9 +818,112 @@ export class UserStatsService {
 			};
 
 			storage.setItem(this.storageKey, JSON.stringify(serializableStats));
+			this.syncStatsToSupabase();
 		} catch (error) {
 			console.warn('Failed to save user statistics:', error);
 		}
+	}
+	private syncProfileToSupabase(): void {
+		if (!this.supabaseUserId) return;
+		const userId = this.supabaseUserId;
+		const p = this.profile;
+		import('./supabaseClient').then(({ supabase }) => {
+			supabase.from('profiles').upsert({
+				id: userId, name: p.name, avatar: p.avatar ?? null,
+				level: p.level, experience_points: p.experiencePoints,
+				total_practice_time: Math.round(p.totalPracticeTime),
+				last_activity: p.lastActivity.toISOString()
+			}).then(({ error }) => {
+				if (error) console.warn('Supabase profile sync:', error.message);
+			});
+		});
+	}
+	private syncStatsToSupabase(): void {
+		if (!this.supabaseUserId) return;
+		const userId = this.supabaseUserId;
+		const s = this.statistics;
+		const now = new Date().toISOString();
+		import('./supabaseClient').then(({ supabase }) => {
+			const typeStatRow = (type: string, stats: ExerciseTypeStats) => ({
+				user_id: userId, exercise_type: type,
+				attempted: stats.attempted, completed: stats.completed,
+				average_accuracy: stats.averageAccuracy, average_score: stats.averageScore,
+				best_score: stats.bestScore, total_time: stats.totalTime,
+				mastery_level: stats.masteryLevel,
+				avg_deviation_ms: stats.avgDeviationMs ?? null, updated_at: now
+			});
+			Promise.all([
+				supabase.from('user_stats').upsert({
+					user_id: userId, updated_at: now,
+					total_exercises: s.totalExercises, completed_exercises: s.completedExercises,
+					average_accuracy: s.averageAccuracy, average_score: s.averageScore,
+					total_practice_time: s.totalPracticeTime,
+					current_streak: s.currentStreak, longest_streak: s.longestStreak,
+					improvement_trend: s.improvementTrend
+				}),
+				supabase.from('exercise_type_stats').upsert([
+					typeStatRow('chord', s.chordStats), typeStatRow('scale', s.scaleStats),
+					typeStatRow('II-V-I', s.progressionStats), typeStatRow('partition', s.partitionStats),
+					typeStatRow('rhythm', s.rhythmStats)
+				]),
+				s.practiceCalendar.size > 0 ? supabase.from('practice_calendar').upsert(
+					Array.from(s.practiceCalendar.entries()).map(([date, d]) => ({
+						user_id: userId, practice_date: date,
+						exercises_completed: d.exercisesCompleted, practice_time: d.practiceTime
+					}))
+				) : Promise.resolve({ error: null }),
+				s.masteredChords.length > 0 ? supabase.from('chord_mastery').upsert(
+					s.masteredChords.map(m => ({
+						user_id: userId, root: m.root, chord_type: m.chordType,
+						mastery_level: m.masteryLevel, attempts_count: m.attemptsCount,
+						best_score: m.bestScore, average_accuracy: m.averageAccuracy,
+						last_practiced: m.lastPracticed.toISOString(),
+						is_learning: m.isLearning, is_mastered: m.isMastered
+					}))
+				) : Promise.resolve({ error: null }),
+				s.masteredScales.length > 0 ? supabase.from('scale_mastery').upsert(
+					s.masteredScales.map(m => ({
+						user_id: userId, root: m.root, scale_type: m.scaleType,
+						mastery_level: m.masteryLevel, attempts_count: m.attemptsCount,
+						best_score: m.bestScore, average_accuracy: m.averageAccuracy,
+						last_practiced: m.lastPracticed.toISOString(),
+						is_learning: m.isLearning, is_mastered: m.isMastered
+					}))
+				) : Promise.resolve({ error: null }),
+				s.masteredProgressions.length > 0 ? supabase.from('progression_mastery').upsert(
+					s.masteredProgressions.map(m => ({
+						user_id: userId, key: m.key, progression_type: m.progressionType,
+						mastery_level: m.masteryLevel, attempts_count: m.attemptsCount,
+						best_score: m.bestScore, average_accuracy: m.averageAccuracy,
+						last_practiced: m.lastPracticed.toISOString(),
+						is_learning: m.isLearning, is_mastered: m.isMastered
+					}))
+				) : Promise.resolve({ error: null }),
+				s.noteProgress.size > 0 ? supabase.from('note_progress').upsert(
+					Array.from(s.noteProgress.entries()).map(([key, np]) => ({
+						user_id: userId, note_key: key, note: np.note, exercise_type: np.exerciseType,
+						chord_type: np.chordType ?? null, attempts: np.attempts, successes: np.successes,
+						average_accuracy: np.averageAccuracy, best_time: np.bestTime,
+						last_practiced: np.lastPracticed.toISOString(), mastery_level: np.masteryLevel
+					}))
+				) : Promise.resolve({ error: null }),
+				s.missedNotes.size > 0 ? supabase.from('missed_notes').upsert(
+					Array.from(s.missedNotes.entries()).map(([key, mn]) => ({
+						user_id: userId, note_key: key, exercise_type: mn.exerciseType,
+						count: mn.count, last_missed: mn.lastMissed.toISOString()
+					}))
+				) : Promise.resolve({ error: null }),
+				s.missedChords.size > 0 ? supabase.from('missed_chords').upsert(
+					Array.from(s.missedChords.entries()).map(([key, mc]) => ({
+						user_id: userId, chord_key: key, exercise_type: mc.exerciseType,
+						count: mc.count, last_missed: mc.lastMissed.toISOString()
+					}))
+				) : Promise.resolve({ error: null })
+			]).then(results => {
+				const err = results.find(r => r?.error);
+				if (err?.error) console.warn('Supabase stats sync:', err.error.message);
+			});
+		});
 	}
 	private notifyListeners(): void {
 		this.listeners.forEach((listener) => {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { Piano, AlertCircle, CheckCircle2, HelpCircle } from 'lucide-svelte';
+	import { Piano, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-svelte';
 	import { midiManager } from '$lib/MIDIManager';
 
 	interface MidiDevice {
@@ -14,12 +14,40 @@
 		outputs: []
 	});
 	let showHelp = $state(false);
+	let permissionState = $state<'unknown' | 'granted' | 'denied' | 'prompt'>('unknown');
+	let retrying = $state(false);
 
 	let isConnected = $derived(midiState.inputs.length > 0);
 
 	let unsubscribe: () => void;
 
-	onMount(() => {
+	async function checkPermission() {
+		if (!navigator.permissions) return;
+		try {
+			const result = await navigator.permissions.query({
+				name: 'midi' as PermissionName,
+				sysex: false
+			} as PermissionDescriptor);
+			permissionState = result.state as typeof permissionState;
+			result.onchange = () => {
+				permissionState = result.state as typeof permissionState;
+			};
+		} catch {
+			// Firefox doesn't support querying 'midi'
+		}
+	}
+
+	async function requestMidi() {
+		retrying = true;
+		try {
+			await midiManager.connectMIDI();
+			await checkPermission();
+		} finally {
+			retrying = false;
+		}
+	}
+
+	onMount(async () => {
 		unsubscribe = midiManager.midiState.subscribe((state) => {
 			if (state) {
 				midiState = {
@@ -34,6 +62,7 @@
 				};
 			}
 		});
+		await checkPermission();
 	});
 
 	onDestroy(() => {
@@ -103,13 +132,33 @@
 				{/if}
 			</div>
 
+			{#if permissionState === 'denied'}
+				<div class="permission-blocked">
+					<AlertCircle size={18} />
+					<span>MIDI access is <strong>blocked</strong> in your browser settings.</span>
+				</div>
+			{/if}
+
+			{#if !isConnected}
+				<button class="retry-midi-btn" onclick={requestMidi} disabled={retrying}>
+					<RefreshCw size={16} class={retrying ? 'spin' : ''} />
+					{retrying ? 'Requesting…' : 'Grant MIDI Access'}
+				</button>
+			{/if}
+
 			<div class="troubleshoot-steps">
 				<h4>Troubleshooting</h4>
 				<ol>
-					<li>Ensure your keyboard is plugged in via USB.</li>
-					<li>Refresh this page (F5).</li>
-					<li>Use Chrome or Edge (MIDI is not supported on Firefox).</li>
-					<li>Check if "Generic MIDI Device" appears in your OS settings.</li>
+					<li>
+						Plug in your MIDI keyboard via USB, then click <strong>Grant MIDI Access</strong> above.
+					</li>
+					<li>
+						If no popup appeared: click the <strong>🔒 lock icon</strong> in the address bar →
+						<em>Site permissions</em>
+						→ set MIDI to <strong>Allow</strong>.
+					</li>
+					<li>Use Chrome or Edge — Firefox does not support Web MIDI.</li>
+					<li>After changing permissions, reload this page (F5).</li>
 				</ol>
 			</div>
 
@@ -250,6 +299,55 @@
 		color: var(--color-text-muted);
 		font-size: 0.95rem;
 		line-height: 1.6;
+	}
+
+	.permission-blocked {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: rgba(239, 68, 68, 0.1);
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		color: var(--color-error);
+		border-radius: 8px;
+		padding: 0.75rem 1rem;
+		font-size: 0.85rem;
+		margin-bottom: 1rem;
+	}
+
+	.retry-midi-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		width: 100%;
+		padding: 0.75rem 1rem;
+		background: var(--color-primary, #4075a6);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.9rem;
+		font-weight: 600;
+		cursor: pointer;
+		margin-bottom: 1.5rem;
+		transition: opacity 0.2s;
+	}
+
+	.retry-midi-btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	:global(.spin) {
+		animation: spin 1s linear infinite;
+	}
+
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.close-btn {

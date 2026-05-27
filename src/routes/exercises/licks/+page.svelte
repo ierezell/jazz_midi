@@ -9,6 +9,8 @@
 	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import { licks } from '$lib/data/licksData';
 
+	const isGymMode = !page.url.searchParams.get('unitId');
+
 	const description =
 		'Practice jazz licks and patterns to develop finger mechanics, muscle memory, and vocabulary. Learn classic phrases from different styles.';
 
@@ -322,79 +324,81 @@
 				</div>
 
 				<div class="controls-section">
-					<div class="control-group">
-						<label for="lick-select">Select Lick:</label>
-						<select
-							id="lick-select"
-							bind:value={selectedLickId}
-							onchange={() => selectSpecificLick(selectedLickId)}
-						>
-							{#each licks as lick}
-								<option value={lick.id}
-									>{lick.name} — {lick.category} · {lick.difficulty} · {lick.suggestedBpm} BPM</option
-								>
-							{/each}
-						</select>
-					</div>
-
-					<div class="control-group">
-						<label for="hand-select">Hand:</label>
-						<select id="hand-select" bind:value={selectedHand}>
-							<option value="left">Left Hand</option>
-							<option value="right">Right Hand</option>
-							<option value="both">Both Hands</option>
-						</select>
-					</div>
-
-					<div class="control-group">
-						<label for="difficulty-select">Difficulty:</label>
-						<select id="difficulty-select" bind:value={selectedDifficulty}>
-							<option value="beginner">Beginner</option>
-							<option value="intermediate">Intermediate</option>
-							<option value="advanced">Advanced</option>
-							<option value="all">All Levels</option>
-						</select>
-					</div>
-
-					<div class="control-group">
-						<label for="failure-mode">On Mistake:</label>
-						<select id="failure-mode" bind:value={failureMode}>
-							<option value="hard-reset">Hard Reset (Start Over)</option>
-							<option value="sticky-note">Hold Note (Wait for Correct)</option>
-						</select>
-					</div>
-
-					<div class="control-group">
-						<label for="progression-mode">Progression:</label>
-						<select id="progression-mode" bind:value={progressionMode}>
-							<option value="cycle">Cycle on Success</option>
-							<option value="require-x">Require Repetitions</option>
-							<option value="loop">Loop Same Lick</option>
-						</select>
-					</div>
-
-					{#if progressionMode === 'require-x'}
+					{#if isGymMode}
 						<div class="control-group">
-							<label for="repetitions">Repetitions:</label>
-							<input
-								id="repetitions"
-								type="number"
-								min="1"
-								max="10"
-								bind:value={requiredRepetitions}
-								class="repetitions-input"
-							/>
+							<label for="lick-select">Select Lick:</label>
+							<select
+								id="lick-select"
+								bind:value={selectedLickId}
+								onchange={() => selectSpecificLick(selectedLickId)}
+							>
+								{#each licks as lick}
+									<option value={lick.id}
+										>{lick.name} — {lick.category} · {lick.difficulty} · {lick.suggestedBpm} BPM</option
+									>
+								{/each}
+							</select>
 						</div>
-					{/if}
 
-					<button
-						class="new-lick-btn"
-						onclick={() => {
-							selectRandomLick();
-						}}
-					>
-						Random Lick
-					</button>
+						<div class="control-group">
+							<label for="hand-select">Hand:</label>
+							<select id="hand-select" bind:value={selectedHand}>
+								<option value="left">Left Hand</option>
+								<option value="right">Right Hand</option>
+								<option value="both">Both Hands</option>
+							</select>
+						</div>
+
+						<div class="control-group">
+							<label for="difficulty-select">Difficulty:</label>
+							<select id="difficulty-select" bind:value={selectedDifficulty}>
+								<option value="beginner">Beginner</option>
+								<option value="intermediate">Intermediate</option>
+								<option value="advanced">Advanced</option>
+								<option value="all">All Levels</option>
+							</select>
+						</div>
+
+						<div class="control-group">
+							<label for="failure-mode">On Mistake:</label>
+							<select id="failure-mode" bind:value={failureMode}>
+								<option value="hard-reset">Hard Reset (Start Over)</option>
+								<option value="sticky-note">Hold Note (Wait for Correct)</option>
+							</select>
+						</div>
+
+						<div class="control-group">
+							<label for="progression-mode">Progression:</label>
+							<select id="progression-mode" bind:value={progressionMode}>
+								<option value="cycle">Cycle on Success</option>
+								<option value="require-x">Require Repetitions</option>
+								<option value="loop">Loop Same Lick</option>
+							</select>
+						</div>
+
+						{#if progressionMode === 'require-x'}
+							<div class="control-group">
+								<label for="repetitions">Repetitions:</label>
+								<input
+									id="repetitions"
+									type="number"
+									min="1"
+									max="10"
+									bind:value={requiredRepetitions}
+									class="repetitions-input"
+								/>
+							</div>
+						{/if}
+
+						<button
+							class="new-lick-btn"
+							onclick={() => {
+								selectRandomLick();
+							}}
+						>
+							Random Lick
+						</button>
+					{/if}
 				</div>
 			{:else}
 				<p class="loading">Loading lick...</p>

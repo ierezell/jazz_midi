@@ -139,7 +139,7 @@
 		}
 
 		// Generate multi-octave scale
-		const startOctave = handMode === 'left' ? 2 : 3;
+		const startOctave = handMode === 'left' ? 3 : 4;
 		const intervals = SCALE_INTERVALS[scaleMode];
 		const result: MidiNote[] = [];
 

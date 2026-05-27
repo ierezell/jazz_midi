@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { userStatsService } from '$lib/UserStatsService';
+	import { journeyService } from '$lib/JourneyService';
+	import { authService } from '$lib/AuthService.svelte';
 	import { onDestroy, onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
 	import '../styles/app.css';
 	import '../styles/global.css';
 	import NavigationBar from '../components/NavigationBar.svelte';
@@ -9,18 +12,41 @@
 	import Metronome from '../components/Metronome.svelte';
 	import MicInputControl from '../components/MicInputControl.svelte';
 	import ThemeToggle from '../components/ThemeToggle.svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { themeService } from '$lib/ThemeService.svelte';
 	import { midiManager } from '$lib/MIDIManager';
+	import { dev } from '$app/environment';
+	import { injectAnalytics } from '@vercel/analytics/sveltekit';
+	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+
+	injectSpeedInsights();
+
+	injectAnalytics({ mode: dev ? 'development' : 'production' });
 
 	let { children } = $props();
 
-	let isExercisePage = $derived($page.url.pathname.includes('/exercises/'));
+	let isExercisePage = $derived(page.url.pathname.includes('/exercises/'));
+	let isLoginPage = $derived(page.url.pathname.includes('/login'));
 
-	onMount(() => {
+	onMount(async () => {
 		userStatsService.startSession();
-		// Make Playwright's MIDI injection hook available as early as possible (after hydration).
 		midiManager.ensurePlaywrightMidiDispatchHook();
+
+		await authService.init();
+
+		if (authService.userId) {
+			await Promise.all([
+				userStatsService.loadFromSupabase(authService.userId),
+				journeyService.loadFromSupabase(authService.userId)
+			]);
+		}
+	});
+
+	// Auth guard: redirect to login when not authenticated (after auth check completes)
+	$effect(() => {
+		if (!authService.loading && !authService.isAuthenticated && !isLoginPage) {
+			goto(resolve('/login'));
+		}
 	});
 
 	onDestroy(() => {
@@ -58,7 +84,7 @@
 	<div class="mobile-nav">
 		<NavigationBar />
 	</div>
-	<footer>© 2025 Jazz midi. All rights reserved.</footer>
+	<footer>© 2026 Jazz MIDI. All rights reserved.</footer>
 </div>
 
 <style>

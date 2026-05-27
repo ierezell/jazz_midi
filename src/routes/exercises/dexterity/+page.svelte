@@ -30,6 +30,7 @@
 	};
 
 	const urlMode = page.url.searchParams.get('mode') as DexMode | null;
+	const isGymMode = !page.url.searchParams.get('unitId');
 	let mode = $state<DexMode>(urlMode && urlMode in modeLabel ? urlMode : 'five-finger');
 
 	const modeHint: Record<DexMode, string> = {
@@ -124,13 +125,15 @@
 
 	onMount(resetSequence);
 
-	function generateExpectedNotes(_selectedNote: Note): MidiNote[] {
+	// $derived so reference changes when playedCount/currentSequence changes,
+	// forcing BaseExercise to re-derive expectedNotes and keyboardProps.
+	let generateExpectedNotes = $derived((_selectedNote: Note): MidiNote[] => {
 		if (playedCount < currentSequence.length) {
 			const note = currentSequence[playedCount];
 			if (note && NoteToMidi[note]) return [NoteToMidi[note]];
 		}
 		return [];
-	}
+	});
 
 	function validateNoteEvent(
 		_selectedNote: Note,
@@ -168,7 +171,8 @@
 		};
 	}
 
-	function generateScoreProps(_selectedNote: Note): ScoreProps {
+	// $derived so score display also advances with playedCount
+	let generateScoreProps = $derived((_selectedNote: Note): ScoreProps => {
 		const maxDisplay = 8;
 		const display = currentSequence.slice(playedCount, playedCount + maxDisplay).map((n) => [n]);
 		return {
@@ -176,7 +180,7 @@
 			leftHand: hand === 'left' ? display : [],
 			rightHand: hand === 'right' ? display : []
 		};
-	}
+	});
 
 	function isCompleted(): boolean {
 		return playedCount === currentSequence.length;
@@ -201,27 +205,33 @@
 	{#snippet children(_api: import('$lib/types/exercise-api').ExerciseAPI)}
 		<div class="dexterity-content">
 			<!-- Mode selector -->
-			<div class="mode-selector card-premium">
-				<span class="section-label">Mode</span>
-				<div class="mode-tabs" role="group" aria-label="Dexterity mode">
-					{#each Object.keys(modeLabel) as DexMode[] as m}
-						<button class="mode-tab" class:active={mode === m} onclick={() => (mode = m)}>
-							{modeLabel[m]}
-						</button>
-					{/each}
+			{#if isGymMode}
+				<div class="mode-selector card-premium">
+					<span class="section-label">Mode</span>
+					<div class="mode-tabs" role="group" aria-label="Dexterity mode">
+						{#each Object.keys(modeLabel) as DexMode[] as m}
+							<button class="mode-tab" class:active={mode === m} onclick={() => (mode = m)}>
+								{modeLabel[m]}
+							</button>
+						{/each}
+					</div>
 				</div>
-			</div>
+			{/if}
 
 			<!-- Hand selector + stats -->
 			<div class="dex-controls card-premium">
-				<div class="hand-toggle" role="group" aria-label="Hand selection">
-					<button class="hand-btn" class:active={hand === 'left'} onclick={() => (hand = 'left')}
-						>Left Hand</button
-					>
-					<button class="hand-btn" class:active={hand === 'right'} onclick={() => (hand = 'right')}
-						>Right Hand</button
-					>
-				</div>
+				{#if isGymMode}
+					<div class="hand-toggle" role="group" aria-label="Hand selection">
+						<button class="hand-btn" class:active={hand === 'left'} onclick={() => (hand = 'left')}
+							>Left Hand</button
+						>
+						<button
+							class="hand-btn"
+							class:active={hand === 'right'}
+							onclick={() => (hand = 'right')}>Right Hand</button
+						>
+					</div>
+				{/if}
 				<div class="progress-display">
 					<span class="progress-num">{playedCount}</span>
 					<span class="progress-sep">/</span>

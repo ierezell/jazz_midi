@@ -29,12 +29,12 @@ export function generateExpectedNotesFor(
 	const notes: MidiNote[] = [];
 
 	if (mode === 'left' || mode === 'both') {
-		const rootMidi = NoteToMidi[(selectedNote + '2') as NoteFullName]; // Octave 2 for Left
+		const rootMidi = NoteToMidi[(selectedNote + '3') as NoteFullName]; // Octave 3 for Left
 		notes.push(...intervals.map((interval) => (rootMidi + interval) as MidiNote));
 	}
 
 	if (mode === 'right' || mode === 'both') {
-		const rootMidi = NoteToMidi[(selectedNote + '3') as NoteFullName]; // Octave 3 for Right
+		const rootMidi = NoteToMidi[(selectedNote + '4') as NoteFullName]; // Octave 4 for Right
 		notes.push(...intervals.map((interval) => (rootMidi + interval) as MidiNote));
 	}
 

@@ -89,8 +89,8 @@
 		timingModeLabel?: string;
 	} = $props();
 
-	const SCORE_SHOW_AFTER_MISTAKES = 1; // Show score after 1 mistake
-	const KEYBOARD_SHOW_AFTER_MISTAKES = 3; // Show keyboard after 3 mistakes
+	const SCORE_SHOW_AFTER_MISTAKES = 3; // Show score after 3 mistakes
+	const KEYBOARD_SHOW_AFTER_MISTAKES = 6; // Show keyboard after 6 mistakes
 	const EXPECTED_NOTES_SHOW_AFTER_MISTAKES = 3;
 
 	// @svelte-ignore state_referenced_locally
@@ -113,6 +113,7 @@
 
 	let noteEvents: NoteEvent[] = $state([]);
 	let mistakes = $state(0);
+	let correctStreak = $state(0); // consecutive correct notes; re-hides hints when ≥ 2
 	let collectedNotes: Set<MidiNote> = $state(new Set());
 	let lastVelocity = $state(0);
 	let startTime = $state(0);
@@ -125,11 +126,11 @@
 	let isLandscapeMobile = $state(false);
 	let lastNoteDisplay = $state<{ note: string; correct: boolean } | null>(null);
 
-	// Landscape phase: name-only → score → keyboard
+	// Landscape phase: name-only → score → keyboard (re-hides after 2 correct in a row)
 	let landscapePhase = $derived.by((): 'name' | 'score' | 'keyboard' => {
 		if (!isLandscapeMobile) return 'name';
 		if (exerciseType === 'partition') return 'score'; // sight-reading always shows score
-		if (mistakes < SCORE_SHOW_AFTER_MISTAKES) return 'name';
+		if (mistakes < SCORE_SHOW_AFTER_MISTAKES || correctStreak >= 2) return 'name';
 		if (mistakes < KEYBOARD_SHOW_AFTER_MISTAKES) return 'score';
 		return 'keyboard';
 	});
@@ -154,7 +155,8 @@
 		if (exerciseType === 'partition') return true; // Always show for sight reading
 		if (isLandscapeMobile) return landscapePhase === 'score';
 		if (progressiveHints) {
-			return mistakes >= SCORE_SHOW_AFTER_MISTAKES;
+			// Show after threshold mistakes, hide again after 2 consecutive correct notes
+			return mistakes >= SCORE_SHOW_AFTER_MISTAKES && correctStreak < 2;
 		}
 		return showScore ?? true;
 	});
@@ -183,7 +185,7 @@
 		debugMode ||
 			(isLandscapeMobile
 				? landscapePhase === 'keyboard'
-				: progressiveHints && mistakes >= KEYBOARD_SHOW_AFTER_MISTAKES)
+				: progressiveHints && mistakes >= KEYBOARD_SHOW_AFTER_MISTAKES && correctStreak < 2)
 	);
 	let keyboardProps = $derived({
 		...calculateOptimalRange(expectedNotes),
@@ -302,6 +304,9 @@
 	});
 
 	function handleNoteOn(note: NoteEvent): void {
+		// Don't process notes after exercise is completed (prevents re-triggering modal)
+		if (completed) return;
+
 		let isOffBeat = false;
 
 		// Tempo Check - only validate timing for certain conditions
@@ -364,12 +369,14 @@
 		}
 
 		if (result.isCorrect) {
+			correctStreak++; // consecutive correct notes → re-hide hints
 			if (!isOffBeat) {
 				showFeedback(result.message, 'success');
 			}
 			// If isCorrect but isOffBeat, we already showed "Off beat" error and played error sound above.
 			// We do NOT show success message/sound.
 		} else {
+			correctStreak = 0; // reset streak on any wrong note
 			// If note matches pitch but is off beat, we already counted mistake above.
 			// If note is WRONG pitch, we count another mistake here?
 			// Ideally we don't double penalize if they just missed the beat but hit the wrong note?
@@ -423,6 +430,7 @@
 	function resetExercise(options?: { preserveFeedback?: boolean }): void {
 		noteEvents = [];
 		mistakes = 0;
+		correctStreak = 0;
 		completed = false;
 		if (!options?.preserveFeedback) {
 			feedbackMessage = '';
@@ -480,7 +488,7 @@
 			const unit = journeyService.getUnit(unitId);
 			const lesson = unit?.lessons.find((l) => l.id === lessonId);
 			completedPerfectCompletions = lesson?.perfectCompletions ?? 0;
-			completedRequiredPerfectCompletions = lesson?.requiredPerfectCompletions ?? 1;
+			completedRequiredPerfectCompletions = lesson?.requiredPerfectCompletions ?? 3;
 
 			showCompleteModal = true;
 		} else {
@@ -572,38 +580,40 @@
 		></div>
 	{/if}
 
-	<!-- Sidebar wrapper — normal flex child on desktop, fixed overlay on mobile landscape -->
-	<div class="sidebar-wrapper" class:open={showMobileSidebar}>
-		<!-- Sidebar for Controls -->
-		<ExerciseSidebar
-			{randomMode}
-			{selectedNote}
-			{tempoMode}
-			{strictBeat}
-			{stopOnMistake}
-			{debugMode}
-			{showTempoControl}
-			{showTrainingControl}
-			{timingModeLabel}
-			{defaultBpm}
-			strictToleranceMs={STRICT_TOLERANCE_MS}
-			normalToleranceMs={NORMAL_TOLERANCE_MS}
-			onNoteChange={(n) => {
-				selectedNote = n;
-				resetExercise();
-			}}
-			onTempoToggle={toggleTempoMode}
-			onStrictToggle={() => {
-				strictBeat = !strictBeat;
-			}}
-			onStopToggle={() => {
-				stopOnMistake = !stopOnMistake;
-			}}
-			onDebugToggle={toggleDebug}
-			onTick={handleTick}
-			onReset={() => resetExercise()}
-		/>
-	</div>
+	<!-- Sidebar wrapper — hidden in journey/training mode -->
+	{#if !isJourneyMode}
+		<div class="sidebar-wrapper" class:open={showMobileSidebar}>
+			<!-- Sidebar for Controls -->
+			<ExerciseSidebar
+				{randomMode}
+				{selectedNote}
+				{tempoMode}
+				{strictBeat}
+				{stopOnMistake}
+				{debugMode}
+				{showTempoControl}
+				{showTrainingControl}
+				{timingModeLabel}
+				{defaultBpm}
+				strictToleranceMs={STRICT_TOLERANCE_MS}
+				normalToleranceMs={NORMAL_TOLERANCE_MS}
+				onNoteChange={(n) => {
+					selectedNote = n;
+					resetExercise();
+				}}
+				onTempoToggle={toggleTempoMode}
+				onStrictToggle={() => {
+					strictBeat = !strictBeat;
+				}}
+				onStopToggle={() => {
+					stopOnMistake = !stopOnMistake;
+				}}
+				onDebugToggle={toggleDebug}
+				onTick={handleTick}
+				onReset={() => resetExercise()}
+			/>
+		</div>
+	{/if}
 	<!-- /sidebar-wrapper -->
 
 	<!-- Main Exercise Area -->
@@ -684,12 +694,14 @@
 				{#if isLandscapeMobile}
 					<div class="mobile-header-controls">
 						<MidiStatusPill />
-						<button
-							class="sidebar-toggle-btn"
-							onclick={() => (showMobileSidebar = !showMobileSidebar)}
-							aria-label="Toggle exercise controls"
-							title="Exercise Controls">⚙</button
-						>
+						{#if !isJourneyMode}
+							<button
+								class="sidebar-toggle-btn"
+								onclick={() => (showMobileSidebar = !showMobileSidebar)}
+								aria-label="Toggle exercise controls"
+								title="Exercise Controls">⚙</button
+							>
+						{/if}
 					</div>
 				{/if}
 			</div>
@@ -764,8 +776,15 @@
 				</div>
 			{/if}
 
-			{#if showScoreState}
-				<div class="score-container card-premium" in:fade>
+			{#if progressiveHints}
+				<!-- Always reserves space so content appearing doesn't shift the layout -->
+				<div class="score-container card-premium" class:hint-invisible={!showScoreState}>
+					{#if showScoreState}
+						<Score {scoreProps} />
+					{/if}
+				</div>
+			{:else if showScoreState}
+				<div class="score-container card-premium">
 					<Score {scoreProps} />
 				</div>
 			{/if}
@@ -1025,7 +1044,13 @@
 	}
 
 	.keyboard-container.hidden {
-		display: none;
+		visibility: hidden;
+		pointer-events: none;
+	}
+
+	.score-container.hint-invisible {
+		visibility: hidden;
+		pointer-events: none;
 	}
 
 	.exercise-footer {

@@ -2,9 +2,10 @@
 
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
+	import { page } from '$app/state';
 	import type { MidiNote, Note, NoteEvent, NoteFullName, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
-	import { AllNotes, MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
+	import { MidiToNote, NoteToMidi } from '$lib/types/notes.constants';
 	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 
 	const description =
@@ -19,25 +20,57 @@
 
 	let { randomMode, onComplete, rootKey: propKey, range: propRange }: Props = $props();
 
+	// Parse range from URL params first, then fall back to props
+	const urlRange = page.url.searchParams.get('range');
 	// @svelte-ignore state_referenced_locally
-	let range = $state<[NoteFullName, NoteFullName]>(untrack(() => propRange || ['C3', 'C6']));
+	let range = $state<[NoteFullName, NoteFullName]>(
+		untrack(() => {
+			if (urlRange) {
+				const parts = urlRange.split(',');
+				if (parts.length === 2) return [parts[0] as NoteFullName, parts[1] as NoteFullName];
+			}
+			return propRange || ['C4', 'C5'];
+		})
+	);
+
 	let currentSequence: NoteFullName[] = $state([]);
-	let hand: 'left' | 'right' = $state('right');
 	let playedCount = $state(0);
 
+	// Derive hand from the range: notes in octave ≥4 → treble (right), below → bass (left)
+	let hand = $derived.by<'left' | 'right'>(() => {
+		const minNote = range[0];
+		const octaveStr = minNote.match(/\d+$/)?.[0];
+		return octaveStr && parseInt(octaveStr) >= 4 ? 'right' : 'left';
+	});
+
 	function generateNewSequence() {
-		const sequenceLength = Math.floor(Math.random() * 10) + 1;
+		const minMidi = NoteToMidi[range[0]];
+		const maxMidi = NoteToMidi[range[1]];
+
+		if (!minMidi || !maxMidi || minMidi >= maxMidi) {
+			currentSequence = [];
+			playedCount = 0;
+			return;
+		}
+
+		// Collect natural (non-accidental) NoteFullNames within the MIDI range
+		const available: NoteFullName[] = [];
+		for (let midi = minMidi; midi <= maxMidi; midi++) {
+			const noteName = MidiToNote[midi as MidiNote];
+			if (!noteName || noteName.includes('#') || noteName.includes('b')) continue;
+			available.push(noteName);
+		}
+
+		if (available.length === 0) {
+			currentSequence = [];
+			playedCount = 0;
+			return;
+		}
+
+		const sequenceLength = 12;
 		const newSequence: NoteFullName[] = [];
-
-		hand = Math.random() < 0.5 ? 'left' : 'right';
-
-		const minOctave = hand === 'left' ? 1 : 3;
-		const maxOctave = hand === 'left' ? 2 : 4;
-
 		for (let i = 0; i < sequenceLength; i++) {
-			const note = AllNotes[Math.floor(Math.random() * AllNotes.length)];
-			const octave = Math.floor(Math.random() * (maxOctave - minOctave + 1)) + minOctave;
-			newSequence.push(`${note}${octave}` as NoteFullName);
+			newSequence.push(available[Math.floor(Math.random() * available.length)]);
 		}
 		currentSequence = newSequence;
 		playedCount = 0;
@@ -48,16 +81,15 @@
 		generateNewSequence();
 	});
 
-	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
-		// Return the NEXT expected note in the sequence
+	// $derived so reference changes when playedCount/currentSequence changes,
+	// forcing BaseExercise to re-derive expectedNotes and keyboard hints.
+	let generateExpectedNotes = $derived((_selectedNote: Note): MidiNote[] => {
 		if (playedCount < currentSequence.length) {
 			const note = currentSequence[playedCount];
-			if (note && NoteToMidi[note]) {
-				return [NoteToMidi[note]];
-			}
+			if (note && NoteToMidi[note]) return [NoteToMidi[note]];
 		}
 		return [];
-	}
+	});
 
 	function validateNoteEvent(
 		selectedNote: Note,
@@ -99,22 +131,21 @@
 		}
 	}
 
-	function generateScoreProps(selectedNote: Note): ScoreProps {
-		// Format sequence for Score component: [[note1], [note2], ...]
+	// $derived so score display advances with playedCount
+	let generateScoreProps = $derived((_selectedNote: Note): ScoreProps => {
 		const formattedSequence = currentSequence.map((note) => [note]);
-
 		return {
-			selectedNote,
+			selectedNote: 'C' as Note,
 			leftHand: hand === 'left' ? formattedSequence : [],
 			rightHand: hand === 'right' ? formattedSequence : []
 		};
-	}
+	});
 
 	function isCompleted(
-		currentNotes: ReadonlyArray<MidiNote>,
-		expectedNotes: ReadonlyArray<MidiNote>
+		_currentNotes: ReadonlyArray<MidiNote>,
+		_expectedNotes: ReadonlyArray<MidiNote>
 	): boolean {
-		return playedCount === currentSequence.length;
+		return playedCount === currentSequence.length && currentSequence.length > 0;
 	}
 
 	function handleParentReset(): void {

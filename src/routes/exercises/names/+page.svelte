@@ -204,9 +204,12 @@
 				? ENGLISH_TO_LATIN[currentTargetNote]
 				: currentTargetNote;
 
-			setTimeout(() => {
-				generateNewNote();
-			}, 1500);
+			setTimeout(
+				() => {
+					generateNewNote();
+				},
+				typeof window !== 'undefined' && (window as any).__dispatchMidi ? 150 : 1500
+			);
 
 			return {
 				isCorrect: true,
@@ -335,7 +338,7 @@
 				{/if}
 			</div>
 
-			{#if !randomMode}
+			{#if !randomMode && !page.url.searchParams.get('unitId')}
 				<div class="note-controls">
 					<div class="control-group">
 						<label>

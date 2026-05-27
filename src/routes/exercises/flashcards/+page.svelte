@@ -14,6 +14,7 @@
 	} from '$lib/types/notes.constants';
 	import { calculateInterval } from '$lib/MusicTheoryUtils';
 	import { onDestroy, onMount } from 'svelte';
+	import { page } from '$app/state';
 
 	import { type FlashCard, type FlashCardType } from './flashcard-types';
 	import ConfigPopup from '../../../components/exercise/ConfigPopup.svelte';
@@ -178,10 +179,12 @@
 		<div class="progress">
 			Cards: {cardsCompleted} / {TOTAL_CARDS}
 		</div>
-		<div class="controls">
-			<button onclick={() => (showConfigPopup = true)} class="config-btn"> ⚙️ Config </button>
-			<button onclick={generateNewCard} class="new-btn"> 🎲 New Card </button>
-		</div>
+		{#if !page.url.searchParams.get('unitId')}
+			<div class="controls">
+				<button onclick={() => (showConfigPopup = true)} class="config-btn"> ⚙️ Config </button>
+				<button onclick={generateNewCard} class="new-btn"> 🎲 New Card </button>
+			</div>
+		{/if}
 		<p class="exercise-instructions">
 			Play the requested note, chord, scale, or interval on your MIDI keyboard — cards advance
 			automatically on success.

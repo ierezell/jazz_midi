@@ -17,7 +17,7 @@ export interface ExerciseMusicXMLData {
  * Load MusicXML content for a lick exercise
  */
 export async function loadLickMusicXML(lickId: string): Promise<ExerciseMusicXMLData> {
-	const url = `/licks/${lickId}.musicxml`;
+	const url = `/licks/${lickId}.xml`;
 	const response = await fetch(url);
 	if (!response.ok) {
 		throw new Error(`Failed to load lick MusicXML: ${response.status}`);
@@ -32,7 +32,7 @@ export async function loadLickMusicXML(lickId: string): Promise<ExerciseMusicXML
  * Load MusicXML content for a rhythm pattern
  */
 export async function loadRhythmMusicXML(patternId: string): Promise<ExerciseMusicXMLData> {
-	const url = `/rhythm/${patternId}.musicxml`;
+	const url = `/rhythm/${patternId}.xml`;
 	const response = await fetch(url);
 	if (!response.ok) {
 		throw new Error(`Failed to load rhythm MusicXML: ${response.status}`);
@@ -47,7 +47,7 @@ export async function loadRhythmMusicXML(patternId: string): Promise<ExerciseMus
  * Load MusicXML content for hand independence exercise
  */
 export async function loadHandIndependenceMusicXML(levelId: string): Promise<ExerciseMusicXMLData> {
-	const url = `/hand_independence/${levelId}.musicxml`;
+	const url = `/hand_independence/${levelId}.xml`;
 	const response = await fetch(url);
 	if (!response.ok) {
 		throw new Error(`Failed to load hand independence MusicXML: ${response.status}`);
@@ -62,7 +62,7 @@ export async function loadHandIndependenceMusicXML(levelId: string): Promise<Exe
  * Load MusicXML content for a song
  */
 export async function loadSongMusicXML(songId: string): Promise<ExerciseMusicXMLData> {
-	const url = `/songs/${songId}.musicxml`;
+	const url = `/songs/${songId}.xml`;
 	const response = await fetch(url);
 	if (!response.ok) {
 		throw new Error(`Failed to load song MusicXML: ${response.status}`);
@@ -78,7 +78,7 @@ export async function loadSongMusicXML(songId: string): Promise<ExerciseMusicXML
  */
 export async function hasMusicXML(basePath: string, id: string): Promise<boolean> {
 	try {
-		const response = await fetch(`${basePath}/${id}.musicxml`, { method: 'HEAD' });
+		const response = await fetch(`${basePath}/${id}.xml`, { method: 'HEAD' });
 		return response.ok;
 	} catch {
 		return false;
@@ -90,7 +90,7 @@ export async function hasMusicXML(basePath: string, id: string): Promise<boolean
  * This is the primary method - exercises should always use MusicXML
  */
 export function getMusicXMLUrl(category: 'licks' | 'rhythm' | 'hand_independence' | 'songs', id: string): string {
-	return `/${category}/${id}.musicxml`;
+	return `/${category}/${id}.xml`;
 }
 
 /**

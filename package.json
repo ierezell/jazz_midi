@@ -3,6 +3,7 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"packageManager": "pnpm@10.11.0",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
@@ -19,8 +20,9 @@
 		"test:integration": "vitest run tests",
 		"test:e2e": "playwright test",
 		"e2e:sequential": "node ./scripts/run-e2e-sequential.js",
-		"test:all": "npm run lint && npm run check && npm run test:unit && npm run test:e2e",
-		"test:ci": "npm run lint && npm run check && npm run test:unit"
+		"test:all": "pnpm run lint && pnpm run check && pnpm run test:unit && pnpm run test:e2e",
+		"test:ci": "pnpm run lint && pnpm run check && pnpm run test:unit",
+		"upload:exercises": "tsx scripts/upload-exercises.ts"
 	},
 	"devDependencies": {
 		"@eslint/compat": "2.0.5",
@@ -40,6 +42,7 @@
 		"@types/webmidi": "^2.1.0",
 		"@vitest/ui": "^4.1.4",
 		"deep-eql": "^5.0.2",
+		"dotenv": "^17.4.2",
 		"eslint": "10.2.1",
 		"eslint-config-prettier": "10.1.8",
 		"eslint-plugin-svelte": "^3.17.0",
@@ -51,6 +54,7 @@
 		"prettier-plugin-svelte": "^3.5.1",
 		"svelte": "5.55.4",
 		"svelte-check": "4.4.6",
+		"tsx": "^4.22.3",
 		"typescript": "6.0.3",
 		"typescript-eslint": "8.58.2",
 		"vite": "8.0.8",
@@ -58,8 +62,11 @@
 	},
 	"dependencies": {
 		"@spotify/basic-pitch": "^1.0.1",
+		"@supabase/supabase-js": "^2.106.1",
 		"@sveltejs/adapter-static": "3.0.10",
 		"@tailwindcss/vite": "^4.2.2",
+		"@vercel/analytics": "^2.0.1",
+		"@vercel/speed-insights": "^2.0.0",
 		"lucide-svelte": "^1.0.1",
 		"opensheetmusicdisplay": "^1.9.7",
 		"tailwindcss": "^4.1.16",

@@ -131,22 +131,25 @@ const CHORD_INTERVALS: Record<ChordType, ReadonlyArray<(root: MidiNote) => MidiN
 };
 
 /**
- * Constrains MIDI note to C4-C5 range (72-84) for optimal playability
- * Pure function - no side effects
+ * Constrains a MIDI root note to the C3–C5 playable range (48–72).
+ * Use this when chord roots are computed via arithmetic and may land too high/low.
+ * Pure function - no side effects.
  */
-function constrainToOptimalRange(midi: MidiNote): MidiNote {
+export function constrainToOptimalRange(midi: MidiNote): MidiNote {
 	let constrained = midi;
 	while (constrained > 72) constrained = (constrained - 12) as MidiNote;
-	while (constrained < 60) constrained = (constrained + 12) as MidiNote;
+	while (constrained < 48) constrained = (constrained + 12) as MidiNote;
 	return constrained;
 }
 
 /**
- * Generates a chord from root, type, and inversion
- * Pure function - same inputs always produce same output
+ * Generates a chord from root, type, and inversion.
+ * The root octave is respected as-is — callers are responsible for range.
+ * Use constrainToOptimalRange() on the root before calling if needed.
+ * Pure function - same inputs always produce same output.
  */
 export function chords(rootMidi: MidiNote, chordType: ChordType, inversion: Inversion = 0): Chord {
-	const constrainedRoot = constrainToOptimalRange(rootMidi);
+	const constrainedRoot = rootMidi;
 
 	// Build chord notes using interval functions
 	const intervalFns = CHORD_INTERVALS[chordType] ?? [];

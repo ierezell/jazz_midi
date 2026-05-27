@@ -107,7 +107,26 @@
 
 		if (notes.length === 0) return '';
 
-		return generateMusicXML(notes, { title: '', key: scoreProps.selectedNote, divisions: 4 });
+		const hasRight = scoreProps.rightHand.some((c) => c.length > 0);
+		const hasLeft = scoreProps.leftHand.some((c) => c.length > 0);
+		const staves: 1 | 2 = hasRight && hasLeft ? 2 : 1;
+		const clef = !hasRight && hasLeft ? 'bass' : 'treble';
+
+		// For single-staff, ensure all notes use staff 1
+		if (staves === 1) {
+			notes.forEach((n) => {
+				n.staff = 1;
+				n.voice = 1;
+			});
+		}
+
+		return generateMusicXML(notes, {
+			title: '',
+			key: scoreProps.selectedNote,
+			divisions: 4,
+			staves,
+			clef
+		});
 	}
 
 	// Get effective MusicXML content
@@ -118,8 +137,10 @@
 		return '';
 	}
 
-	onMount(async () => {
-		if (!containerRef) return;
+	let osmdInitializing = false;
+
+	async function initOSMD(): Promise<void> {
+		if (!containerRef || osmdInitializing || osmdInstance) return;
 
 		const effectiveXML = getEffectiveMusicXML();
 		if (!effectiveXML && !url?.trim()) {
@@ -127,6 +148,7 @@
 			return;
 		}
 
+		osmdInitializing = true;
 		try {
 			const osmdModule = (await import('opensheetmusicdisplay')) as any;
 			const OpenSheetMusicDisplay = osmdModule.OpenSheetMusicDisplay;
@@ -155,24 +177,19 @@
 				defaultFontFamily: 'Bravura, Arial, sans-serif'
 			});
 
-			// Load content
 			if (url?.trim()) {
 				await osmdInstance.load(url);
 			} else {
 				await osmdInstance.load(effectiveXML);
 			}
 
-			// Apply annotations
 			if (annotations.length > 0) {
 				applyAnnotations(osmdInstance, annotations);
 			}
 
-			// Apply zoom
 			osmdInstance.Zoom = currentZoom;
-
 			await osmdInstance.render();
 
-			// Initialize cursor if enabled
 			if (showCursor) {
 				initializeCursor();
 			}
@@ -184,7 +201,13 @@
 			loadError = error instanceof Error ? error.message : 'Failed to load score';
 			isLoading = false;
 			onError?.(error instanceof Error ? error : new Error(String(error)));
+		} finally {
+			osmdInitializing = false;
 		}
+	}
+
+	onMount(async () => {
+		await initOSMD();
 	});
 
 	onDestroy(() => {
@@ -200,10 +223,18 @@
 
 	// Re-render when content changes
 	$effect(() => {
-		if (osmdInstance && (musicXmlContent || url || scoreProps)) {
-			isLoading = true;
+		if (musicXmlContent || url || scoreProps) {
 			const effectiveXML = getEffectiveMusicXML();
 
+			if (!osmdInstance) {
+				// Deferred init: content became available after onMount
+				if (effectiveXML || url?.trim()) {
+					initOSMD();
+				}
+				return;
+			}
+
+			isLoading = true;
 			const loadPromise = url?.trim() ? osmdInstance.load(url) : osmdInstance.load(effectiveXML);
 
 			loadPromise
@@ -398,17 +429,6 @@
 </script>
 
 <div class="score-wrapper">
-	<div class="score-toolbar">
-		<div class="zoom-controls">
-			<button class="zoom-btn" onclick={zoomOut} title="Zoom out">−</button>
-			<span class="zoom-level">{Math.round(currentZoom * 100)}%</span>
-			<button class="zoom-btn" onclick={zoomIn} title="Zoom in">+</button>
-		</div>
-		{#if isLoading}
-			<span class="loading-indicator">Loading...</span>
-		{/if}
-	</div>
-
 	<div class="score-container">
 		{#if isLoading}
 			<div class="loading-overlay">
@@ -433,54 +453,6 @@
 		flex-direction: column;
 		gap: 0.5rem;
 		width: 100%;
-	}
-
-	.score-toolbar {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 0.5rem;
-		background: var(--color-surface);
-		border-radius: 8px;
-	}
-
-	.zoom-controls {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.zoom-btn {
-		width: 28px;
-		height: 28px;
-		border-radius: 4px;
-		border: 1px solid var(--color-border);
-		background: var(--color-surface-raised);
-		color: var(--color-text);
-		cursor: pointer;
-		font-size: 1rem;
-		line-height: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.zoom-btn:hover {
-		background: var(--color-primary);
-		color: white;
-	}
-
-	.zoom-level {
-		font-size: 0.875rem;
-		color: var(--color-text-muted);
-		min-width: 3rem;
-		text-align: center;
-	}
-
-	.loading-indicator {
-		font-size: 0.875rem;
-		color: var(--color-text-muted);
-		font-style: italic;
 	}
 
 	.score-container {

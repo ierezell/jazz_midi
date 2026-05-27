@@ -1,12 +1,19 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { fade } from 'svelte/transition';
+	import { page } from '$app/state';
 	import BaseExercise from '../../../components/exercise/BaseExercise.svelte';
 	import type { Note, NoteEvent, MidiNote, ScoreProps } from '$lib/types/types';
 	import type { ValidationResult } from '$lib/types/exercise-api';
 	import { rhythmPatterns } from '$lib/data/rhythmPatternsData';
 
-	let bpm = $state(100);
+	// Read URL params
+	const urlPatternId = page.url.searchParams.get('patternId');
+	const urlBpm = Number(page.url.searchParams.get('bpm')) || 0;
+	const urlHand = page.url.searchParams.get('hand') as 'LH' | 'RH' | 'both' | null;
+	const isGymMode = !page.url.searchParams.get('unitId');
+
+	let bpm = $state(urlBpm || 100);
 	let isPlaying = $state(false);
 	let beatCount = $state(0);
 	let leftHandHits = $state(0);
@@ -15,7 +22,6 @@
 	let lastDiff = $state<number | null>(null);
 	let feedback = $state('');
 	let syncOffset = $state<number | null>(null); // Difference between LH and RH in ms
-	let soloHand = $state<'none' | 'LH' | 'RH'>('none');
 	let lastLhTime = 0;
 	let lastRhTime = 0;
 	let audioContext: AudioContext | null = null;
@@ -27,9 +33,26 @@
 	let deviations: number[] = [];
 	let notesInQueue: { beat: number; time: number }[] = [];
 
-	let selectedPatternId = $state(rhythmPatterns[0].id);
+	let selectedPatternId = $state(
+		urlPatternId && rhythmPatterns.find((p) => p.id === urlPatternId)
+			? urlPatternId
+			: rhythmPatterns[0].id
+	);
 	let currentPattern = $derived(
 		rhythmPatterns.find((p) => p.id === selectedPatternId) || rhythmPatterns[0]
+	);
+
+	// Hand mode from URL or default
+	let soloHand = $state<'none' | 'LH' | 'RH'>(
+		urlHand === 'LH' ? 'LH' : urlHand === 'RH' ? 'RH' : 'none'
+	);
+
+	// Completion targets: 2 full loops through the pattern per hand
+	let lhTarget = $derived(
+		Math.max(4, currentPattern.hits.filter((h) => h.hand === 'LH').length * 2)
+	);
+	let rhTarget = $derived(
+		Math.max(4, currentPattern.hits.filter((h) => h.hand === 'RH').length * 2)
 	);
 
 	const HIT_WINDOW = 0.15;
@@ -132,7 +155,19 @@
 		void selectedNote;
 		void expectedNotes;
 		void currentNotes;
-		if (!isPlaying || !audioContext) {
+
+		// Auto-start on first MIDI note (MIDI keypress is a valid user gesture)
+		if (!isPlaying) {
+			start();
+			return {
+				isCorrect: true,
+				message: '🎹 Metronome started! Play on the beat.',
+				collected: false,
+				resetCollected: false
+			};
+		}
+
+		if (!audioContext) {
 			return {
 				isCorrect: false,
 				message: 'Start the metronome first!',
@@ -224,11 +259,10 @@
 		void currentNotes;
 		void expectedNotes;
 
-		if (soloHand !== 'none') {
-			return beatCount >= 32;
-		}
-
-		return beatCount >= 32 && leftHandHits >= 8 && rightHandHits >= 8 && coordinatedHits >= 8;
+		if (soloHand === 'LH') return leftHandHits >= lhTarget;
+		if (soloHand === 'RH') return rightHandHits >= rhTarget;
+		// Both hands: need hits from each
+		return leftHandHits >= lhTarget && rightHandHits >= rhTarget;
 	}
 
 	function onReset() {
@@ -237,6 +271,7 @@
 		rightHandHits = 0;
 		coordinatedHits = 0;
 		deviations = [];
+		syncOffset = null;
 		stop();
 	}
 
@@ -263,80 +298,113 @@
 >
 	{#snippet children(api: import('$lib/types/exercise-api').ExerciseAPI)}
 		<div class="rhythm-exercise-content">
-			<!-- Header Controls -->
-			<div class="rhythm-header card-premium">
-				<div class="pattern-selector">
-					<label for="pattern-select">Musical Style</label>
-					<select
-						id="pattern-select"
-						class="select-premium"
-						bind:value={selectedPatternId}
-						onchange={stop}
-					>
-						{#each rhythmPatterns as pattern}
-							<option value={pattern.id}>{pattern.name}</option>
-						{/each}
-					</select>
-				</div>
+			<!-- Controls row: gym mode only -->
+			{#if isGymMode}
+				<div class="rhythm-header card-premium">
+					<div class="pattern-selector">
+						<label for="pattern-select">Style</label>
+						<select
+							id="pattern-select"
+							class="select-premium"
+							bind:value={selectedPatternId}
+							onchange={() => {
+								stop();
+								onReset();
+							}}
+						>
+							{#each rhythmPatterns as pattern}
+								<option value={pattern.id}>{pattern.name}</option>
+							{/each}
+						</select>
+					</div>
 
-				<div class="rhythm-controls">
 					<div class="hand-isolation">
-						<span class="label" id="solo-focus-label">Solo Focus</span>
+						<span class="label" id="solo-focus-label">Hand</span>
 						<div class="toggle-group" role="group" aria-labelledby="solo-focus-label">
-							<button class:active={soloHand === 'none'} onclick={() => (soloHand = 'none')}
-								>Both</button
+							<button
+								class:active={soloHand === 'LH'}
+								onclick={() => {
+									soloHand = 'LH';
+									onReset();
+								}}>LH</button
 							>
-							<button class:active={soloHand === 'LH'} onclick={() => (soloHand = 'LH')}
-								>LH Only</button
+							<button
+								class:active={soloHand === 'none'}
+								onclick={() => {
+									soloHand = 'none';
+									onReset();
+								}}>Both</button
 							>
-							<button class:active={soloHand === 'RH'} onclick={() => (soloHand = 'RH')}
-								>RH Only</button
+							<button
+								class:active={soloHand === 'RH'}
+								onclick={() => {
+									soloHand = 'RH';
+									onReset();
+								}}>RH</button
 							>
 						</div>
 					</div>
-					<button class="action-btn" onclick={togglePlay} class:playing={isPlaying}>
-						{isPlaying ? 'Stop' : 'Start Metronome'}
-					</button>
+
 					<div class="bpm-input">
 						<label for="bpm">BPM: {bpm}</label>
 						<input id="bpm" type="range" min="40" max="200" bind:value={bpm} />
 					</div>
+
+					<button class="action-btn" onclick={togglePlay} class:playing={isPlaying}>
+						{isPlaying ? '⏹ Stop' : '▶ Start'}
+					</button>
 				</div>
+			{/if}
+
+			<!-- How to play instruction card -->
+			<div class="instruction-card card-premium">
+				<div class="instruction-row">
+					{#if soloHand === 'LH' || soloHand === 'none'}
+						<div class="hand-guide lh-guide">
+							<span class="hand-badge lh-badge">LH</span>
+							<span class="hand-note">Any note <strong>below C4</strong> (e.g. C3)</span>
+						</div>
+					{/if}
+					{#if soloHand === 'RH' || soloHand === 'none'}
+						<div class="hand-guide rh-guide">
+							<span class="hand-badge rh-badge">RH</span>
+							<span class="hand-note">Any note <strong>C4 or above</strong> (e.g. C4)</span>
+						</div>
+					{/if}
+					<div class="desc-text">{currentPattern.description}</div>
+				</div>
+				{#if !isPlaying}
+					<p class="start-hint">🎹 Press any key on your MIDI keyboard to start!</p>
+				{/if}
 			</div>
 
-			<!-- Dynamic Timeline Visualizer -->
+			<!-- Timeline Visualizer: always visible so student can read the pattern -->
 			<div class="timeline-container card-premium">
-				<div class="timeline-labels">
-					<span>1</span><span>&</span><span>2</span><span>&</span>
-					<span>3</span><span>&</span><span>4</span><span>&</span>
+				<div class="beat-labels">
+					{#each Array(currentPattern.measures * 4) as _, i}
+						<span class="beat-label">{(i % 4) + 1}</span>
+					{/each}
 				</div>
 				<div class="timeline-track">
-					<!-- Subdivisions (16th notes) -->
 					{#each Array(currentPattern.measures * 16) as _, i}
 						{@const isWholeBeat = i % 4 === 0}
 						{@const isHalfBeat = i % 2 === 0}
 						<div class="subdivision-mark" class:whole={isWholeBeat} class:half={isHalfBeat}></div>
 					{/each}
 
-					<!-- Hits (Expected) -->
-					<!-- Hits (Expected) - Only show when playing -->
-					{#if isPlaying}
-						{#each currentPattern.hits as hit}
-							<div
-								class="hit-marker"
-								class:lh={hit.hand === 'LH'}
-								class:rh={hit.hand === 'RH'}
-								class:dimmed={soloHand !== 'none' && hit.hand !== soloHand}
-								style="left: {((hit.beat - 1) / (currentPattern.measures * 4)) * 100}%"
-								transition:fade
-							>
-								<span class="hit-dot"></span>
-								<span class="hit-label">{hit.hand}</span>
-							</div>
-						{/each}
-					{/if}
+					{#each currentPattern.hits as hit}
+						<div
+							class="hit-marker"
+							class:lh={hit.hand === 'LH'}
+							class:rh={hit.hand === 'RH'}
+							class:dimmed={soloHand !== 'none' && hit.hand !== soloHand}
+							style="left: {((hit.beat - 1) / (currentPattern.measures * 4)) * 100}%"
+						>
+							<span class="hit-dot"></span>
+							<span class="hit-label">{hit.hand}</span>
+						</div>
+					{/each}
 
-					<!-- Playhead -->
 					{#if isPlaying}
 						<div
 							class="playhead"
@@ -346,80 +414,87 @@
 				</div>
 			</div>
 
-			<!-- Live Feedback Display -->
+			<!-- Progress + Feedback row -->
 			<div class="feedback-area">
-				{#if lastDiff !== null}
-					<div class="timing-feedback-container">
-						<div
-							class="timing-feedback"
-							class:perfect={Math.abs(lastDiff) < 50}
-							class:near={Math.abs(lastDiff) >= 50 && Math.abs(lastDiff) < 120}
-							class:miss={Math.abs(lastDiff) >= 120}
-						>
-							<span class="feedback-msg">{feedback}</span>
-							<span class="diff-val">{lastDiff > 0 ? '+' : ''}{Math.round(lastDiff)}ms</span>
+				<!-- Progress bars -->
+				<div class="progress-card card-premium">
+					{#if soloHand === 'LH' || soloHand === 'none'}
+						<div class="progress-row">
+							<span class="lh-badge-sm">LH</span>
+							<div class="progress-bar">
+								<div
+									class="progress-fill lh-fill"
+									style="width: {Math.min(100, (leftHandHits / lhTarget) * 100)}%"
+								></div>
+							</div>
+							<span class="progress-count">{leftHandHits}/{lhTarget}</span>
 						</div>
-
-						{#if syncOffset !== null}
-							<div class="sync-meter-card card-premium">
-								<span class="label">LH/RH Sync</span>
-								<div class="sync-gauge">
-									<div class="sync-axis"></div>
-									<div class="sync-marker" style="left: {50 + (syncOffset / 100) * 50}%"></div>
-								</div>
-								<span class="sync-val"
-									>{Math.abs(syncOffset) < 10 ? 'Locked' : `${Math.round(syncOffset)}ms`}</span
-								>
+					{/if}
+					{#if soloHand === 'RH' || soloHand === 'none'}
+						<div class="progress-row">
+							<span class="rh-badge-sm">RH</span>
+							<div class="progress-bar">
+								<div
+									class="progress-fill rh-fill"
+									style="width: {Math.min(100, (rightHandHits / rhTarget) * 100)}%"
+								></div>
 							</div>
-						{/if}
+							<span class="progress-count">{rightHandHits}/{rhTarget}</span>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Timing feedback -->
+				{#if lastDiff !== null}
+					<div
+						class="timing-feedback"
+						class:perfect={Math.abs(lastDiff) < 50}
+						class:near={Math.abs(lastDiff) >= 50 && Math.abs(lastDiff) < 120}
+						class:miss={Math.abs(lastDiff) >= 120}
+						transition:fade
+					>
+						<span class="feedback-msg">{feedback}</span>
+						<span class="diff-val">{lastDiff > 0 ? '+' : ''}{Math.round(lastDiff)}ms</span>
 					</div>
 				{/if}
+			</div>
 
-				{#if beatCount >= 32}
-					<div class="completion-cta card-premium">
-						<h3>Target Reached!</h3>
-						<p>
-							{#if soloHand === 'none'}
-								Hit target: 32 hits + balanced hands + 8 synced pairs.
-							{:else}
-								You've completed 32 hits. Click below to save your stats.
-							{/if}
-						</p>
-						<button
-							disabled={!isCompleted([], [])}
-							class="finish-btn"
-							onclick={() => {
-								const avgDev =
-									deviations.length > 0
-										? deviations.reduce((a, b) => a + b, 0) / deviations.length
-										: undefined;
-								api.completeExercise({
-									avgDeviationMs: avgDev,
-									leftHandHits,
-									rightHandHits,
-									coordinatedHits
-								});
-							}}
-						>
-							Finish Exercise
-						</button>
-						{#if soloHand === 'none'}
-							<div class="coordination-summary">
-								<span>LH: {leftHandHits}</span>
-								<span>RH: {rightHandHits}</span>
-								<span>Synced: {coordinatedHits}</span>
-							</div>
-						{/if}
-					</div>
-				{/if}
+			<!-- Completion CTA -->
+			{#if isCompleted([], [])}
+				<div class="completion-cta card-premium" transition:fade>
+					<h3>🎉 Well done!</h3>
+					<p>
+						{soloHand === 'none'
+							? `LH: ${leftHandHits} · RH: ${rightHandHits} hits`
+							: `${leftHandHits + rightHandHits} correct hits`}
+					</p>
+					<button
+						class="finish-btn"
+						onclick={() => {
+							const avgDev =
+								deviations.length > 0
+									? deviations.reduce((a, b) => a + b, 0) / deviations.length
+									: undefined;
+							api.completeExercise({
+								avgDeviationMs: avgDev,
+								leftHandHits,
+								rightHandHits,
+								coordinatedHits
+							});
+						}}
+					>
+						Finish Exercise
+					</button>
+				</div>
+			{/if}
 
-				<div class="chord-display card-premium">
-					<span class="label">Current Sequence:</span>
-					<div class="chords">
-						{#each currentPattern.defaultChords as chord}
-							<span class="chord-tag">{chord}</span>
-						{/each}
-					</div>
+			<!-- Chord sequence -->
+			<div class="chord-display card-premium">
+				<span class="label">Sequence:</span>
+				<div class="chords">
+					{#each currentPattern.defaultChords as chord}
+						<span class="chord-tag">{chord}</span>
+					{/each}
 				</div>
 			</div>
 		</div>
@@ -430,30 +505,29 @@
 	.rhythm-exercise-content {
 		display: flex;
 		flex-direction: column;
-		gap: 2rem;
-		max-width: 1000px;
-		margin: 0 auto;
+		gap: 0.75rem;
+		width: 100%;
 	}
 
+	/* Controls row */
 	.rhythm-header {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
-		padding: 1.5rem;
+		padding: 0.6rem 1rem;
 		flex-wrap: wrap;
-		gap: 1.5rem;
+		gap: 0.75rem;
 	}
 
 	.pattern-selector,
 	.bpm-input {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.2rem;
 	}
 
 	.pattern-selector label,
 	.bpm-input label {
-		font-size: 0.8rem;
+		font-size: 0.7rem;
 		font-weight: 600;
 		color: var(--color-text-muted);
 		text-transform: uppercase;
@@ -463,46 +537,152 @@
 		background: var(--color-surface-raised);
 		border: 1px solid var(--color-border);
 		color: var(--color-text);
-		padding: 0.6rem 1rem;
+		padding: 0.4rem 0.75rem;
 		border-radius: 8px;
-		min-width: 200px;
+		min-width: 160px;
+		font-size: 0.9rem;
+	}
+
+	.bpm-input input[type='range'] {
+		width: 100px;
 	}
 
 	.action-btn {
-		padding: 0.8rem 2rem;
-		border-radius: 30px;
+		padding: 0.5rem 1.25rem;
+		border-radius: 20px;
 		border: none;
 		background: var(--color-primary);
 		color: #000;
 		font-weight: 700;
 		cursor: pointer;
+		font-size: 0.9rem;
+		white-space: nowrap;
 	}
 
 	.action-btn.playing {
 		background: var(--color-error);
-		color: var(--color-on-primary);
+		color: white;
 	}
 
-	/* Timeline Styles */
+	/* Hand isolation */
+	.hand-isolation {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		align-items: center;
+	}
+
+	.hand-isolation .label {
+		font-size: 0.7rem;
+		font-weight: 600;
+		color: var(--color-text-muted);
+		text-transform: uppercase;
+	}
+
+	.toggle-group {
+		display: flex;
+		background: var(--color-surface-raised);
+		padding: 0.15rem;
+		border-radius: 20px;
+		border: 1px solid var(--color-border);
+	}
+
+	.toggle-group button {
+		padding: 0.3rem 0.7rem;
+		border-radius: 18px;
+		border: none;
+		background: transparent;
+		color: var(--color-text-muted);
+		font-size: 0.8rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+
+	.toggle-group button.active {
+		background: var(--color-primary);
+		color: #000;
+	}
+
+	/* Instruction card */
+	.instruction-card {
+		padding: 0.6rem 1rem;
+	}
+
+	.instruction-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.hand-guide {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.hand-badge {
+		font-size: 0.7rem;
+		font-weight: 800;
+		padding: 0.2rem 0.5rem;
+		border-radius: 4px;
+	}
+
+	.lh-badge {
+		background: var(--color-lh, #3b82f6);
+		color: white;
+	}
+
+	.rh-badge {
+		background: var(--color-rh, #ef4444);
+		color: white;
+	}
+
+	.hand-note {
+		font-size: 0.85rem;
+		color: var(--color-text);
+	}
+
+	.desc-text {
+		font-size: 0.8rem;
+		color: var(--color-text-muted);
+		flex: 1;
+	}
+
+	.start-hint {
+		margin: 0.4rem 0 0;
+		font-size: 0.85rem;
+		color: var(--color-primary);
+		font-weight: 600;
+		text-align: center;
+	}
+
+	/* Timeline */
 	.timeline-container {
-		padding: 2rem;
+		padding: 0.75rem 1rem;
 		position: relative;
 		overflow: hidden;
 	}
 
-	.timeline-labels {
+	.beat-labels {
 		display: flex;
 		justify-content: space-between;
 		color: var(--color-text-muted);
+		font-size: 0.75rem;
 		font-family: monospace;
-		margin-bottom: 2rem;
-		padding: 0 5%;
+		margin-bottom: 0.4rem;
+	}
+
+	.beat-label {
+		flex: 1;
+		text-align: center;
 	}
 
 	.timeline-track {
-		height: 80px;
+		height: 64px;
 		background: var(--color-surface-raised);
-		border-radius: 12px;
+		border-radius: 8px;
 		position: relative;
 		display: flex;
 		align-items: center;
@@ -510,16 +690,17 @@
 
 	.subdivision-mark {
 		flex: 1;
-		height: 8px;
+		height: 6px;
 		border-right: 1px solid var(--color-border);
 	}
 
 	.subdivision-mark.half {
-		height: 16px;
+		height: 12px;
 		border-color: var(--color-text-muted);
 	}
+
 	.subdivision-mark.whole {
-		height: 32px;
+		height: 24px;
 		border-color: var(--color-text);
 	}
 
@@ -531,32 +712,31 @@
 		flex-direction: column;
 		align-items: center;
 		z-index: 2;
-		transition: opacity 0.3s ease;
 	}
 
 	.hit-marker.dimmed {
-		opacity: 0.1;
-		filter: grayscale(1);
+		opacity: 0.15;
 	}
 
 	.hit-dot {
-		width: 12px;
-		height: 12px;
+		width: 10px;
+		height: 10px;
 		border-radius: 50%;
-		margin-bottom: 4px;
+		margin-bottom: 2px;
 	}
 
 	.lh .hit-dot {
-		background-color: var(--color-lh) !important;
-		box-shadow: 0 0 10px var(--color-lh);
+		background-color: var(--color-lh, #3b82f6);
+		box-shadow: 0 0 6px var(--color-lh, #3b82f6);
 	}
+
 	.rh .hit-dot {
-		background-color: var(--color-rh) !important;
-		box-shadow: 0 0 10px var(--color-rh);
+		background-color: var(--color-rh, #ef4444);
+		box-shadow: 0 0 6px var(--color-rh, #ef4444);
 	}
 
 	.hit-label {
-		font-size: 0.7rem;
+		font-size: 0.6rem;
 		font-weight: 700;
 		color: var(--color-text-muted);
 	}
@@ -567,29 +747,96 @@
 		height: 100%;
 		width: 2px;
 		background: var(--color-primary);
-		box-shadow: 0 0 15px var(--color-primary);
+		box-shadow: 0 0 8px var(--color-primary);
 		z-index: 5;
 		transition: left 0.05s linear;
 	}
 
-	/* Feedback Area */
+	/* Progress + feedback row */
 	.feedback-area {
 		display: flex;
-		gap: 2rem;
-		align-items: flex-start;
+		gap: 0.75rem;
+		align-items: stretch;
 	}
 
-	.timing-feedback {
+	.progress-card {
+		padding: 0.6rem 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
 		flex: 1;
+	}
+
+	.progress-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.lh-badge-sm {
+		font-size: 0.65rem;
+		font-weight: 800;
+		padding: 0.1rem 0.4rem;
+		border-radius: 3px;
+		background: var(--color-lh, #3b82f6);
+		color: white;
+		min-width: 24px;
+		text-align: center;
+	}
+
+	.rh-badge-sm {
+		font-size: 0.65rem;
+		font-weight: 800;
+		padding: 0.1rem 0.4rem;
+		border-radius: 3px;
+		background: var(--color-rh, #ef4444);
+		color: white;
+		min-width: 24px;
+		text-align: center;
+	}
+
+	.progress-bar {
+		flex: 1;
+		height: 10px;
+		background: var(--color-surface-raised);
+		border-radius: 5px;
+		overflow: hidden;
+		border: 1px solid var(--color-border);
+	}
+
+	.progress-fill {
+		height: 100%;
+		border-radius: 5px;
+		transition: width 0.2s ease;
+	}
+
+	.lh-fill {
+		background: var(--color-lh, #3b82f6);
+	}
+
+	.rh-fill {
+		background: var(--color-rh, #ef4444);
+	}
+
+	.progress-count {
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: var(--color-text-muted);
+		min-width: 36px;
+		text-align: right;
+	}
+
+	/* Timing feedback */
+	.timing-feedback {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 2rem;
-		border-radius: 12px;
+		padding: 0.5rem 1rem;
+		border-radius: 8px;
 		background: var(--color-surface);
 		border: 2px solid transparent;
-		min-width: 200px;
+		min-width: 90px;
 	}
 
 	.timing-feedback.perfect {
@@ -606,40 +853,76 @@
 	}
 
 	.feedback-msg {
-		font-size: 1.5rem;
+		font-size: 1rem;
 		font-weight: 800;
 	}
+
 	.diff-val {
-		font-size: 1rem;
+		font-size: 0.75rem;
 		opacity: 0.8;
 	}
 
-	.chord-display {
-		flex: 1;
+	/* Completion */
+	.completion-cta {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		align-items: center;
+		justify-content: center;
+		padding: 1rem;
+		text-align: center;
+		border: 2px solid var(--color-primary);
+	}
+
+	.completion-cta h3 {
+		color: var(--color-primary);
+		margin: 0 0 0.25rem;
+	}
+
+	.completion-cta p {
+		font-size: 0.85rem;
+		color: var(--color-text-muted);
+		margin: 0 0 0.75rem;
+	}
+
+	.finish-btn {
+		padding: 0.5rem 1.5rem;
+		border-radius: 8px;
+		background: var(--color-primary);
+		color: #000;
+		font-weight: 700;
+		border: none;
+		cursor: pointer;
+	}
+
+	/* Chord display */
+	.chord-display {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.5rem 1rem;
 	}
 
 	.chord-display .label {
-		font-size: 0.8rem;
+		font-size: 0.7rem;
 		font-weight: 600;
 		color: var(--color-text-muted);
 		text-transform: uppercase;
+		white-space: nowrap;
 	}
 
 	.chords {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.75rem;
+		gap: 0.5rem;
 	}
 
 	.chord-tag {
-		padding: 0.5rem 1rem;
+		padding: 0.2rem 0.6rem;
 		background: var(--color-surface-raised);
-		border-radius: 6px;
+		border-radius: 4px;
 		font-weight: 700;
 		color: var(--color-primary);
+		font-size: 0.85rem;
 		border: 1px solid rgba(88, 166, 255, 0.2);
 	}
 
@@ -648,184 +931,13 @@
 		color: var(--color-text);
 		border: 1px solid var(--color-border);
 		border-radius: 8px;
-		padding: 0.5rem;
-		font-size: 1rem;
-		min-width: 200px;
-	}
-
-	/* Completion CTA */
-	.completion-cta {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		padding: 2rem;
-		text-align: center;
-		border: 2px solid var(--color-primary);
-		background: var(--color-surface);
-		box-shadow: var(--shadow-lg);
-		animation: slideUp 0.4s ease-out;
-	}
-
-	.completion-cta h3 {
-		color: var(--color-primary);
-		margin-bottom: 0.5rem;
-	}
-
-	.completion-cta p {
+		padding: 0.4rem 0.6rem;
 		font-size: 0.9rem;
-		color: var(--color-text-muted);
-		margin-bottom: 1.5rem;
-	}
-
-	.finish-btn {
-		padding: 0.75rem 2rem;
-		border-radius: 8px;
-		background: var(--color-primary);
-		color: #000;
-		font-weight: 700;
-		border: none;
-		cursor: pointer;
-		transition: transform 0.2s;
-	}
-
-	.finish-btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-		transform: none;
-	}
-
-	.finish-btn:hover {
-		transform: scale(1.05);
-	}
-
-	@keyframes slideUp {
-		from {
-			opacity: 0;
-			transform: translateY(20px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	/* Synchronization Meter */
-	.timing-feedback-container {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		flex: 1;
-	}
-
-	.sync-meter-card {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 1rem;
-		background: var(--color-surface);
-	}
-
-	.sync-meter-card .label {
-		font-size: 0.75rem;
-		font-weight: 700;
-		color: var(--color-text-muted);
-		text-transform: uppercase;
-	}
-
-	.sync-gauge {
-		width: 100%;
-		height: 20px;
-		background: var(--color-surface-raised);
-		border-radius: 10px;
-		position: relative;
-		overflow: hidden;
-		border: 1px solid var(--color-border);
-	}
-
-	.sync-axis {
-		position: absolute;
-		left: 50%;
-		top: 0;
-		width: 2px;
-		height: 100%;
-		background: var(--color-border);
-	}
-
-	.sync-marker {
-		position: absolute;
-		top: 0;
-		width: 4px;
-		height: 100%;
-		background: var(--color-success);
-		box-shadow: 0 0 10px var(--color-success);
-		transition: left 0.1s ease-out;
-		transform: translateX(-50%);
-	}
-
-	.sync-val {
-		font-size: 0.8rem;
-		font-weight: 800;
-		color: var(--color-success);
-	}
-
-	.coordination-summary {
-		display: flex;
-		gap: 1rem;
-		margin-top: 0.75rem;
-		font-size: 0.85rem;
-		color: var(--color-text-muted);
-	}
-
-	/* Hand Isolation Toggles */
-	.hand-isolation {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	.hand-isolation .label {
-		font-size: 0.75rem;
-		font-weight: 700;
-		color: var(--color-text-muted);
-		text-transform: uppercase;
-	}
-
-	.toggle-group {
-		display: flex;
-		background: var(--color-surface-raised);
-		padding: 0.25rem;
-		border-radius: 30px;
-		border: 1px solid var(--color-border);
-	}
-
-	.toggle-group button {
-		padding: 0.4rem 1rem;
-		border-radius: 25px;
-		border: none;
-		background: transparent;
-		color: var(--color-text-muted);
-		font-size: 0.85rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.toggle-group button.active {
-		background: var(--color-primary);
-		color: #000;
 	}
 
 	@media (max-width: 768px) {
 		.feedback-area {
 			flex-direction: column;
-		}
-		.timing-feedback-container,
-		.chord-display {
-			width: 100%;
 		}
 	}
 </style>

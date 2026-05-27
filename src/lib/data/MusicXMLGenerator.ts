@@ -24,6 +24,8 @@ export interface MusicXMLOptions {
 	key?: Note;
 	timeSignature?: { numerator: number; denominator: number };
 	divisions?: number; // Pulses per quarter note
+	staves?: 1 | 2;   // 1 = single staff, 2 = grand staff (default)
+	clef?: 'treble' | 'bass'; // clef for single-staff mode (default: treble)
 }
 
 const DEFAULT_OPTIONS: MusicXMLOptions = {
@@ -32,7 +34,9 @@ const DEFAULT_OPTIONS: MusicXMLOptions = {
 	tempo: 120,
 	key: 'C',
 	timeSignature: { numerator: 4, denominator: 4 },
-	divisions: 4
+	divisions: 4,
+	staves: 2,
+	clef: 'treble'
 };
 
 /**
@@ -67,7 +71,6 @@ export function generateMusicXML(notes: MusicXMLNote[], options: MusicXMLOptions
 		);
 		measureXML.push(measureContent);
 	}
-
 	// Build complete document
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
@@ -164,11 +167,34 @@ ${noteElements.join('\n')}
  * Generate attributes element (clef, key, time)
  */
 function generateAttributes(options: MusicXMLOptions, divisions: number): string {
-	const { key, timeSignature } = options;
+	const { key, timeSignature, staves = 2, clef = 'treble' } = options;
 
 	// Convert key to fifths
 	const keyFifths = key ? noteToFifths(key) : 0;
 
+	if (staves === 1) {
+		// Single-staff score: only one clef
+		const sign = clef === 'bass' ? 'F' : 'G';
+		const line = clef === 'bass' ? 4 : 2;
+		return `    <attributes>
+      <divisions>${divisions}</divisions>
+      <key>
+        <fifths>${keyFifths}</fifths>
+      </key>
+      <time>
+        <beats>${timeSignature?.numerator || 4}</beats>
+        <beat-type>${timeSignature?.denominator || 4}</beat-type>
+      </time>
+      <staves>1</staves>
+      <clef>
+        <sign>${sign}</sign>
+        <line>${line}</line>
+      </clef>
+    </attributes>
+`;
+	}
+
+	// Grand staff (2 staves)
 	return `    <attributes>
       <divisions>${divisions}</divisions>
       <key>
@@ -178,6 +204,7 @@ function generateAttributes(options: MusicXMLOptions, divisions: number): string
         <beats>${timeSignature?.numerator || 4}</beats>
         <beat-type>${timeSignature?.denominator || 4}</beat-type>
       </time>
+      <staves>2</staves>
       <clef number="1">
         <sign>G</sign>
         <line>2</line>
@@ -186,12 +213,6 @@ function generateAttributes(options: MusicXMLOptions, divisions: number): string
         <sign>F</sign>
         <line>4</line>
       </clef>
-      <staff-details number="1">
-        <staff-lines>5</staff-lines>
-      </staff-details>
-      <staff-details number="2">
-        <staff-lines>5</staff-lines>
-      </staff-details>
     </attributes>
 `;
 }

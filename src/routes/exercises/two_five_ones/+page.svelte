@@ -1,7 +1,12 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-	import { chords, generateChordNotesDataFromChord } from '$lib/MusicTheoryUtils';
+	import {
+		chords,
+		generateChordNotesDataFromChord,
+		getVoicedChordNotes,
+		constrainToOptimalRange
+	} from '$lib/MusicTheoryUtils';
 	import type {
 		Chord,
 		ChordVoicing,
@@ -84,6 +89,17 @@
 		)
 	);
 
+	const voicingHandGuide: Record<string, string> = {
+		'full-right': '🤚 Right hand only (around C4)',
+		'full-left': '👇 Left hand only (below C4)',
+		'1735': '👈 LH: Root+7th  ·  🤚 RH: 3rd+5th',
+		'1537': '👈 LH: Root+5th  ·  🤚 RH: 3rd+7th',
+		'rootless-a': '🤚 RH: 3–5–7–9 (no root)',
+		'rootless-b': '🤚 RH: 7–9–3–5 (no root)',
+		shell: '👇 LH: Root + 7th',
+		'guide-tones': '🤚 RH: 3rd + 7th'
+	};
+
 	let effectiveRootKey = $derived(paramKey ?? propKey ?? 'C');
 	let exerciseCompleted = $state(false);
 
@@ -98,9 +114,10 @@
 	}
 
 	function getCurrentChord(selectedNote: Note): Chord {
-		const twoChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName] + 2;
-		const fiveChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName] + 7;
-		const oneChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName];
+		const base = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName];
+		const twoChordRoot = constrainToOptimalRange((base + 2) as MidiNote);
+		const fiveChordRoot = constrainToOptimalRange((base + 7) as MidiNote);
+		const oneChordRoot = constrainToOptimalRange(base as MidiNote);
 
 		const twoChord = chords(twoChordRoot as MidiNote, 'min7', inversion);
 		const fiveChord = chords(fiveChordRoot as MidiNote, '7', inversion);
@@ -110,13 +127,20 @@
 		return progressionChords[currentChordIndex];
 	}
 
+	// Use voiced notes so expected positions match what the score shows (correct octaves / hands)
 	function generateExpectedNotes(selectedNote: Note): MidiNote[] {
 		const curChord = getCurrentChord(selectedNote);
-
-		return [curChord.root, curChord.third, curChord.fifth, curChord.seventh].filter(
-			(n) => n != null
-		) as MidiNote[];
+		return getVoicedChordNotes(curChord, voicing);
 	}
+
+	// Per-chord hand breakdown shown in the guide card
+	let currentChordHandGuide = $derived.by(() => {
+		const chord = getCurrentChord(effectiveRootKey);
+		const voicedNotes = getVoicedChordNotes(chord, voicing);
+		const lhNotes = voicedNotes.filter((n) => n < 60).map((n) => MidiToNote[n]);
+		const rhNotes = voicedNotes.filter((n) => n >= 60).map((n) => MidiToNote[n]);
+		return { lhNotes, rhNotes };
+	});
 
 	function validateNoteEvent(
 		selectedNote: Note,
@@ -168,6 +192,22 @@
 			}
 		}
 
+		// Same pitch class but wrong octave → correct tone, wrong voicing position
+		const pitchClass = event.noteNumber % 12;
+		const matchedVoiced = expectedNotes.find((n) => n % 12 === pitchClass);
+		if (matchedVoiced !== undefined) {
+			const needsLower = matchedVoiced < event.noteNumber;
+			const hint = needsLower
+				? `⬇ Play ${MidiToNote[matchedVoiced]} (left hand)`
+				: `⬆ Play ${MidiToNote[matchedVoiced]} (right hand)`;
+			return {
+				isCorrect: true,
+				message: `Right note, wrong octave! ${hint}`,
+				collected: false,
+				resetCollected: false
+			};
+		}
+
 		const missing = expectedNotes.filter((n) => !currentNotes.includes(n));
 		const missingNames = missing.map((n) => MidiToNote[n].slice(0, -1)).join(', ');
 		return {
@@ -199,9 +239,10 @@
 	}
 
 	function getChordNames(selectedNote: Note = 'C'): string[] {
-		const twoChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName] + 2;
-		const fiveChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName] + 7;
-		const oneChordRoot = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName];
+		const base = NoteToMidi[(selectedNote + DEFAULT_OCTAVE) as NoteFullName];
+		const twoChordRoot = constrainToOptimalRange((base + 2) as MidiNote);
+		const fiveChordRoot = constrainToOptimalRange((base + 7) as MidiNote);
+		const oneChordRoot = constrainToOptimalRange(base as MidiNote);
 
 		return [
 			`${MidiToNote[twoChordRoot as MidiNote].slice(0, -1)}m7`,
@@ -302,6 +343,23 @@
 						{/if}
 					</div>
 				{/if}
+
+				<!-- Voicing guide: always visible — shows which hand plays which notes -->
+				<div class="voicing-guide card-premium">
+					<div class="vg-info">
+						<span class="vg-name">{voicingHandGuide[voicing] ?? voicing}</span>
+						<span class="vg-ref">Reference: <strong>{effectiveRootKey}4</strong> = middle C</span>
+					</div>
+					<div class="vg-hands">
+						{#if currentChordHandGuide.lhNotes.length > 0}
+							<span class="vg-hand lh">👈 {currentChordHandGuide.lhNotes.join(' · ')}</span>
+						{/if}
+						{#if currentChordHandGuide.rhNotes.length > 0}
+							<span class="vg-hand rh">🤚 {currentChordHandGuide.rhNotes.join(' · ')}</span>
+						{/if}
+					</div>
+				</div>
+
 				<div class="chord-progress">
 					{#each getChordNames(api.selectedNote) as chordName, index}
 						<div
@@ -314,14 +372,9 @@
 					{/each}
 				</div>
 			</div>
-			<div class="exercise-status">
-				<div class="current-chord">
-					Current: {getChordNames(api.selectedNote)[currentChordIndex]} ({currentChordIndex + 1}/3)
-				</div>
-				{#if api.completed}
-					<div class="completion">🎉 ii-V-I Completed!</div>
-				{/if}
-			</div>
+			{#if api.completed}
+				<div class="completion">🎉 ii-V-I Completed!</div>
+			{/if}
 		{/snippet}
 	</BaseExercise>
 </div>
@@ -356,9 +409,10 @@
 
 	.chord-indicator {
 		padding: 0.5rem 1rem;
-		border: 2px solid #e0e0e0;
+		border: 2px solid var(--color-border);
 		border-radius: 8px;
-		background: #f5f5f5;
+		background: var(--color-surface);
+		color: var(--color-text);
 		font-weight: 500;
 		transition: all 0.3s;
 		min-width: 80px;
@@ -366,16 +420,16 @@
 	}
 
 	.chord-indicator.active {
-		border-color: #2196f3;
-		background: #e3f2fd;
-		color: #1976d2;
+		border-color: var(--color-primary);
+		background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+		color: var(--color-primary);
 		transform: scale(1.05);
 	}
 
 	.chord-indicator.completed {
-		border-color: #4caf50;
-		background: #e8f5e8;
-		color: #2e7d32;
+		border-color: var(--color-success);
+		background: color-mix(in srgb, var(--color-success) 15%, transparent);
+		color: var(--color-success);
 	}
 
 	.rhythm-controls {
@@ -408,24 +462,68 @@
 		font-size: 0.85rem;
 	}
 
-	.exercise-status {
-		display: flex;
-		gap: 2rem;
-		padding: 1rem;
-		background: #f8f9fa;
+	.completion {
+		padding: 0.75rem 1.5rem;
+		background: color-mix(in srgb, var(--color-success) 15%, transparent);
+		border: 1px solid var(--color-success);
 		border-radius: 8px;
-		margin-top: 1rem;
+		color: var(--color-success);
+		font-weight: bold;
+		text-align: center;
+		animation: bounce 0.5s ease-in-out;
+	}
+
+	/* Voicing guide card */
+	.voicing-guide {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 0.6rem 1rem;
 		flex-wrap: wrap;
 	}
 
-	.current-chord {
-		color: #1976d2;
+	.vg-info {
+		display: flex;
+		gap: 0.75rem;
+		align-items: baseline;
+		flex-wrap: wrap;
 	}
 
-	.completion {
-		color: #28a745;
-		font-weight: bold;
-		animation: bounce 0.5s ease-in-out;
+	.vg-name {
+		font-weight: 600;
+		color: var(--color-text);
+		font-size: 0.9rem;
+	}
+
+	.vg-ref {
+		font-size: 0.78rem;
+		color: var(--color-text-muted);
+	}
+
+	.vg-hands {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.vg-hand {
+		font-size: 0.85rem;
+		padding: 0.2rem 0.6rem;
+		border-radius: 6px;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+	}
+
+	.vg-hand.lh {
+		background: color-mix(in srgb, #60a5fa 20%, transparent);
+		color: #60a5fa;
+		border: 1px solid #60a5fa;
+	}
+
+	.vg-hand.rh {
+		background: color-mix(in srgb, #34d399 20%, transparent);
+		color: #34d399;
+		border: 1px solid #34d399;
 	}
 
 	@keyframes bounce {
@@ -455,11 +553,6 @@
 		}
 
 		.chord-progress {
-			flex-direction: column;
-			gap: 0.5rem;
-		}
-
-		.exercise-status {
 			flex-direction: column;
 			gap: 0.5rem;
 		}

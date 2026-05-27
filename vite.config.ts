@@ -3,10 +3,13 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
-	build: {
-		chunkSizeWarningLimit: 1500,
-		rollupOptions: {
-			external: ['opensheetmusicdisplay']
+	server: {
+		headers: {
+			// Explicitly allow Web MIDI API on all origins in dev
+			'Permissions-Policy': 'midi=*, microphone=*'
 		}
+	},
+	build: {
+		chunkSizeWarningLimit: 1500
 	}
 });
